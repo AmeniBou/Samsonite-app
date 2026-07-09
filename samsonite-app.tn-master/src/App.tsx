@@ -1,0 +1,82 @@
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { CartProvider } from "@/hooks/useCart";
+import Layout from "@/components/layout/Layout";
+import Home from "./pages/Home";
+import Category from "./pages/Category";
+import Product from "./pages/Product";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import Search from "./pages/Search";
+import Brand from "./pages/Brand";
+import Services from "./pages/Services";
+import Personnalisation from "./pages/Personnalisation";
+import PrestashopConfig from "./pages/PrestashopConfig";
+import Stores from "./pages/Stores";
+import Account from "./pages/Account";
+import Shipping from "./pages/Shipping";
+import Returns from "./pages/Returns";
+import Newsletter from "./pages/Newsletter";
+import DataError from "./pages/DataError";
+import NotFound from "./pages/NotFound";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminProductForm from "./pages/admin/AdminProductForm";
+
+const queryClient = new QueryClient();
+
+const App = () => {
+  useEffect(() => {
+    document.title = "Samsonite Tunisie | Bagages, Valises, Sacs";
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <CartProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Admin routes — layout séparé sans header/footer public */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="produits/nouveau" element={<AdminProductForm />} />
+                <Route path="produits/modifier/:id" element={<AdminProductForm />} />
+              </Route>
+
+              {/* Public routes — layout avec header/footer */}
+              <Route element={<Layout />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/categorie/:slug" element={<Category />} />
+                <Route path="/produit/:slug" element={<Product />} />
+                <Route path="/panier" element={<Cart />} />
+                <Route path="/commande" element={<Checkout />} />
+                <Route path="/recherche" element={<Search />} />
+                <Route path="/la-marque" element={<Brand />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/personnalisation" element={<Personnalisation />} />
+                <Route path="/magasins" element={<Stores />} />
+                <Route path="/compte" element={<Account />} />
+                <Route path="/livraison" element={<Shipping />} />
+                <Route path="/retours" element={<Returns />} />
+                <Route path="/newsletter" element={<Newsletter />} />
+                <Route path="/erreur" element={<DataError />} />
+                <Route path="/config" element={<PrestashopConfig />} />
+                <Route path="*" element={<NotFound />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </CartProvider>
+    </QueryClientProvider>
+  );
+};
+
+export default App;

@@ -1,0 +1,4632 @@
+[
+  {
+    "id": 1,
+    "id_parent": "0",
+    "level_depth": "0",
+    "nb_products_recursive": "218",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "0",
+    "date_add": "2022-03-16 08:29:35",
+    "date_upd": "2022-03-16 08:29:35",
+    "name": [
+      {
+        "id": "1",
+        "value": "Root"
+      },
+      {
+        "id": "2",
+        "value": "Racine"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "root"
+      },
+      {
+        "id": "2",
+        "value": "racine"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "associations": {
+      "categories": [
+        {
+          "id": "2"
+        }
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "id_parent": "1",
+    "level_depth": "1",
+    "nb_products_recursive": "218",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "1",
+    "position": "0",
+    "date_add": "2022-03-16 08:29:35",
+    "date_upd": "2022-03-16 08:29:35",
+    "name": [
+      {
+        "id": "1",
+        "value": "Home"
+      },
+      {
+        "id": "2",
+        "value": "Accueil"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "home"
+      },
+      {
+        "id": "2",
+        "value": "accueil"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "associations": {
+      "categories": [
+        {
+          "id": "10"
+        },
+        {
+          "id": "13"
+        },
+        {
+          "id": "17"
+        },
+        {
+          "id": "27"
+        },
+        {
+          "id": "32"
+        },
+        {
+          "id": "37"
+        },
+        {
+          "id": "40"
+        }
+      ],
+      "products": [
+        {
+          "id": "1"
+        },
+        {
+          "id": "2"
+        },
+        {
+          "id": "3"
+        },
+        {
+          "id": "4"
+        },
+        {
+          "id": "5"
+        },
+        {
+          "id": "6"
+        },
+        {
+          "id": "7"
+        },
+        {
+          "id": "8"
+        },
+        {
+          "id": "9"
+        },
+        {
+          "id": "10"
+        },
+        {
+          "id": "11"
+        },
+        {
+          "id": "12"
+        },
+        {
+          "id": "13"
+        },
+        {
+          "id": "14"
+        },
+        {
+          "id": "15"
+        },
+        {
+          "id": "16"
+        },
+        {
+          "id": "17"
+        },
+        {
+          "id": "18"
+        },
+        {
+          "id": "19"
+        },
+        {
+          "id": "20"
+        },
+        {
+          "id": "22"
+        },
+        {
+          "id": "23"
+        },
+        {
+          "id": "25"
+        },
+        {
+          "id": "26"
+        },
+        {
+          "id": "27"
+        },
+        {
+          "id": "28"
+        },
+        {
+          "id": "29"
+        },
+        {
+          "id": "30"
+        },
+        {
+          "id": "32"
+        },
+        {
+          "id": "34"
+        },
+        {
+          "id": "35"
+        },
+        {
+          "id": "36"
+        },
+        {
+          "id": "37"
+        },
+        {
+          "id": "38"
+        },
+        {
+          "id": "41"
+        },
+        {
+          "id": "42"
+        },
+        {
+          "id": "43"
+        },
+        {
+          "id": "44"
+        },
+        {
+          "id": "45"
+        },
+        {
+          "id": "46"
+        },
+        {
+          "id": "47"
+        },
+        {
+          "id": "48"
+        },
+        {
+          "id": "49"
+        },
+        {
+          "id": "50"
+        },
+        {
+          "id": "51"
+        },
+        {
+          "id": "52"
+        },
+        {
+          "id": "53"
+        },
+        {
+          "id": "55"
+        },
+        {
+          "id": "56"
+        },
+        {
+          "id": "57"
+        },
+        {
+          "id": "59"
+        },
+        {
+          "id": "61"
+        },
+        {
+          "id": "62"
+        },
+        {
+          "id": "63"
+        },
+        {
+          "id": "64"
+        },
+        {
+          "id": "65"
+        },
+        {
+          "id": "66"
+        },
+        {
+          "id": "67"
+        },
+        {
+          "id": "68"
+        },
+        {
+          "id": "69"
+        },
+        {
+          "id": "70"
+        },
+        {
+          "id": "71"
+        },
+        {
+          "id": "72"
+        },
+        {
+          "id": "75"
+        },
+        {
+          "id": "76"
+        },
+        {
+          "id": "77"
+        },
+        {
+          "id": "78"
+        },
+        {
+          "id": "79"
+        },
+        {
+          "id": "80"
+        },
+        {
+          "id": "81"
+        },
+        {
+          "id": "82"
+        },
+        {
+          "id": "83"
+        },
+        {
+          "id": "85"
+        },
+        {
+          "id": "86"
+        },
+        {
+          "id": "87"
+        },
+        {
+          "id": "88"
+        },
+        {
+          "id": "89"
+        },
+        {
+          "id": "90"
+        },
+        {
+          "id": "91"
+        },
+        {
+          "id": "92"
+        },
+        {
+          "id": "93"
+        },
+        {
+          "id": "96"
+        },
+        {
+          "id": "97"
+        },
+        {
+          "id": "98"
+        },
+        {
+          "id": "99"
+        },
+        {
+          "id": "100"
+        },
+        {
+          "id": "101"
+        },
+        {
+          "id": "102"
+        },
+        {
+          "id": "103"
+        },
+        {
+          "id": "104"
+        },
+        {
+          "id": "105"
+        },
+        {
+          "id": "107"
+        },
+        {
+          "id": "108"
+        },
+        {
+          "id": "109"
+        },
+        {
+          "id": "110"
+        },
+        {
+          "id": "111"
+        },
+        {
+          "id": "112"
+        },
+        {
+          "id": "113"
+        },
+        {
+          "id": "114"
+        },
+        {
+          "id": "115"
+        },
+        {
+          "id": "116"
+        },
+        {
+          "id": "117"
+        },
+        {
+          "id": "118"
+        },
+        {
+          "id": "119"
+        },
+        {
+          "id": "120"
+        },
+        {
+          "id": "122"
+        },
+        {
+          "id": "123"
+        },
+        {
+          "id": "124"
+        },
+        {
+          "id": "126"
+        },
+        {
+          "id": "127"
+        },
+        {
+          "id": "128"
+        },
+        {
+          "id": "129"
+        },
+        {
+          "id": "130"
+        },
+        {
+          "id": "131"
+        },
+        {
+          "id": "132"
+        },
+        {
+          "id": "133"
+        },
+        {
+          "id": "134"
+        },
+        {
+          "id": "135"
+        },
+        {
+          "id": "136"
+        },
+        {
+          "id": "137"
+        },
+        {
+          "id": "138"
+        },
+        {
+          "id": "139"
+        },
+        {
+          "id": "140"
+        },
+        {
+          "id": "141"
+        },
+        {
+          "id": "142"
+        },
+        {
+          "id": "143"
+        },
+        {
+          "id": "144"
+        },
+        {
+          "id": "146"
+        },
+        {
+          "id": "147"
+        },
+        {
+          "id": "148"
+        },
+        {
+          "id": "149"
+        },
+        {
+          "id": "150"
+        },
+        {
+          "id": "151"
+        },
+        {
+          "id": "152"
+        },
+        {
+          "id": "153"
+        },
+        {
+          "id": "154"
+        },
+        {
+          "id": "155"
+        },
+        {
+          "id": "158"
+        },
+        {
+          "id": "159"
+        },
+        {
+          "id": "160"
+        },
+        {
+          "id": "162"
+        },
+        {
+          "id": "163"
+        },
+        {
+          "id": "164"
+        },
+        {
+          "id": "165"
+        },
+        {
+          "id": "166"
+        },
+        {
+          "id": "167"
+        },
+        {
+          "id": "168"
+        },
+        {
+          "id": "169"
+        },
+        {
+          "id": "170"
+        },
+        {
+          "id": "171"
+        },
+        {
+          "id": "172"
+        },
+        {
+          "id": "173"
+        },
+        {
+          "id": "174"
+        },
+        {
+          "id": "175"
+        },
+        {
+          "id": "178"
+        },
+        {
+          "id": "179"
+        },
+        {
+          "id": "180"
+        },
+        {
+          "id": "182"
+        },
+        {
+          "id": "187"
+        },
+        {
+          "id": "190"
+        },
+        {
+          "id": "191"
+        },
+        {
+          "id": "192"
+        },
+        {
+          "id": "194"
+        },
+        {
+          "id": "197"
+        },
+        {
+          "id": "198"
+        },
+        {
+          "id": "199"
+        },
+        {
+          "id": "200"
+        },
+        {
+          "id": "201"
+        },
+        {
+          "id": "202"
+        },
+        {
+          "id": "203"
+        },
+        {
+          "id": "204"
+        },
+        {
+          "id": "206"
+        },
+        {
+          "id": "189"
+        },
+        {
+          "id": "218"
+        },
+        {
+          "id": "220"
+        },
+        {
+          "id": "222"
+        },
+        {
+          "id": "223"
+        },
+        {
+          "id": "226"
+        },
+        {
+          "id": "228"
+        },
+        {
+          "id": "229"
+        },
+        {
+          "id": "230"
+        },
+        {
+          "id": "231"
+        },
+        {
+          "id": "235"
+        },
+        {
+          "id": "236"
+        },
+        {
+          "id": "237"
+        },
+        {
+          "id": "238"
+        },
+        {
+          "id": "239"
+        },
+        {
+          "id": "243"
+        },
+        {
+          "id": "244"
+        },
+        {
+          "id": "245"
+        },
+        {
+          "id": "247"
+        },
+        {
+          "id": "253"
+        },
+        {
+          "id": "255"
+        },
+        {
+          "id": "257"
+        },
+        {
+          "id": "258"
+        },
+        {
+          "id": "259"
+        },
+        {
+          "id": "261"
+        },
+        {
+          "id": "263"
+        },
+        {
+          "id": "268"
+        },
+        {
+          "id": "269"
+        },
+        {
+          "id": "271"
+        },
+        {
+          "id": "272"
+        },
+        {
+          "id": "273"
+        },
+        {
+          "id": "277"
+        },
+        {
+          "id": "279"
+        },
+        {
+          "id": "280"
+        },
+        {
+          "id": "283"
+        },
+        {
+          "id": "284"
+        },
+        {
+          "id": "285"
+        },
+        {
+          "id": "288"
+        },
+        {
+          "id": "290"
+        },
+        {
+          "id": "293"
+        },
+        {
+          "id": "294"
+        },
+        {
+          "id": "295"
+        }
+      ]
+    }
+  },
+  {
+    "id": 3,
+    "id_parent": "2",
+    "level_depth": "2",
+    "nb_products_recursive": "2",
+    "active": "0",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "0",
+    "date_add": "2022-03-16 08:29:35",
+    "date_upd": "2022-03-24 12:15:56",
+    "name": [
+      {
+        "id": "1",
+        "value": "Clothes"
+      },
+      {
+        "id": "2",
+        "value": "Clothes"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "clothes"
+      },
+      {
+        "id": "2",
+        "value": "clothes"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": "<p>Discover our favorites fashionable discoveries, a selection of cool items to integrate in your wardrobe. Compose a unique style with personality which matches your own.</p>"
+      },
+      {
+        "id": "2",
+        "value": "<p>Discover our favorites fashionable discoveries, a selection of cool items to integrate in your wardrobe. Compose a unique style with personality which matches your own.</p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "associations": {
+      "categories": [
+        {
+          "id": "4"
+        },
+        {
+          "id": "5"
+        }
+      ],
+      "products": [
+        {
+          "id": "1"
+        },
+        {
+          "id": "2"
+        }
+      ]
+    }
+  },
+  {
+    "id": 9,
+    "id_parent": "2",
+    "level_depth": "2",
+    "nb_products_recursive": "7",
+    "active": "0",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "1",
+    "date_add": "2022-03-16 08:29:35",
+    "date_upd": "2022-03-24 12:15:56",
+    "name": [
+      {
+        "id": "1",
+        "value": "Art"
+      },
+      {
+        "id": "2",
+        "value": "Art"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "art"
+      },
+      {
+        "id": "2",
+        "value": "art"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": "<p>Framed poster and vector images, all you need to give personality to your walls or bring your creative projects to life.</p>"
+      },
+      {
+        "id": "2",
+        "value": "<p>Framed poster and vector images, all you need to give personality to your walls or bring your creative projects to life.</p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "3"
+        },
+        {
+          "id": "4"
+        },
+        {
+          "id": "5"
+        },
+        {
+          "id": "12"
+        },
+        {
+          "id": "13"
+        },
+        {
+          "id": "14"
+        },
+        {
+          "id": "15"
+        }
+      ]
+    }
+  },
+  {
+    "id": 10,
+    "id_parent": "2",
+    "level_depth": "2",
+    "nb_products_recursive": "23",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "2",
+    "date_add": "2022-03-17 11:23:24",
+    "date_upd": "2022-03-24 12:15:56",
+    "name": [
+      {
+        "id": "1",
+        "value": "Business"
+      },
+      {
+        "id": "2",
+        "value": "Business"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "business"
+      },
+      {
+        "id": "2",
+        "value": "business"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p>Cette gamme innovante répond parfaitement aux exigences des voyageurs actuels. Elle propose également l'assortiment le plus large de chez Samsonite : 21 modèles (bagages et business) multifonctionnels, légers et résistants pour des voyages facilités.</p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Notre gamme Business - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Cette gamme innovante répond parfaitement aux exigences des voyageurs actuels: multifonctionnels, légers et résistants pour des voyages facilités."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "gamme business, samsonite business, gamme business samsonite, valise tunisie, valise business"
+      }
+    ],
+    "associations": {
+      "categories": [
+        {
+          "id": "11"
+        },
+        {
+          "id": "12"
+        }
+      ],
+      "products": [
+        {
+          "id": "27"
+        },
+        {
+          "id": "42"
+        },
+        {
+          "id": "103"
+        },
+        {
+          "id": "104"
+        },
+        {
+          "id": "106"
+        },
+        {
+          "id": "114"
+        },
+        {
+          "id": "115"
+        },
+        {
+          "id": "116"
+        },
+        {
+          "id": "117"
+        },
+        {
+          "id": "118"
+        },
+        {
+          "id": "119"
+        },
+        {
+          "id": "120"
+        },
+        {
+          "id": "122"
+        },
+        {
+          "id": "123"
+        },
+        {
+          "id": "124"
+        },
+        {
+          "id": "164"
+        },
+        {
+          "id": "259"
+        },
+        {
+          "id": "277"
+        },
+        {
+          "id": "288"
+        }
+      ]
+    }
+  },
+  {
+    "id": 13,
+    "id_parent": "2",
+    "level_depth": "2",
+    "nb_products_recursive": "112",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "3",
+    "date_add": "2022-03-17 12:13:24",
+    "date_upd": "2022-03-24 12:15:56",
+    "name": [
+      {
+        "id": "1",
+        "value": "Valises"
+      },
+      {
+        "id": "2",
+        "value": "Valises"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "valises"
+      },
+      {
+        "id": "2",
+        "value": "valises"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">La </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise </strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">qu'il vous faut est forcément sur Samsonite, spécialiste des </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valises</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> sur Internet. Nous vous conseillons et nous employons à vous proposer les meilleures marques du marché : </span><a href=\"https://www.mesbagages.com/bagages/valises-samsonite.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise Samsonite</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, </span><a href=\"https://www.mesbagages.com/bagages/valises-roncato.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise American Tourister</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, </span><a href=\"https://www.mesbagages.com/bagages/valises-eastpak.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise Disney</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">.</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Vous recherchez une </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise pas cher </strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">? Pas de problème ! Vous trouverez ici les meilleures marques à des prix défiant toute concurrence !</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Nos Valises - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Découvrez maintenant nos choix de valises de tous types : valises rigides, souples, cabine, enfant, set de valises. Il y en aura pour tous les goûts!"
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "valise tunisie, valise samsonite, samsonite tunisie, valise rigide, valise souple, valise cabine, valise rigide tunisie, valise souple tunisie, valise cabine tunisie"
+      }
+    ],
+    "associations": {
+      "categories": [
+        {
+          "id": "14"
+        },
+        {
+          "id": "15"
+        },
+        {
+          "id": "38"
+        },
+        {
+          "id": "16"
+        }
+      ],
+      "products": [
+        {
+          "id": "20"
+        },
+        {
+          "id": "22"
+        },
+        {
+          "id": "23"
+        },
+        {
+          "id": "25"
+        },
+        {
+          "id": "26"
+        },
+        {
+          "id": "28"
+        },
+        {
+          "id": "30"
+        },
+        {
+          "id": "55"
+        },
+        {
+          "id": "57"
+        },
+        {
+          "id": "59"
+        },
+        {
+          "id": "61"
+        },
+        {
+          "id": "62"
+        },
+        {
+          "id": "63"
+        },
+        {
+          "id": "64"
+        },
+        {
+          "id": "65"
+        },
+        {
+          "id": "66"
+        },
+        {
+          "id": "67"
+        },
+        {
+          "id": "68"
+        },
+        {
+          "id": "69"
+        },
+        {
+          "id": "70"
+        },
+        {
+          "id": "71"
+        },
+        {
+          "id": "72"
+        },
+        {
+          "id": "56"
+        },
+        {
+          "id": "52"
+        },
+        {
+          "id": "51"
+        },
+        {
+          "id": "50"
+        },
+        {
+          "id": "49"
+        },
+        {
+          "id": "48"
+        },
+        {
+          "id": "47"
+        },
+        {
+          "id": "46"
+        },
+        {
+          "id": "45"
+        },
+        {
+          "id": "44"
+        },
+        {
+          "id": "43"
+        },
+        {
+          "id": "42"
+        },
+        {
+          "id": "41"
+        },
+        {
+          "id": "38"
+        },
+        {
+          "id": "37"
+        },
+        {
+          "id": "36"
+        },
+        {
+          "id": "35"
+        },
+        {
+          "id": "34"
+        },
+        {
+          "id": "32"
+        },
+        {
+          "id": "93"
+        },
+        {
+          "id": "95"
+        },
+        {
+          "id": "96"
+        },
+        {
+          "id": "97"
+        },
+        {
+          "id": "98"
+        },
+        {
+          "id": "99"
+        },
+        {
+          "id": "100"
+        },
+        {
+          "id": "101"
+        },
+        {
+          "id": "110"
+        },
+        {
+          "id": "126"
+        },
+        {
+          "id": "127"
+        },
+        {
+          "id": "128"
+        },
+        {
+          "id": "129"
+        },
+        {
+          "id": "130"
+        },
+        {
+          "id": "131"
+        },
+        {
+          "id": "132"
+        },
+        {
+          "id": "133"
+        },
+        {
+          "id": "134"
+        },
+        {
+          "id": "135"
+        },
+        {
+          "id": "136"
+        },
+        {
+          "id": "137"
+        },
+        {
+          "id": "138"
+        },
+        {
+          "id": "139"
+        },
+        {
+          "id": "140"
+        },
+        {
+          "id": "141"
+        },
+        {
+          "id": "142"
+        },
+        {
+          "id": "143"
+        },
+        {
+          "id": "144"
+        },
+        {
+          "id": "155"
+        },
+        {
+          "id": "158"
+        },
+        {
+          "id": "162"
+        },
+        {
+          "id": "168"
+        },
+        {
+          "id": "169"
+        },
+        {
+          "id": "171"
+        },
+        {
+          "id": "172"
+        },
+        {
+          "id": "173"
+        },
+        {
+          "id": "174"
+        },
+        {
+          "id": "187"
+        },
+        {
+          "id": "189"
+        },
+        {
+          "id": "190"
+        },
+        {
+          "id": "207"
+        },
+        {
+          "id": "230"
+        },
+        {
+          "id": "231"
+        },
+        {
+          "id": "243"
+        },
+        {
+          "id": "245"
+        },
+        {
+          "id": "257"
+        },
+        {
+          "id": "261"
+        },
+        {
+          "id": "263"
+        },
+        {
+          "id": "269"
+        },
+        {
+          "id": "272"
+        },
+        {
+          "id": "273"
+        },
+        {
+          "id": "288"
+        },
+        {
+          "id": "290"
+        },
+        {
+          "id": "295"
+        }
+      ]
+    }
+  },
+  {
+    "id": 17,
+    "id_parent": "2",
+    "level_depth": "2",
+    "nb_products_recursive": "32",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "4",
+    "date_add": "2022-03-17 14:33:34",
+    "date_upd": "2022-03-24 12:15:56",
+    "name": [
+      {
+        "id": "1",
+        "value": "Accessories"
+      },
+      {
+        "id": "2",
+        "value": "Accessoires"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "accessoires"
+      },
+      {
+        "id": "2",
+        "value": "accessoires"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#9b9b9b;\">Prenez les bons accessoires de voyage pour voyager confortablement. Endormez-vous avec un oreiller de voyage moelleux et afin d'éviter de payer un supplément bagages pensez à notre pèse bagage. Avec ces accessoires, vous êtes paré à tout pour votre prochain voyage.</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Accessoires de voyage - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Découvrez nos larges gammes d'accessoires de voyage ✓Vanity ✓Portefeuilles ✓Housses de protection ✓Sangles ✓Parapluies ✓Cadenas..."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "accessoire samsonite, accessoire de voyage tunisie, accessoire de voyage samsonite, accessoire samsonite tunisie, housse de protection, housse tunisie, housse samsonite, sangles samsonite, samsonite, samsonite tunisie"
+      }
+    ],
+    "associations": {
+      "categories": [
+        {
+          "id": "18"
+        },
+        {
+          "id": "19"
+        },
+        {
+          "id": "20"
+        },
+        {
+          "id": "21"
+        },
+        {
+          "id": "22"
+        },
+        {
+          "id": "23"
+        },
+        {
+          "id": "24"
+        },
+        {
+          "id": "25"
+        }
+      ],
+      "products": [
+        {
+          "id": "29"
+        },
+        {
+          "id": "75"
+        },
+        {
+          "id": "76"
+        },
+        {
+          "id": "77"
+        },
+        {
+          "id": "78"
+        },
+        {
+          "id": "79"
+        },
+        {
+          "id": "80"
+        },
+        {
+          "id": "81"
+        },
+        {
+          "id": "82"
+        },
+        {
+          "id": "83"
+        },
+        {
+          "id": "85"
+        },
+        {
+          "id": "86"
+        },
+        {
+          "id": "87"
+        },
+        {
+          "id": "88"
+        },
+        {
+          "id": "89"
+        },
+        {
+          "id": "90"
+        },
+        {
+          "id": "91"
+        },
+        {
+          "id": "92"
+        },
+        {
+          "id": "107"
+        },
+        {
+          "id": "108"
+        },
+        {
+          "id": "109"
+        },
+        {
+          "id": "112"
+        },
+        {
+          "id": "113"
+        },
+        {
+          "id": "124"
+        },
+        {
+          "id": "159"
+        },
+        {
+          "id": "236"
+        },
+        {
+          "id": "237"
+        },
+        {
+          "id": "238"
+        },
+        {
+          "id": "239"
+        },
+        {
+          "id": "268"
+        },
+        {
+          "id": "293"
+        },
+        {
+          "id": "294"
+        }
+      ]
+    }
+  },
+  {
+    "id": 27,
+    "id_parent": "2",
+    "level_depth": "2",
+    "nb_products_recursive": "17",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "5",
+    "date_add": "2022-03-17 17:06:24",
+    "date_upd": "2022-03-24 12:15:56",
+    "name": [
+      {
+        "id": "1",
+        "value": "Disney & Enfant"
+      },
+      {
+        "id": "2",
+        "value": "Disney & Enfant"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "disney-enfant"
+      },
+      {
+        "id": "2",
+        "value": "disney-enfant"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#9b9b9b;\">Vous partez à l'école ou en vacances? Notre collection Disney excitera certainement les plus jeunes voyageurs. découvrez nos valises, cartables et sacs à dos pour enfants aux couleurs des personnages Disney les plus cool. Découvrez nos valises à chevaucher pour enfants, nos ensembles de bagages et nos ensembles scolaires aux design étonnants.</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Disney & enfants - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Gamme dédiée pour enfants! Adaptés dès le plus jeune âge et jusqu'au collège: un design ludique, conception résistante et un grand confort de transport."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "enfant, sac à dos, valise enfant, sac enfant, samsonite enfant, samsonite tunisie"
+      }
+    ],
+    "associations": {
+      "categories": [
+        {
+          "id": "28"
+        },
+        {
+          "id": "29"
+        },
+        {
+          "id": "31"
+        }
+      ],
+      "products": [
+        {
+          "id": "59"
+        },
+        {
+          "id": "64"
+        },
+        {
+          "id": "96"
+        },
+        {
+          "id": "97"
+        },
+        {
+          "id": "98"
+        },
+        {
+          "id": "99"
+        },
+        {
+          "id": "102"
+        },
+        {
+          "id": "111"
+        },
+        {
+          "id": "146"
+        },
+        {
+          "id": "147"
+        },
+        {
+          "id": "148"
+        },
+        {
+          "id": "149"
+        },
+        {
+          "id": "150"
+        },
+        {
+          "id": "151"
+        },
+        {
+          "id": "152"
+        },
+        {
+          "id": "174"
+        },
+        {
+          "id": "290"
+        }
+      ]
+    }
+  },
+  {
+    "id": 32,
+    "id_parent": "2",
+    "level_depth": "2",
+    "nb_products_recursive": "37",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "6",
+    "date_add": "2022-03-18 11:41:56",
+    "date_upd": "2022-03-24 12:15:57",
+    "name": [
+      {
+        "id": "1",
+        "value": "Sac à dos"
+      },
+      {
+        "id": "2",
+        "value": "Sac à dos"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "sac-a-dos"
+      },
+      {
+        "id": "2",
+        "value": "sac-a-dos"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Samsonite vous propose une grande sélection de modèles, qu'il s'agisse d'un </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos/ordinateur/samsonite.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos Samsonite ordinateur portable</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> ou d'un </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos/enfant/samsonite.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos Samsonite enfant</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, vous n'aurez que l'embarras du choix.</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Parfaits pour les premiers pas d'école, les </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sacs à dos Samsonite enfant</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> procureront à vos bouts de chou le confort et l'ergonomie recherchés avec des accessoires indispensables, et un design très original décliné en plusieurs thèmes. A vous de les découvrir...</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Nos gamme sac à dos - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Privilégiez la qualité avec un sac à dos Samsonite !"
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "sac à dos, sac à dos tunisie, sac à dos samsonite, sac à dos scolaire tunisie, sac ordinateur tunisie, sac enfant tunisie, samsonite, samsonite tunisie, sac pc tunisie"
+      }
+    ],
+    "associations": {
+      "categories": [
+        {
+          "id": "33"
+        },
+        {
+          "id": "34"
+        },
+        {
+          "id": "35"
+        },
+        {
+          "id": "36"
+        }
+      ],
+      "products": [
+        {
+          "id": "102"
+        },
+        {
+          "id": "105"
+        },
+        {
+          "id": "111"
+        },
+        {
+          "id": "114"
+        },
+        {
+          "id": "115"
+        },
+        {
+          "id": "116"
+        },
+        {
+          "id": "117"
+        },
+        {
+          "id": "118"
+        },
+        {
+          "id": "119"
+        },
+        {
+          "id": "120"
+        },
+        {
+          "id": "122"
+        },
+        {
+          "id": "123"
+        },
+        {
+          "id": "124"
+        },
+        {
+          "id": "125"
+        },
+        {
+          "id": "146"
+        },
+        {
+          "id": "147"
+        },
+        {
+          "id": "148"
+        },
+        {
+          "id": "149"
+        },
+        {
+          "id": "150"
+        },
+        {
+          "id": "151"
+        },
+        {
+          "id": "152"
+        },
+        {
+          "id": "153"
+        },
+        {
+          "id": "154"
+        },
+        {
+          "id": "164"
+        },
+        {
+          "id": "165"
+        },
+        {
+          "id": "166"
+        },
+        {
+          "id": "167"
+        },
+        {
+          "id": "170"
+        },
+        {
+          "id": "175"
+        },
+        {
+          "id": "206"
+        },
+        {
+          "id": "226"
+        },
+        {
+          "id": "228"
+        },
+        {
+          "id": "244"
+        },
+        {
+          "id": "279"
+        }
+      ]
+    }
+  },
+  {
+    "id": 37,
+    "id_parent": "2",
+    "level_depth": "2",
+    "nb_products_recursive": "5",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "7",
+    "date_add": "2022-03-18 14:59:16",
+    "date_upd": "2022-03-24 12:15:57",
+    "name": [
+      {
+        "id": "1",
+        "value": "Promos"
+      },
+      {
+        "id": "2",
+        "value": "Promos"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "promos"
+      },
+      {
+        "id": "2",
+        "value": "promos"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Envie d'un sac, d'une </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise ou un accessoire de voyage pas cher</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> ? Retrouvez tous nos </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">bagages en promotion</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> !</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Que vous recherchiez une </span><a href=\"https://www.mesbagages.com/promotions/valises.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise en promotion</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, un </span><a href=\"https://www.mesbagages.com/promotions/sacs_dos.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos en promotion</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> ou encore un </span><a href=\"https://www.mesbagages.com/promotions/cartables_scolaires.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">cartable en promotion</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> pour la rentrée de vos enfants, vous les trouverez forcément dans cette rubrique : -10%, -30%, -50%... Il y en aura pour tous les budgets.</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Achetez vos </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">bagages en promo</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> parmi les plus grandes marques du marché : Disney, Samsonite, American Tourister</span><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;\">…</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Nos promos - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Envie d'un sac, d'une valise ou un accessoire de voyage pas cher ? Retrouvez tous nos bagages en promotion !"
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "nos promos, promo, promos, promotion, samsonite, samsonite tunisie, promotion samsonite, promotion samsonite tunisie, promo samsonite tunisie, promo tunisie, promos tunisie"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "56"
+        },
+        {
+          "id": "174"
+        },
+        {
+          "id": "48"
+        },
+        {
+          "id": "169"
+        },
+        {
+          "id": "170"
+        }
+      ]
+    }
+  },
+  {
+    "id": 40,
+    "id_parent": "2",
+    "level_depth": "2",
+    "nb_products_recursive": "4",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "8",
+    "date_add": "2024-08-26 13:33:13",
+    "date_upd": "2024-08-26 13:33:13",
+    "name": [
+      {
+        "id": "1",
+        "value": "Accueil"
+      },
+      {
+        "id": "2",
+        "value": "Accueil"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "accueil"
+      },
+      {
+        "id": "2",
+        "value": "accueil"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "279"
+        },
+        {
+          "id": "285"
+        },
+        {
+          "id": "290"
+        },
+        {
+          "id": "294"
+        }
+      ]
+    }
+  },
+  {
+    "id": 4,
+    "id_parent": "3",
+    "level_depth": "3",
+    "nb_products_recursive": "1",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "0",
+    "date_add": "2022-03-16 08:29:35",
+    "date_upd": "2022-03-16 08:29:35",
+    "name": [
+      {
+        "id": "1",
+        "value": "Men"
+      },
+      {
+        "id": "2",
+        "value": "Men"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "men"
+      },
+      {
+        "id": "2",
+        "value": "men"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": "<p>T-shirts, sweaters, hoodies and men's accessories. From basics to original creations, for every style. </p>"
+      },
+      {
+        "id": "2",
+        "value": "<p>T-shirts, sweaters, hoodies and men's accessories. From basics to original creations, for every style. </p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "1"
+        }
+      ]
+    }
+  },
+  {
+    "id": 5,
+    "id_parent": "3",
+    "level_depth": "3",
+    "nb_products_recursive": "1",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "1",
+    "date_add": "2022-03-16 08:29:35",
+    "date_upd": "2022-03-16 08:29:35",
+    "name": [
+      {
+        "id": "1",
+        "value": "Women"
+      },
+      {
+        "id": "2",
+        "value": "Women"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "women"
+      },
+      {
+        "id": "2",
+        "value": "women"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": "<p>T-shirts, sweaters, hoodies and women's accessories. From basics to original creations, for every style. </p>"
+      },
+      {
+        "id": "2",
+        "value": "<p>T-shirts, sweaters, hoodies and women's accessories. From basics to original creations, for every style. </p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": ""
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "2"
+        }
+      ]
+    }
+  },
+  {
+    "id": 11,
+    "id_parent": "10",
+    "level_depth": "3",
+    "nb_products_recursive": "14",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "0",
+    "date_add": "2022-03-17 11:36:36",
+    "date_upd": "2022-03-17 11:36:36",
+    "name": [
+      {
+        "id": "1",
+        "value": "Sac Ordinateur"
+      },
+      {
+        "id": "2",
+        "value": "Sac Ordinateur"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "sac-ordinateur"
+      },
+      {
+        "id": "2",
+        "value": "sac-ordinateur"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p style=\"text-align:justify;\"><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;\">Idéal pour transporter votre ordinateur mais également d'autres affaires (accessoires divers, documents et dossiers de travail, cartes de visites...), le sac pour ordinateur saura répondre à chacune de vos exigences.</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Sac ordinateur Business - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Retrouvez dès maintenant notre assortiment de sac ordinateur business à des prix défiant toute concurrence !"
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "sac ordinateur, sac à dos, sac pc, sac ordinateur tunisie, sac à doc tunisie, sac à dos pour pc, sac à dos pour pc tunisie"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "103"
+        },
+        {
+          "id": "114"
+        },
+        {
+          "id": "115"
+        },
+        {
+          "id": "116"
+        },
+        {
+          "id": "117"
+        },
+        {
+          "id": "118"
+        },
+        {
+          "id": "119"
+        },
+        {
+          "id": "120"
+        },
+        {
+          "id": "122"
+        },
+        {
+          "id": "123"
+        },
+        {
+          "id": "164"
+        },
+        {
+          "id": "165"
+        },
+        {
+          "id": "166"
+        },
+        {
+          "id": "170"
+        }
+      ]
+    }
+  },
+  {
+    "id": 12,
+    "id_parent": "10",
+    "level_depth": "3",
+    "nb_products_recursive": "6",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "1",
+    "date_add": "2022-03-17 11:44:51",
+    "date_upd": "2022-03-17 11:44:51",
+    "name": [
+      {
+        "id": "1",
+        "value": "Pilot Case"
+      },
+      {
+        "id": "2",
+        "value": "Pilot Case"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "pilot-case"
+      },
+      {
+        "id": "2",
+        "value": "pilot-case"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Vous recherchez un </span><a href=\"https://www.mesbagages.com/business.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac business</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> pour transporter vos dossiers/documents professionnels, votre ordinateur portable ou vos vêtements ? Optez pour le </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">pilot case trolley</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> ! Fonctionnel et bien compartimenté, ce sac ordinateur à roulettes vous offrira des solutions de rangement pratiques afin d'organiser au mieux vos accessoires de travail.</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Pilot Case Business - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Venez dès maintenant découvrir notre large sélection de pilot case qu'il vous faut  aux meilleurs prix et sur la meilleure marque du marché."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "pilot case, samsonite, samsonite tunisie, valise business samsonite, valise business tunisie"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "27"
+        },
+        {
+          "id": "104"
+        },
+        {
+          "id": "106"
+        },
+        {
+          "id": "199"
+        },
+        {
+          "id": "259"
+        },
+        {
+          "id": "277"
+        }
+      ]
+    }
+  },
+  {
+    "id": 14,
+    "id_parent": "13",
+    "level_depth": "3",
+    "nb_products_recursive": "51",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "0",
+    "date_add": "2022-03-17 13:52:11",
+    "date_upd": "2022-03-17 13:52:11",
+    "name": [
+      {
+        "id": "1",
+        "value": "Rigides"
+      },
+      {
+        "id": "2",
+        "value": "Rigides"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "rigides"
+      },
+      {
+        "id": "2",
+        "value": "rigides"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Que vous cherchiez une </span><a href=\"https://www.mesbagages.com/bagages/valises/cabine-rigide/\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise cabine rigide</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, une </span><a href=\"https://www.mesbagages.com/bagages/valises/4roues-rigide/\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise rigide 4 roues</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, une </span><a href=\"https://www.mesbagages.com/bagages/valises/enfant-rigide/\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise rigide enfant</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, un </span><a href=\"https://www.mesbagages.com/bagages/ensembles_valises/rigide/\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">set de valises rigides</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, ou encore une </span><a href=\"https://www.mesbagages.com/bagages/valises/rigide/samsonite.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise rigide Samsonite</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> pour voyager à la pointe des tendances... Tout est là, le plus dur reste de se décider !</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Ultra résistantes et robustes, les </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valises rigides </strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">perdurent dans le temps et vous apportent la fiabilité que vous recherchez dans vos déplacements.</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Vous cherchez une</span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\"> valise rigide ultra légère</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> ? Découvrez les </span><a href=\"https://www.mesbagages.com/bagages/valises-samsonite--curv.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valises Samsonite en Curv</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> : parmi les plus légères et résistantes du marché !</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Valise rigide - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Pour votre achat de valise rigide, choisissez Samsonite, le spécialiste des valises rigides moins cher en Tunisie !"
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "valise rigide, valise rigide samsonite, valise rigide tunisie, valise tunisie, valise curv, valise curv samsonite, valise curv tunisie"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "20"
+        },
+        {
+          "id": "22"
+        },
+        {
+          "id": "23"
+        },
+        {
+          "id": "25"
+        },
+        {
+          "id": "30"
+        },
+        {
+          "id": "55"
+        },
+        {
+          "id": "57"
+        },
+        {
+          "id": "59"
+        },
+        {
+          "id": "61"
+        },
+        {
+          "id": "62"
+        },
+        {
+          "id": "63"
+        },
+        {
+          "id": "64"
+        },
+        {
+          "id": "65"
+        },
+        {
+          "id": "66"
+        },
+        {
+          "id": "67"
+        },
+        {
+          "id": "56"
+        },
+        {
+          "id": "44"
+        },
+        {
+          "id": "43"
+        },
+        {
+          "id": "42"
+        },
+        {
+          "id": "41"
+        },
+        {
+          "id": "38"
+        },
+        {
+          "id": "37"
+        },
+        {
+          "id": "36"
+        },
+        {
+          "id": "35"
+        },
+        {
+          "id": "34"
+        },
+        {
+          "id": "32"
+        },
+        {
+          "id": "93"
+        },
+        {
+          "id": "96"
+        },
+        {
+          "id": "97"
+        },
+        {
+          "id": "98"
+        },
+        {
+          "id": "99"
+        },
+        {
+          "id": "100"
+        },
+        {
+          "id": "101"
+        },
+        {
+          "id": "110"
+        },
+        {
+          "id": "155"
+        },
+        {
+          "id": "174"
+        },
+        {
+          "id": "187"
+        },
+        {
+          "id": "189"
+        },
+        {
+          "id": "194"
+        },
+        {
+          "id": "207"
+        },
+        {
+          "id": "218"
+        },
+        {
+          "id": "220"
+        },
+        {
+          "id": "223"
+        },
+        {
+          "id": "229"
+        },
+        {
+          "id": "243"
+        },
+        {
+          "id": "247"
+        },
+        {
+          "id": "263"
+        },
+        {
+          "id": "269"
+        },
+        {
+          "id": "271"
+        },
+        {
+          "id": "283"
+        },
+        {
+          "id": "288"
+        }
+      ]
+    }
+  },
+  {
+    "id": 15,
+    "id_parent": "13",
+    "level_depth": "3",
+    "nb_products_recursive": "32",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "1",
+    "date_add": "2022-03-17 14:02:18",
+    "date_upd": "2022-03-17 14:02:18",
+    "name": [
+      {
+        "id": "1",
+        "value": "Souples"
+      },
+      {
+        "id": "2",
+        "value": "Souples"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "souples"
+      },
+      {
+        "id": "2",
+        "value": "souples"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Vous trouverez sur Samsonite un choix complet de </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valises souples</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> parmi les modèles et les marques les plus célèbres du marché. Nous vous proposons une sélection des plus complètes de </span><a href=\"https://www.mesbagages.com/bagages/valises/souple-4roues/\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise souple 4 roues</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, de </span><a href=\"https://www.mesbagages.com/bagages/valises/souple-cabine/\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise cabine souple</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> ou encore de </span><a href=\"https://www.mesbagages.com/bagages/valises/souple-enfant/\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise souple enfant</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> afin de répondre à vos besoins !</span></p>\n<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Pourquoi ne pas opter pour une </span><a href=\"https://www.mesbagages.com/bagages/valises/souple/delsey.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise souple American Tourister</a> <span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">ou </span><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">une </span><a href=\"https://www.mesbagages.com/bagages/valises/souple/samsonite.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise souple Samsonite</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> ? La marque incontournable vous propose de nombreuses </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valises souples pas cher</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, des </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valises souples cabine</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, des </span><a href=\"https://www.mesbagages.com/bagages/valises/souple/-rose.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valises souples rose</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">... Il y en aura pour tous les goûts !</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Valise souple - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Profitez de notre expérience sur le sujet pour vous procurer la valise souple qu'il vous faut !"
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "valise souple, valise souple samsonite, valise souple tunisie, samsonite tunisie, valise tunisie, valise"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "26"
+        },
+        {
+          "id": "68"
+        },
+        {
+          "id": "69"
+        },
+        {
+          "id": "70"
+        },
+        {
+          "id": "71"
+        },
+        {
+          "id": "72"
+        },
+        {
+          "id": "52"
+        },
+        {
+          "id": "51"
+        },
+        {
+          "id": "50"
+        },
+        {
+          "id": "49"
+        },
+        {
+          "id": "48"
+        },
+        {
+          "id": "47"
+        },
+        {
+          "id": "46"
+        },
+        {
+          "id": "45"
+        },
+        {
+          "id": "95"
+        },
+        {
+          "id": "158"
+        },
+        {
+          "id": "162"
+        },
+        {
+          "id": "168"
+        },
+        {
+          "id": "169"
+        },
+        {
+          "id": "171"
+        },
+        {
+          "id": "190"
+        },
+        {
+          "id": "191"
+        },
+        {
+          "id": "192"
+        },
+        {
+          "id": "204"
+        },
+        {
+          "id": "230"
+        },
+        {
+          "id": "231"
+        },
+        {
+          "id": "245"
+        },
+        {
+          "id": "261"
+        },
+        {
+          "id": "272"
+        },
+        {
+          "id": "273"
+        },
+        {
+          "id": "285"
+        },
+        {
+          "id": "295"
+        }
+      ]
+    }
+  },
+  {
+    "id": 16,
+    "id_parent": "13",
+    "level_depth": "3",
+    "nb_products_recursive": "4",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "3",
+    "date_add": "2022-03-17 14:15:31",
+    "date_upd": "2022-03-18 15:14:41",
+    "name": [
+      {
+        "id": "1",
+        "value": "Accessoire"
+      },
+      {
+        "id": "2",
+        "value": "Accessoire"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "accessoire"
+      },
+      {
+        "id": "2",
+        "value": "accessoire"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#9b9b9b;background-color:#ffffff;\">Prenez les bons accessoires de voyage pour voyager confortablement. Endormez-vous avec un oreiller de voyage moelleux et afin d'éviter de payer un supplément bagages pensez à notre pèse bagage. Avec ces accessoires, vous êtes paré à tout pour votre prochain voyage.</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Accessoires des valises - Saamsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Retrouvez vos accessoires de voyage sur notre boutique en ligne Samsonite. Achetez ici votre oreiller de voyage, cadenas à combinaison, housse valises..."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "accessoire de voyage, accessoire valise, accessoire samsonite, accessoire de voyage tunisie, accessoire samsonite tunisie, cadenas, housse de protection, sangles"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "29"
+        },
+        {
+          "id": "107"
+        },
+        {
+          "id": "159"
+        },
+        {
+          "id": "268"
+        }
+      ]
+    }
+  },
+  {
+    "id": 18,
+    "id_parent": "17",
+    "level_depth": "3",
+    "nb_products_recursive": "7",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "0",
+    "date_add": "2022-03-17 14:49:27",
+    "date_upd": "2022-03-17 15:16:00",
+    "name": [
+      {
+        "id": "1",
+        "value": "Housse de valise"
+      },
+      {
+        "id": "2",
+        "value": "Housse de valise"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "housse-de-valise"
+      },
+      {
+        "id": "2",
+        "value": "housse-de-valise"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Afin de protéger efficacement la coque de votre bagage et de facilement le reconnaître sur les tapis d'aéroports, quoi de mieux qu'une </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">housse de valise Samsonite</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> ? Nous vous proposons de nombreux types de housses, à motifs ou unies, avec un objectif en tête : rendre votre valise encore plus élégante qu'elle n'y paraît !</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Les </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">housses de valises Samsonite</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> sont parfaites pour renforcer la solidité de la coque durant les déplacements et apportent par ailleurs un design original très pratique. La plupart d'entre elles dispose d'ouvertures sur le dessus et les côtés afin de pouvoir simplement attraper son bagage par la main.</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Housse de protection de valise - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Choisissez la taille de votre housse Samsonite: housse pour valise cabine, valise moyenne, grande valise ou encore housse pour valise extensible !"
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "housse de protection, housse, housse de protection samsonite, housse tunisie, housse valise, housse valise tunisie"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "29"
+        },
+        {
+          "id": "83"
+        },
+        {
+          "id": "85"
+        },
+        {
+          "id": "86"
+        },
+        {
+          "id": "87"
+        },
+        {
+          "id": "109"
+        },
+        {
+          "id": "159"
+        }
+      ]
+    }
+  },
+  {
+    "id": 19,
+    "id_parent": "17",
+    "level_depth": "3",
+    "nb_products_recursive": "1",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "1",
+    "date_add": "2022-03-17 15:13:34",
+    "date_upd": "2022-03-17 15:13:34",
+    "name": [
+      {
+        "id": "1",
+        "value": "Sangles"
+      },
+      {
+        "id": "2",
+        "value": "Sangles"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "sangles"
+      },
+      {
+        "id": "2",
+        "value": "sangles"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">La </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sangle de valise Samsonite </strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">est l'accessoire \"sécurité\" indispensable pour tous vos voyages, à  ajouter absolument à votre liste d'affaires utiles pour préparer vos futures vacances ! En effet, il s’agit d’un dispositif dont la fonction est de sécuriser le contenu de vos valises durant le trajet, que ce soit en avion, en train, en voiture ou même en bus.</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">En plus d'empêcher l'ouverture intempestive de votre bagage, les </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sangles de valises Samsonite </strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">vous protègeront des vols durant vos transferts, en aidant à prévenir facilement les risques d’ouvertures forcées.</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Sangles de bagages - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Nos sangles de bagages sont disponibles en différentes couleurs et imprimés pour vous permettre d'identifier plus facilement vos bagages."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "samsonite tunisie, sangle samsonite, sange bagage tunisie, sangle bagage, sangle tunisie, accessoire, accessoire samsonite"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "92"
+        }
+      ]
+    }
+  },
+  {
+    "id": 20,
+    "id_parent": "17",
+    "level_depth": "3",
+    "nb_products_recursive": -1,
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "2",
+    "date_add": "2022-03-17 15:23:44",
+    "date_upd": "2022-03-17 15:23:44",
+    "name": [
+      {
+        "id": "1",
+        "value": "Porte adresse"
+      },
+      {
+        "id": "2",
+        "value": "Porte adresse"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "porte-adresse"
+      },
+      {
+        "id": "2",
+        "value": "porte-adresse"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Associer à votre valise un </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">porte adresse Samsonite</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> permettra de sécuriser votre bagage et de plus rapidement le retrouver en cas de perte. En effet, une étiquette vous permet d'inscrire votre nom ainsi que vos coordonnées afin d'être contacté plus facilement si besoin.</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Nous vous proposons une large sélection de </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">porte étiquette Samsonite</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> : du </span><a href=\"https://www.mesbagages.com/accessoires/porte_adresses/rond/samsonite.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">porte étiquette Samsonite rond</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> au </span><a href=\"https://www.mesbagages.com/accessoires/porte_adresses/rectangulaire/samsonite.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">porte adresse Samsonite rectangulaire</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, en passant par le </span><a href=\"https://www.mesbagages.com/accessoires/porte_adresses/set_de_2/samsonite.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">set de porte adresse Samsonite</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">.</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Porte adresse - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Pour les voyageurs les plus exigeants, vous pouvez également opter pour un porte adresse Samsonite en cuir."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "porte adresse, porte adresse samsonite, porte adresse tunisie, accessoire samsonite, accessoire samsonite tunisie, samsonite tunisie"
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "id_parent": "17",
+    "level_depth": "3",
+    "nb_products_recursive": "12",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "3",
+    "date_add": "2022-03-17 15:39:01",
+    "date_upd": "2022-03-17 15:39:01",
+    "name": [
+      {
+        "id": "1",
+        "value": "Portefeuille"
+      },
+      {
+        "id": "2",
+        "value": "Portefeuille"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "portefeuille"
+      },
+      {
+        "id": "2",
+        "value": "portefeuille"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#9b9b9b;\">Conservez vos effets les plus personnels ensemble et organisés dans un portefeuille design et pratique. Découvrez nos larges gammes de portefeuille RFID, porte-monnaie zippé, porte-carte pour homme et pour femme.</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Nos portefeuilles - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Découvrez nos gammes de portefeuilles ✓ Protection RFID ✓ Pour Homme et Femme ✓ Cuir ou synthétique ✓ Commandez sur la boutique en ligne officielle."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "portefeuilles, portefeuille samsonite, portefeuille tunisie, portefeuille samsonite tunisie, accessoire, accessoire tunisie, accessoire samsonite"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "76"
+        },
+        {
+          "id": "77"
+        },
+        {
+          "id": "89"
+        },
+        {
+          "id": "90"
+        },
+        {
+          "id": "112"
+        },
+        {
+          "id": "113"
+        },
+        {
+          "id": "236"
+        },
+        {
+          "id": "237"
+        },
+        {
+          "id": "238"
+        },
+        {
+          "id": "239"
+        },
+        {
+          "id": "293"
+        },
+        {
+          "id": "294"
+        }
+      ]
+    }
+  },
+  {
+    "id": 22,
+    "id_parent": "17",
+    "level_depth": "3",
+    "nb_products_recursive": "4",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "4",
+    "date_add": "2022-03-17 16:32:57",
+    "date_upd": "2022-03-17 16:32:57",
+    "name": [
+      {
+        "id": "1",
+        "value": "Cadenas"
+      },
+      {
+        "id": "2",
+        "value": "Cadenas"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "cadenas"
+      },
+      {
+        "id": "2",
+        "value": "cadenas"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Samsonite, c'est LE spécialiste de la bagagerie dans le monde ! Si vous recherche un accessoire de voyage fiable, comme un </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">cadenas </strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">pour sécuriser votre bagage durant vos transits ou à l'aéroport, vous pouvez opter les yeux fermés pour un </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">cadenas Samsonite</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> : à code, à clé, en set... peu importe, choisissez celui que vous aimez.</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">En partance vers les Etats-Unis ? Privilégiez l'achat d'un </span><a href=\"https://www.mesbagages.com/accessoires/cadenas/tsa/samsonite.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">cadenas TSA Samsonite</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, qui vous permettra d'être en règle avec les douanes américaines qui se réservent le droit de fracturer vos bagages s'il n'est pas agréé TSA.</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Par ailleurs, avec Samsonite Tunisie, vous êtes assurés d'acheter votre</span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\"> cadenas Samsonite pas cher</strong></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Cadenas TSA - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Un choix unique de Cadenas samsonite disponible dans notre magasin."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "cadenas samsonite, cadenas tunisie, cadenas samsonite tunisie, cadenas TSA, cadenas valise, cadenas valise yunisie, cadenas"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "78"
+        },
+        {
+          "id": "79"
+        },
+        {
+          "id": "80"
+        },
+        {
+          "id": "107"
+        }
+      ]
+    }
+  },
+  {
+    "id": 23,
+    "id_parent": "17",
+    "level_depth": "3",
+    "nb_products_recursive": "2",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "5",
+    "date_add": "2022-03-17 16:39:50",
+    "date_upd": "2022-03-17 16:39:50",
+    "name": [
+      {
+        "id": "1",
+        "value": "Coussin de voyage"
+      },
+      {
+        "id": "2",
+        "value": "Coussin de voyage"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "coussin-de-voyage"
+      },
+      {
+        "id": "2",
+        "value": "coussin-de-voyage"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Les </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">coussins de voyage</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> sont des accessoires parfaits pour maintenir votre tête bien en place dans l'avion ou un autre moyen de transport. Ils vous assurent un réel confort ainsi qu'un sommeil en toute quiétude.</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Les </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">coussins </strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">procurent aux voyageurs davantage d'ergonomie et de confort lors des trajets puisqu'ils soutiennent votre nuque et épousent ses formes de manière à vous ôter toute pression.</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Dans la majorité des cas, les </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">coussin de voyage</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> disposent d'un format compact afin de pouvoir les glisser à l'intérieur du sac à dos. Ils peuvent également y être accrochés à l'aide d'une attache ou être gonflables pour prendre toujours moins d'espace.</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Coussin de voyage - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Le coussin de voyage Samsonite Confort peut servir pour mieux dormir pendant les voyages (en train, bateau, voiture, avion, etc.) ou même à la maison."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "coussin de voyage, coussin de voyage samsonite, coussin, coussin de voyage tunisie, coussin tunisie, accessoire tunisie, accessoire de voyage tunisie, accessoire samsonite, samsonite tunisie"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "81"
+        },
+        {
+          "id": "88"
+        }
+      ]
+    }
+  },
+  {
+    "id": 24,
+    "id_parent": "17",
+    "level_depth": "3",
+    "nb_products_recursive": "2",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "6",
+    "date_add": "2022-03-17 16:45:13",
+    "date_upd": "2022-03-17 16:45:13",
+    "name": [
+      {
+        "id": "1",
+        "value": "Parapluie"
+      },
+      {
+        "id": "2",
+        "value": "Parapluie"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "parapluie"
+      },
+      {
+        "id": "2",
+        "value": "parapluie"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#9b9b9b;\">Préparez-vous à toutes les conditions météorologiques avec nos parapluies solides et de grande qualité. Ouvrez votre nouveau parapluie dès qu'il commence à pleuvoir et rangez-le rapidement et facilement lorsque la pluie se calme. Chaque parapluie est fabriqué avec un matériau hydrofuge (résistant à l'eau) et est facile à utiliser.</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Nos parapluies - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Découvrez nos offres Parapluie Samsonite : large sélection de produits au meilleur prix | Livraison gratuite"
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "parapluie, parapluie samsonite, parapluie tunisie, parapluie samsonite tunisie, accessoire samsonite, accessoire, accessoire tunisie, accessoire voyage, accessoire voyage tunisie"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "75"
+        },
+        {
+          "id": "91"
+        }
+      ]
+    }
+  },
+  {
+    "id": 25,
+    "id_parent": "17",
+    "level_depth": "3",
+    "nb_products_recursive": "2",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "7",
+    "date_add": "2022-03-17 16:52:57",
+    "date_upd": "2022-03-17 16:52:57",
+    "name": [
+      {
+        "id": "1",
+        "value": "Masques"
+      },
+      {
+        "id": "2",
+        "value": "Masques"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "masques"
+      },
+      {
+        "id": "2",
+        "value": "masques"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Les </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">masques de voyage </strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">sont parfaits pour se relaxer dans un avion éclairé ou dans une chambre d'hôtel. Incontournables pour les voyages, ils assurent à leurs utilisateurs davantage de confort en bloquant les lumières les plus vives.</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Thermoformé ou moussé, vous aurez le choix entre différents modèles, l'objectif étant de vous proposer des </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">masques de repos </strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">pratiques pour vous endormir avec quiétude durant les déplacements. Choisissez nos</span><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> </span><a href=\"https://www.mesbagages.com/accessoires/masques-samsonite.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">masque Samsonite</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> pour vous reposer sereinement.</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Aussi bien adaptés aux hommes, aux femmes qu'aux enfants, les </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">masques pour voyage </strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">s'ajustent aux différentes tailles de tête et sont très pratiques, si bien qu'une fois adoptés, vous ne pourrez plus vous en séparer !</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Masque de voyage - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Pour un voyages confort, le masque Samsonite dispose d'un rembourrage en gel amovible. Ce dernier confère un effet frais et agréables sur les yeux."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "masque samsonite, masque de sommeille samsonite, masque de sommeille tunisie, masque de voyage, masque de voyage samsonite, masque de voyage tunisie"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "82"
+        },
+        {
+          "id": "108"
+        }
+      ]
+    }
+  },
+  {
+    "id": 28,
+    "id_parent": "27",
+    "level_depth": "3",
+    "nb_products_recursive": "9",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "0",
+    "date_add": "2022-03-18 10:36:43",
+    "date_upd": "2022-03-18 10:54:40",
+    "name": [
+      {
+        "id": "1",
+        "value": "Sac à dos enfants"
+      },
+      {
+        "id": "2",
+        "value": "Sac à dos enfants"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "sac-a-dos-enfants"
+      },
+      {
+        "id": "2",
+        "value": "sac-a-dos-enfants"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Bienvenue dans notre rubrique dédiée aux</span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\"> sacs à dos pour enfants</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> ! Adaptés dès le plus jeune âge et jusqu'au collège, les sacs à dos enfants ont tout pour plaire : un design ludique, haut en couleurs, une conception résistante et un grand confort de transport (pour le bonheur des parents).</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Tous ces </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sacs à dos pour enfants</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> sont très ergonomiques avec des bretelles ajustables, matelassées pour la plupart, des poignées de portage confortables et des espaces de rangement très pratiques.</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Sac à dos enfants - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Vous aurez le choix parmi des marques spécialisées, avec des sacs à dos enfants﻿."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "sac enfant, sac à dos enfant, sac enfant samsonite, sac enfant tunisie, sac à dos enfant tunisie, sac à dos enfant samsonite tunisie, sac à dos enfant samsonite"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "102"
+        },
+        {
+          "id": "111"
+        },
+        {
+          "id": "146"
+        },
+        {
+          "id": "147"
+        },
+        {
+          "id": "148"
+        },
+        {
+          "id": "149"
+        },
+        {
+          "id": "150"
+        },
+        {
+          "id": "151"
+        },
+        {
+          "id": "152"
+        }
+      ]
+    }
+  },
+  {
+    "id": 29,
+    "id_parent": "27",
+    "level_depth": "3",
+    "nb_products_recursive": "8",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "1",
+    "date_add": "2022-03-18 10:48:28",
+    "date_upd": "2022-03-18 10:55:26",
+    "name": [
+      {
+        "id": "1",
+        "value": "Valise enfant"
+      },
+      {
+        "id": "2",
+        "value": "Valise enfant"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "valise-enfant"
+      },
+      {
+        "id": "2",
+        "value": "valise-enfant"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Découvrez un grand choix de </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valises enfant pas cher</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, à l'effigie des héros des plus jeunes ! Pensée pour leur confort, chaque </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise enfant</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> est pratique et ergonomique pour voyager comme papa et maman !</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Samsonite Tunisie vous propose un assortiment incroyable de </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise pour enfant</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> : de la </span><a href=\"https://www.mesbagages.com/bagages/valises/enfant-rigide/\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise rigide enfant</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> à la </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise cavalier</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, en passant par la </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise enfant fille</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> ou la </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valise enfant garçon</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">... Reste à savoir de quoi votre petit bout est fan pour lui choisir son tout premier bagage enfant !</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Afin qu'ils puissent voyager comme des grands, chaque </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">valisette enfant</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> dispose d'un design original et rigolo, si bien que les</span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\"> valises enfant</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> deviennent indispensables lors des grandes vacances chez les grands-parents ou pour les longs week-ends ! </span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Valise enfant - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Découvrez nos choix de valises enfant pas cher, à l'effigie des héros des plus jeunes! Pensée pour leur confort, chaque valise enfant est ergonomique."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "valise enfant samsonite, valise enfant tunisie, valise enfant, samsonite tunisie, valise samsonite enfant, valise enfant samsonite tunisie"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "59"
+        },
+        {
+          "id": "64"
+        },
+        {
+          "id": "96"
+        },
+        {
+          "id": "97"
+        },
+        {
+          "id": "98"
+        },
+        {
+          "id": "99"
+        },
+        {
+          "id": "174"
+        },
+        {
+          "id": "290"
+        }
+      ]
+    }
+  },
+  {
+    "id": 31,
+    "id_parent": "27",
+    "level_depth": "3",
+    "nb_products_recursive": -1,
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "2",
+    "date_add": "2022-03-18 11:16:34",
+    "date_upd": "2022-03-18 11:23:14",
+    "name": [
+      {
+        "id": "1",
+        "value": "Trousse enfant"
+      },
+      {
+        "id": "2",
+        "value": "Trousse enfant"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "trousse-enfant"
+      },
+      {
+        "id": "2",
+        "value": "trousse-enfant"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Côté assortiment, vous aurez le choix entre des </span><a href=\"https://www.mesbagages.com/bagages/trousses_scolaires/ronde/disney.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">trousses rondes Disney</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, des </span><a href=\"https://www.mesbagages.com/bagages/trousses_scolaires/fille/disney.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">trousses filles Disney</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, des </span><a href=\"https://www.mesbagages.com/bagages/trousses_scolaires/garcon/disney.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">trousses Disney pour garçons</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> ou des </span><a href=\"https://www.mesbagages.com/bagages/trousses_scolaires/rectangulaire/disney.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">trousses rectangulaires Disney</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">.</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Dans tous les cas, vous achetez votre</span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\"> trousse Disney pas cher</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> !</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Trousse enfant - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Choisissez votre trousse scolaire Disney en fonction de vos héros / héroïnes préférés : Violetta, Mickey, Minnie, Cars, Spiderman."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "trousse enfant, trousse enfant samsonite, trousse enfant tunisie, trousse enfant pas cher, trousse enfant samsonite tunisie"
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "id_parent": "32",
+    "level_depth": "3",
+    "nb_products_recursive": "16",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "0",
+    "date_add": "2022-03-18 11:49:50",
+    "date_upd": "2022-03-18 11:49:50",
+    "name": [
+      {
+        "id": "1",
+        "value": "Sac Ordinateur"
+      },
+      {
+        "id": "2",
+        "value": "Sac Ordinateur"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "sac-ordinateur"
+      },
+      {
+        "id": "2",
+        "value": "sac-ordinateur"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">A la recherche d'un sac de qualité, fonctionnel et tendance ? Retrouvez tous nos </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sacs à dos ordinateur Samsonite</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> : des sacs aussi résistants que pratiques !</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Opter pour un </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos ordinateur Samsonite</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, c'est s'assurer un look moderne, une organisation au quotidien et un grand confort lors des déplacements. </span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Et pour encore plus de confort, optez pour un </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos/ordinateur-roulettes/samsonite.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos ordinateur Samsonite à roulettes</a><span style=\"text-align:justify;background-color:#f9f9f9;\"><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;\"> : facilement manœuvrable, à l'instar d'une petite valise, il vous suivra dans chacun de vos déplacements professionnels ou citadins.</span></span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Sac à dos pour ordinateur - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "A la recherche d'un sac de qualité, fonctionnel et tendance? Retrouvez tous nos sacs à dos ordinateur: des sacs aussi résistants que pratiques !"
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "sac à dos ordinateur samsonite, sac à dos samsonite, sac à dos ordinateur tunisie, sac à dos tunisie, sac à dos pc portable tunisie, sac pc tunisie, sac à dos pc tunisie, samsonite, samsonite tunisie"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "103"
+        },
+        {
+          "id": "114"
+        },
+        {
+          "id": "115"
+        },
+        {
+          "id": "116"
+        },
+        {
+          "id": "117"
+        },
+        {
+          "id": "118"
+        },
+        {
+          "id": "119"
+        },
+        {
+          "id": "120"
+        },
+        {
+          "id": "122"
+        },
+        {
+          "id": "123"
+        },
+        {
+          "id": "163"
+        },
+        {
+          "id": "164"
+        },
+        {
+          "id": "165"
+        },
+        {
+          "id": "166"
+        },
+        {
+          "id": "167"
+        },
+        {
+          "id": "170"
+        }
+      ]
+    }
+  },
+  {
+    "id": 34,
+    "id_parent": "32",
+    "level_depth": "3",
+    "nb_products_recursive": "13",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "1",
+    "date_add": "2022-03-18 12:01:25",
+    "date_upd": "2022-03-18 12:06:08",
+    "name": [
+      {
+        "id": "1",
+        "value": "Sac Scolaire"
+      },
+      {
+        "id": "2",
+        "value": "Sac Scolaire"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "sac-scolaire"
+      },
+      {
+        "id": "2",
+        "value": "sac-scolaire"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Vous recherchez votre nouveau</span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\"> sac à dos scolaire</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> pour la rentrée ?</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Samsonite Tunisie vous propose toutes les plus grandes marques de </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sacs à dos</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> du marché : </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos/scolaire/eastpak.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos scolaire Samsonite</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos/scolaire/fjallraven.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos scolaire American Tourister</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">... Et pour les plus petits : </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos/scolaire/kipling.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos </a><a href=\"https://www.mesbagages.com/bagages/sacs_dos/scolaire/disney.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">Disney</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos/scolaire/samsonite.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos Samsonite</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos/scolaire/tanns.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos Sammies</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">...</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Que vous soyez en primaire, au collège ou à l'université, vous trouverez sur Samsonite une incroyable collection de </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> : </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos/scolaire-enfant/\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos scolaire enfant</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos scolaire fille</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos scolaire garçon</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos/scolaire-roulettes/\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos à roulette scolaire</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos/scolaire-ordinateur/\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac a dos ordinateur</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">...</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Sac à dos scolaire - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Vous recherchez votre nouveau sac à dos scolaire pour la rentrée ? Nous possédons une large gamme de sac à dos scolaire."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "sac à dos samsonite, sac à dos tunisie, sac à dos scolaire samsonite, sac à dos scolaire tunisie, samsonite, samsonite tunisie, sac tunisie, sac scolaire, sac scolaire tunisie"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "105"
+        },
+        {
+          "id": "111"
+        },
+        {
+          "id": "146"
+        },
+        {
+          "id": "147"
+        },
+        {
+          "id": "148"
+        },
+        {
+          "id": "149"
+        },
+        {
+          "id": "150"
+        },
+        {
+          "id": "151"
+        },
+        {
+          "id": "152"
+        },
+        {
+          "id": "153"
+        },
+        {
+          "id": "154"
+        },
+        {
+          "id": "163"
+        },
+        {
+          "id": "175"
+        }
+      ]
+    }
+  },
+  {
+    "id": 35,
+    "id_parent": "32",
+    "level_depth": "3",
+    "nb_products_recursive": "3",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "2",
+    "date_add": "2022-03-18 14:43:48",
+    "date_upd": "2022-03-18 14:43:48",
+    "name": [
+      {
+        "id": "1",
+        "value": "Sac à Roulette"
+      },
+      {
+        "id": "2",
+        "value": "Sac à Roulette"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "sac-a-roulette"
+      },
+      {
+        "id": "2",
+        "value": "sac-a-roulette"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Pour vos petits bouts, optez pour le </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos/roulettes-enfant/\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos à roulettes</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, qu'il s'agisse d'un </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos à roulettes garçon</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> ou d'un </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos à roulettes filles</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, Samsonite Tunisie vous propose les marques les plus tendances du marché : </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos/roulettes/rip_curl.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos à roulettes Samsonite</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos/roulettes/tanns.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos roulettes American Tourister</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos/roulettes-enfant/disney.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos à roulettes Disney</a><span style=\"text-align:justify;background-color:#f9f9f9;\"><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;\"> (Cars, Minnie, Mickey, Planes…).</span></span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Choisissez dès-à-présent votre </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sac à dos à roulettes pas cher</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> grâce au spécialiste des </span><a href=\"https://www.mesbagages.com/bagages/sacs_dos.htm\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sacs à dos</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> !</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Nos sac à dos à roulettes - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Venez découvrir nos sac à roulettes: des sacs à dos à roulettes de toutes sortes et pour toutes utilisations : quotidienne, professionnelle, scolaire."
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "sac à dos tunisie, sac à dos avec roues tunisie, sac à dos à roulettes tunisie, sac à roulette tunisie, samsonite, samsonite tunisie"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "119"
+        },
+        {
+          "id": "125"
+        },
+        {
+          "id": "169"
+        }
+      ]
+    }
+  },
+  {
+    "id": 36,
+    "id_parent": "32",
+    "level_depth": "3",
+    "nb_products_recursive": "8",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "3",
+    "date_add": "2022-03-18 14:51:27",
+    "date_upd": "2022-03-18 14:51:27",
+    "name": [
+      {
+        "id": "1",
+        "value": "Sac Enfant"
+      },
+      {
+        "id": "2",
+        "value": "Sac Enfant"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "sac-enfant"
+      },
+      {
+        "id": "2",
+        "value": "sac-enfant"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Bienvenue dans notre rubrique dédiée aux</span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\"> sacs à dos pour enfants</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> ! Adaptés dès le plus jeune âge et jusqu'au collège, les sacs à dos enfants ont tout pour plaire : un design ludique, haut en couleurs, une conception résistante et un grand confort de transport (pour le bonheur des parents).</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Tous ces </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">sacs à dos pour enfants</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> sont très ergonomiques avec des bretelles ajustables, matelassées pour la plupart, des poignées de portage confortables et des espaces de rangement très pratiques.</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Sac à dos pour enfants - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Bienvenue dans notre rubrique dédiée aux sacs à dos pour enfants! Adaptés dès le plus jeune âge et jusqu'au collège. Découvrez-les maintenant !"
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "sac à dos enfant, sac à dos enfant tunisie, sac à dos enfant samsonite, samsonite, samsonite tunisie, sac à dos, sac à dos tunisie"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "102"
+        },
+        {
+          "id": "111"
+        },
+        {
+          "id": "146"
+        },
+        {
+          "id": "147"
+        },
+        {
+          "id": "149"
+        },
+        {
+          "id": "150"
+        },
+        {
+          "id": "151"
+        },
+        {
+          "id": "152"
+        }
+      ]
+    }
+  },
+  {
+    "id": 38,
+    "id_parent": "13",
+    "level_depth": "3",
+    "nb_products_recursive": "24",
+    "active": "1",
+    "id_shop_default": "1",
+    "is_root_category": "0",
+    "position": "2",
+    "date_add": "2022-03-18 15:14:30",
+    "date_upd": "2022-03-18 15:14:41",
+    "name": [
+      {
+        "id": "1",
+        "value": "Ensembles de valises"
+      },
+      {
+        "id": "2",
+        "value": "Ensembles de valises"
+      }
+    ],
+    "link_rewrite": [
+      {
+        "id": "1",
+        "value": "ensembles-de-valises"
+      },
+      {
+        "id": "2",
+        "value": "ensembles-de-valises"
+      }
+    ],
+    "description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "<p><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Sans plus attendre, retrouvez tous les</span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\"> ensembles de valises pas cher</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> sur Samsonite Tunisie !</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Pour voyager avec confort en fonction de la durée de votre séjour, optez pour le </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">set de valises</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> : des valises de plusieurs tailles et assorties pour vous déplacer avec style et modernité ! Idéal pour toutes les occasions, le </span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">set valises</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> permet de voyager à la pointe des tendances, et avec praticité.</span><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><br style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\" /><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">Qu'il s'agisse d'un </span><a href=\"https://www.mesbagages.com/bagages/ensembles_valises/3valises-rigide/\" style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\">set 3 valises rigides</a><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\"> ou d'un</span><strong style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;\"> set valises bagages divers</strong><span style=\"color:#999999;font-family:Arial, Helvetica, sans-serif;text-align:justify;background-color:#f9f9f9;\">, nous vous offrons le meilleur et à prix réduit pour des voyages toujours plus agréables !</span></p>"
+      }
+    ],
+    "meta_title": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Ensembles de valises - Samsonite"
+      }
+    ],
+    "meta_description": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "Sans plus attendre, retrouvez tous les ensembles de valises pas cher sur Samsonite !"
+      }
+    ],
+    "meta_keywords": [
+      {
+        "id": "1",
+        "value": ""
+      },
+      {
+        "id": "2",
+        "value": "sets de valise samsonite, sets de valise, set de valise samsonite, sets de valises tunisie, ensembles de valise tunisie, ensembles de valises samsonite, samsonite, samsonite tunisie"
+      }
+    ],
+    "associations": {
+      "products": [
+        {
+          "id": "28"
+        },
+        {
+          "id": "126"
+        },
+        {
+          "id": "127"
+        },
+        {
+          "id": "128"
+        },
+        {
+          "id": "129"
+        },
+        {
+          "id": "130"
+        },
+        {
+          "id": "131"
+        },
+        {
+          "id": "132"
+        },
+        {
+          "id": "133"
+        },
+        {
+          "id": "134"
+        },
+        {
+          "id": "135"
+        },
+        {
+          "id": "136"
+        },
+        {
+          "id": "137"
+        },
+        {
+          "id": "138"
+        },
+        {
+          "id": "139"
+        },
+        {
+          "id": "140"
+        },
+        {
+          "id": "141"
+        },
+        {
+          "id": "142"
+        },
+        {
+          "id": "143"
+        },
+        {
+          "id": "144"
+        },
+        {
+          "id": "172"
+        },
+        {
+          "id": "173"
+        },
+        {
+          "id": "255"
+        },
+        {
+          "id": "257"
+        }
+      ]
+    }
+  }
+]

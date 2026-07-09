@@ -1,0 +1,97 @@
+import express from "express";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
+import { config } from "./config.js";
+import authRoutes from "./routes/auth.routes.js";
+import catalogRoutes from "./routes/catalog.routes.js";
+import productsRoutes from "./routes/products.routes.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const app = express();
+
+// ---------------------------------------------------------------------------
+// Middleware
+// ---------------------------------------------------------------------------
+
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json({ limit: "5mb" }));
+app.use("/images", express.static(path.join(__dirname, "../public/images")));
+
+// ---------------------------------------------------------------------------
+// Routes
+// ---------------------------------------------------------------------------
+
+app.use("/api/auth", authRoutes);
+app.use("/api/catalog", catalogRoutes);
+app.use("/api/admin", productsRoutes);
+
+// Health check
+app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// ---------------------------------------------------------------------------
+// Start
+// ---------------------------------------------------------------------------
+
+const MAX_PORT_RETRY = 5;
+
+const displayStartupInfo = (port: number) => {
+    console.log(`\n🚀 Samsonite Admin Server`);
+    console.log(`   Port:        ${port}`);
+    console.log(`   PrestaShop:  ${config.ps.apiUrl}`);
+    console.log(`   Admins:      ${config.adminUsers.map((u) => u.username).join(", ")}`);
+    console.log(`   Endpoints:`);
+    console.log(`     POST /api/auth/login`);
+    console.log(`     GET  /api/catalog`);
+    console.log(`     GET  /api/catalog/images/products/:productId/:imageId`);
+    console.log(`     GET  /api/admin/products`);
+    console.log(`     POST /api/admin/products`);
+    console.log(`     PUT  /api/admin/products/:id`);
+    console.log(`     DEL  /api/admin/products/:id`);
+    console.log(`     GET  /api/admin/categories`);
+    console.log();
+};
+
+const startServer = (port: number): Promise<void> =>
+    new Promise((resolve, reject) => {
+        const server = app.listen(port, () => {
+            displayStartupInfo(port);
+            resolve();
+        });
+
+        server.on("error", (err: NodeJS.ErrnoException) => {
+            reject(err);
+        });
+    });
+
+const launchServer = async () => {
+    let port = config.port;
+
+    for (let attempt = 0; attempt <= MAX_PORT_RETRY; attempt += 1) {
+        try {
+            if (attempt > 0) {
+                console.warn(`Port ${port - 1} was unavailable. Trying port ${port} instead.`);
+            }
+            await startServer(port);
+            return;
+        } catch (err: unknown) {
+            const error = err as NodeJS.ErrnoException;
+            if (error.code === "EADDRINUSE") {
+                port += 1;
+                continue;
+            }
+            console.error("\n❌ Server failed to start:", err);
+            process.exit(1);
+        }
+    }
+
+    console.error(`\n❌ Unable to start server: ports ${config.port}-${config.port + MAX_PORT_RETRY} are all in use.`);
+    process.exit(1);
+};
+
+launchServer();
+
+export default app;
