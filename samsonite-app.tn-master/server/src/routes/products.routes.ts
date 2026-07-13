@@ -1,4 +1,7 @@
 import { Router, Request, Response } from "express";
+import fs from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
 import { requireAuth } from "../middleware/auth.js";
 import {
     getMappedAdminProducts,
@@ -11,6 +14,9 @@ import {
 import { invalidateCatalogCache } from "./catalog.routes.js";
 
 const router = Router();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const adminImagesDir = path.join(__dirname, "../../public/images/admin");
 
 // All routes here require authentication
 router.use(requireAuth);
@@ -88,6 +94,57 @@ router.get("/categories", async (_req: Request, res: Response): Promise<void> =>
 // ---------------------------------------------------------------------------
 // POST /api/admin/products — create a new product
 // ---------------------------------------------------------------------------
+
+router.post("/images", async (req: Request, res: Response): Promise<void> => {
+    const { images } = req.body as {
+        images?: Array<{ name?: string; type?: string; data?: string }>;
+    };
+
+    if (!Array.isArray(images) || images.length === 0) {
+        res.status(400).json({ error: "Aucune image fournie" });
+        return;
+    }
+
+    try {
+        await fs.mkdir(adminImagesDir, { recursive: true });
+
+        const saved = await Promise.all(
+            images.map(async (image, index) => {
+                const base64 = (image.data || "").replace(/^data:[^;]+;base64,/, "");
+                if (!base64) throw new Error("Image invalide");
+
+                const extensionFromName = path.extname(image.name || "").toLowerCase();
+                const extensionFromType =
+                    image.type === "image/png"
+                        ? ".png"
+                        : image.type === "image/webp"
+                          ? ".webp"
+                          : image.type === "image/gif"
+                            ? ".gif"
+                            : ".jpg";
+                const extension = extensionFromName || extensionFromType;
+                const safeBaseName =
+                    path
+                        .basename(image.name || `image-${index + 1}`, extension)
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, "-")
+                        .replace(/^-+|-+$/g, "")
+                        .slice(0, 60) || `image-${index + 1}`;
+                const filename = `${Date.now()}-${index + 1}-${safeBaseName}${extension}`;
+                const filePath = path.join(adminImagesDir, filename);
+
+                await fs.writeFile(filePath, Buffer.from(base64, "base64"));
+
+                return `/images/admin/${filename}`;
+            })
+        );
+
+        res.status(201).json({ success: true, images: saved });
+    } catch (err) {
+        console.error("Erreur upload images admin:", err);
+        res.status(500).json({ error: "Impossible d'importer les images" });
+    }
+});
 
 router.post("/products", async (req: Request, res: Response): Promise<void> => {
     const {

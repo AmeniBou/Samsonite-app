@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
-import { Facebook, Instagram, Youtube, Twitter } from "lucide-react";
+import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
+
+import { useLanguage } from "@/lib/i18n";
 
 const socialLinks = {
   facebook: "https://www.facebook.com/samsonite.tn",
@@ -9,101 +11,103 @@ const socialLinks = {
 };
 
 const Footer = () => {
+  const { t } = useLanguage();
+
   return (
     <footer className="bg-foreground text-primary-foreground">
       <div className="samsonite-container py-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           <div>
-            <h4 className="text-xs font-bold tracking-wider mb-4">NOS PRODUITS</h4>
+            <h4 className="mb-4 text-xs font-bold tracking-wider">{t("footer.products")}</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/categorie/valises" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Valises
+                <Link to="/categorie/valises" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
+                  {t("nav.suitcases")}
                 </Link>
               </li>
               <li>
-                <Link to="/categorie/sac-a-dos" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Sacs a dos
+                <Link to="/categorie/sac-a-dos" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
+                  {t("nav.backpacks")}
                 </Link>
               </li>
               <li>
-                <Link to="/categorie/business" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
+                <Link to="/categorie/business" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
                   Business
                 </Link>
               </li>
               <li>
-                <Link to="/categorie/accessoires" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Accessoires
+                <Link to="/categorie/accessoires" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
+                  {t("nav.accessories")}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-xs font-bold tracking-wider mb-4">AIDE</h4>
+            <h4 className="mb-4 text-xs font-bold tracking-wider">{t("footer.help")}</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/livraison" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Livraison
+                <Link to="/livraison" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
+                  {t("footer.shipping")}
                 </Link>
               </li>
               <li>
-                <Link to="/retours" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Retours
+                <Link to="/retours" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
+                  {t("footer.returns")}
                 </Link>
               </li>
               <li>
-                <Link to="/commande" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Suivi de commande
+                <Link to="/commande" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
+                  {t("footer.orderTracking")}
                 </Link>
               </li>
               <li>
-                <Link to="/services" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Garantie
+                <Link to="/services" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
+                  {t("product.warranty")}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-xs font-bold tracking-wider mb-4">LA MARQUE</h4>
+            <h4 className="mb-4 text-xs font-bold tracking-wider">{t("footer.brand")}</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/la-marque" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Notre histoire
+                <Link to="/la-marque" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
+                  {t("footer.history")}
                 </Link>
               </li>
               <li>
-                <Link to="/la-marque" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Developpement durable
+                <Link to="/la-marque" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
+                  {t("footer.sustainability")}
                 </Link>
               </li>
               <li>
-                <Link to="/services" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Innovation
+                <Link to="/services" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
+                  {t("footer.innovation")}
                 </Link>
               </li>
               <li>
-                <Link to="/personnalisation" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">
-                  Personnalisation
+                <Link to="/personnalisation" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
+                  {t("home.personalization")}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-xs font-bold tracking-wider mb-4">SUIVEZ-NOUS</h4>
+            <h4 className="mb-4 text-xs font-bold tracking-wider">{t("footer.follow")}</h4>
             <div className="flex items-center gap-4">
-              <a href={socialLinks.facebook} target="_blank" rel="noreferrer" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
+              <a href={socialLinks.facebook} target="_blank" rel="noreferrer" className="text-primary-foreground/70 transition-colors hover:text-primary-foreground">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href={socialLinks.instagram} target="_blank" rel="noreferrer" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
+              <a href={socialLinks.instagram} target="_blank" rel="noreferrer" className="text-primary-foreground/70 transition-colors hover:text-primary-foreground">
                 <Instagram className="h-5 w-5" />
               </a>
-              <a href={socialLinks.youtube} target="_blank" rel="noreferrer" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
+              <a href={socialLinks.youtube} target="_blank" rel="noreferrer" className="text-primary-foreground/70 transition-colors hover:text-primary-foreground">
                 <Youtube className="h-5 w-5" />
               </a>
-              <a href={socialLinks.twitter} target="_blank" rel="noreferrer" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors">
+              <a href={socialLinks.twitter} target="_blank" rel="noreferrer" className="text-primary-foreground/70 transition-colors hover:text-primary-foreground">
                 <Twitter className="h-5 w-5" />
               </a>
             </div>
@@ -112,14 +116,20 @@ const Footer = () => {
       </div>
 
       <div className="border-t border-primary-foreground/20">
-        <div className="samsonite-container py-4 flex flex-col md:flex-row items-center justify-between gap-2">
+        <div className="samsonite-container flex flex-col items-center justify-between gap-2 py-4 md:flex-row">
           <p className="text-xs text-primary-foreground/50">
-            © {new Date().getFullYear()} Samsonite. Tous droits reserves.
+            © {new Date().getFullYear()} Samsonite. {t("footer.rights")}
           </p>
           <div className="flex items-center gap-4 text-xs text-primary-foreground/50">
-            <Link to="/services" className="hover:text-primary-foreground">Mentions legales</Link>
-            <Link to="/services" className="hover:text-primary-foreground">Politique de confidentialite</Link>
-            <Link to="/services" className="hover:text-primary-foreground">Cookies</Link>
+            <Link to="/services" className="hover:text-primary-foreground">
+              {t("footer.legal")}
+            </Link>
+            <Link to="/services" className="hover:text-primary-foreground">
+              {t("footer.privacy")}
+            </Link>
+            <Link to="/services" className="hover:text-primary-foreground">
+              Cookies
+            </Link>
           </div>
         </div>
       </div>
@@ -128,4 +138,3 @@ const Footer = () => {
 };
 
 export default Footer;
-

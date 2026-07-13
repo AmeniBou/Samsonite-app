@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import { CartProvider } from "@/hooks/useCart";
+import { LanguageProvider } from "@/lib/i18n";
 import Layout from "@/components/layout/Layout";
 import Home from "./pages/Home";
 import Category from "./pages/Category";
@@ -27,6 +28,8 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProductForm from "./pages/admin/AdminProductForm";
+import AdminOrders from "./pages/admin/AdminOrders";
+import OrderConfirmation from "./pages/OrderConfirmation";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +41,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <CartProvider>
+        <LanguageProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -47,6 +51,7 @@ const App = () => {
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
+                <Route path="commandes" element={<AdminOrders />} />
                 <Route path="produits/nouveau" element={<AdminProductForm />} />
                 <Route path="produits/modifier/:id" element={<AdminProductForm />} />
               </Route>
@@ -58,6 +63,7 @@ const App = () => {
                 <Route path="/produit/:slug" element={<Product />} />
                 <Route path="/panier" element={<Cart />} />
                 <Route path="/commande" element={<Checkout />} />
+                <Route path="/commande/confirmation/:id" element={<OrderConfirmation />} />
                 <Route path="/recherche" element={<Search />} />
                 <Route path="/la-marque" element={<Brand />} />
                 <Route path="/services" element={<Services />} />
@@ -74,6 +80,7 @@ const App = () => {
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
+        </LanguageProvider>
       </CartProvider>
     </QueryClientProvider>
   );

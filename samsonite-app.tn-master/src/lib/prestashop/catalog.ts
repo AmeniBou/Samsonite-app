@@ -41,16 +41,44 @@ const getRawLangValue = (
   return normalize(field[0]?.value);
 };
 
-const ROOT_CATEGORY_ID = 2;
-const EXCLUDED_TOP_CATEGORY_IDS = new Set<number>([40]);
-const NAV_PRIORITY_BY_ID: Record<number, number> = {
-  13: 1, // Valises
-  32: 2, // Sac a dos
-  10: 3, // Business
-  17: 4, // Accessoires
-  27: 5, // Disney & Enfant
-  37: 6, // Promos
-};
+const CATEGORY_GROUPS: Array<{
+  name: string;
+  slug: string;
+  childSlugs: string[];
+}> = [
+  {
+    name: "Valises",
+    slug: "valises",
+    childSlugs: ["rigides", "souples", "ensembles-de-valises", "valise-enfant"],
+  },
+  {
+    name: "Sacs",
+    slug: "sacs",
+    childSlugs: ["sac-a-dos", "sac-ordinateur"],
+  },
+  {
+    name: "Business",
+    slug: "business",
+    childSlugs: ["pilot-case", "portefeuille"],
+  },
+  {
+    name: "Disney & Enfant",
+    slug: "disney-amp-enfant",
+    childSlugs: ["valise-enfant", "sac-scolaire", "sac-a-dos-enfants"],
+  },
+  {
+    name: "Accessoires",
+    slug: "accessoires",
+    childSlugs: [
+      "cadenas",
+      "sangles",
+      "housse-de-valise",
+      "coussin-de-voyage",
+      "parapluie",
+      "masques",
+    ],
+  },
+];
 
 const mapCategoryNode = (category: PSCategory): CategoryNode => {
   const id = Number(category.id);
@@ -72,6 +100,7 @@ export const fetchDisplayCategories = async (): Promise<CategoryDisplay[]> => {
   const nodes = rawCategories
     .map(mapCategoryNode)
     .filter((node) => node.active && Boolean(node.name && node.slug));
+  const nodeBySlug = new Map(nodes.map((node) => [node.slug, node]));
   const productCountByCategoryId = activeProducts.reduce<Record<number, number>>((acc, product) => {
     for (const category of product.associations?.categories || []) {
       const categoryId = Number(category.id);
@@ -79,32 +108,30 @@ export const fetchDisplayCategories = async (): Promise<CategoryDisplay[]> => {
     }
     return acc;
   }, {});
+  const productCountBySlug = nodes.reduce<Record<string, number>>((acc, node) => {
+    acc[node.slug] = productCountByCategoryId[node.id] || 0;
+    return acc;
+  }, {});
 
-  const topCategories = nodes
-    .filter((node) => node.parentId === ROOT_CATEGORY_ID)
-    .filter((node) => !EXCLUDED_TOP_CATEGORY_IDS.has(node.id))
-    .filter((node) => (productCountByCategoryId[node.id] || 0) > 0)
-    .sort((a, b) => {
-      const rankA = NAV_PRIORITY_BY_ID[a.id] ?? 99;
-      const rankB = NAV_PRIORITY_BY_ID[b.id] ?? 99;
-      if (rankA !== rankB) return rankA - rankB;
-      return a.name.localeCompare(b.name);
-    });
-
-  return topCategories.map((node) => {
-    const children = nodes
-      .filter((child) => child.parentId === node.id)
-      .filter((child) => (productCountByCategoryId[child.id] || 0) > 0)
+  return CATEGORY_GROUPS.map((group, index) => {
+    const node = nodeBySlug.get(group.slug);
+    const children = group.childSlugs
+      .map((childSlug) => nodeBySlug.get(childSlug))
+      .filter((child): child is CategoryNode => Boolean(child))
+      .filter((child) => (productCountBySlug[child.slug] || 0) > 0)
       .map((child) => ({ name: child.name, slug: child.slug }));
-
     return {
-      id: node.id,
-      name: node.name,
-      slug: node.slug,
-      description: node.description,
-      image: getCategoryImageUrl(node.id),
+      id: node?.id || 1000 + index,
+      name: node?.name || group.name,
+      slug: group.slug,
+      description: node?.description,
+      image: node ? getCategoryImageUrl(node.id) : undefined,
       children,
     };
+  }).filter((category) => {
+    const childCount = category.children?.length || 0;
+    const node = nodeBySlug.get(category.slug);
+    return childCount > 0 || (node ? (productCountBySlug[node.slug] || 0) > 0 : false);
   });
 };
 

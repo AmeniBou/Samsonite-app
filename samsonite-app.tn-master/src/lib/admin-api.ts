@@ -124,6 +124,33 @@ export const updateProduct = async (
     return res.json();
 };
 
+export const uploadAdminImages = async (
+    files: File[]
+): Promise<{ success: boolean; images?: string[]; error?: string }> => {
+    const toBase64 = (file: File) =>
+        new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ""));
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+        });
+
+    const images = await Promise.all(
+        files.map(async (file) => ({
+            name: file.name,
+            type: file.type,
+            data: await toBase64(file),
+        }))
+    );
+
+    const res = await fetch(`${API_BASE}/admin/images`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ images }),
+    });
+    return res.json();
+};
+
 export const deleteProduct = async (id: number): Promise<{ success: boolean; error?: string }> => {
     const res = await fetch(`${API_BASE}/admin/products/${id}`, {
         method: "DELETE",

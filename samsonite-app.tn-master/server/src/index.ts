@@ -16,7 +16,7 @@ const app = express();
 // ---------------------------------------------------------------------------
 
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json({ limit: "5mb" }));
+app.use(express.json({ limit: "25mb" }));
 app.use("/images", express.static(path.join(__dirname, "../public/images")));
 
 // ---------------------------------------------------------------------------

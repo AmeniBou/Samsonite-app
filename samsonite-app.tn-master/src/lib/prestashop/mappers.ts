@@ -59,6 +59,44 @@ export const mapPSProductToDisplay = (
   const isVolumeText = (value: string) =>
     /volume|\b\d+(?:[.,]\d+)?\s*l\b/i.test(value.trim());
 
+  const toTitleCase = (value: string) =>
+    value
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) => {
+        if (word.length <= 3 || /^[A-Z0-9-]+$/.test(word)) return word.toUpperCase();
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
+      .join(" ");
+
+  const getCollectionName = (productName: string, productSlug: string) => {
+    const cleanedName = productName
+      .replace(/^copy\s+of\s+/i, "")
+      .replace(/&quot;/g, '"')
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const typeSplit = cleanedName.split(
+      /\s+(?:valise|spinner|sac|pilot|portefeuille|cadenas|sangle|housse|coussin|parapluie|masque|tablette|ordinateur)\b/i
+    )[0];
+
+    if (typeSplit && /[a-zA-Z]/.test(typeSplit)) {
+      return typeSplit.toUpperCase();
+    }
+
+    const slugParts = (productSlug || "")
+      .replace(/-html$/i, "")
+      .split("-")
+      .filter(Boolean)
+      .filter((part) => !/^\d+$/.test(part));
+
+    if (slugParts.length > 0) {
+      return toTitleCase(slugParts.slice(0, 3).join(" "));
+    }
+
+    return cleanedName || "Samsonite";
+  };
+
   const isMeaningfulValue = (value: string): boolean => {
     const normalized = stripHtml(value).replace(/\u00a0/g, " ").trim();
     if (!normalized) return false;
@@ -332,17 +370,12 @@ export const mapPSProductToDisplay = (
     /poids|weight/i.test(item.label)
   )?.value;
 
-  const collectionFromSlug = (slug || "")
-    .split("-")
-    .filter(Boolean)
-    .slice(0, 2)
-    .join(" ")
-    .trim();
+  const collectionName = getCollectionName(name, slug || "");
 
   return {
     id: productId,
     name,
-    collection: collectionFromSlug || "Samsonite",
+    collection: collectionName,
     shortDescription: shortDesc,
     description: fullDesc,
     price,

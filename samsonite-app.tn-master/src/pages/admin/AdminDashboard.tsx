@@ -23,6 +23,28 @@ type SortKey = "id" | "name" | "reference" | "price" | "stock" | "categoryName" 
 type SortDirection = "asc" | "desc";
 type StatusFilter = "all" | "active" | "inactive";
 
+const decodeAdminText = (value?: string | null): string => {
+    let text = value || "";
+    const textarea = document.createElement("textarea");
+
+    for (let index = 0; index < 2; index += 1) {
+        textarea.innerHTML = text;
+        text = textarea.value;
+    }
+
+    for (let index = 0; index < 2 && /Ã|Â|â/.test(text); index += 1) {
+        try {
+            const bytes = Uint8Array.from(text, (char) => char.charCodeAt(0) & 0xff);
+            const decoded = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+            if (decoded && decoded !== text) text = decoded;
+        } catch {
+            break;
+        }
+    }
+
+    return text;
+};
+
 const AdminDashboard = () => {
     const [products, setProducts] = useState<AdminProduct[]>([]);
     const [loading, setLoading] = useState(true);
@@ -57,7 +79,7 @@ const AdminDashboard = () => {
     }, [loadProducts]);
 
     const handleDelete = async (product: AdminProduct) => {
-        if (!window.confirm(`Supprimer "${product.name}" (ID: ${product.id}) ?`)) return;
+        if (!window.confirm(`Supprimer "${decodeAdminText(product.name)}" (ID: ${product.id}) ?`)) return;
 
         setDeletingId(product.id);
         try {
@@ -96,9 +118,9 @@ const AdminDashboard = () => {
         if (!search.trim()) return true;
         const q = search.toLowerCase();
         return (
-            p.name.toLowerCase().includes(q) ||
+            decodeAdminText(p.name).toLowerCase().includes(q) ||
             p.reference.toLowerCase().includes(q) ||
-            p.categoryName.toLowerCase().includes(q) ||
+            decodeAdminText(p.categoryName).toLowerCase().includes(q) ||
             String(p.id).includes(q)
         );
     });
@@ -117,9 +139,9 @@ const AdminDashboard = () => {
         if (sortKey === "stock") return (a.stock - b.stock) * factor;
         if (sortKey === "active") return (Number(a.active) - Number(b.active)) * factor;
 
-        if (sortKey === "name") return a.name.localeCompare(b.name, "fr", { sensitivity: "base" }) * factor;
+        if (sortKey === "name") return decodeAdminText(a.name).localeCompare(decodeAdminText(b.name), "fr", { sensitivity: "base" }) * factor;
         if (sortKey === "reference") return a.reference.localeCompare(b.reference, "fr", { sensitivity: "base" }) * factor;
-        return a.categoryName.localeCompare(b.categoryName, "fr", { sensitivity: "base" }) * factor;
+        return decodeAdminText(a.categoryName).localeCompare(decodeAdminText(b.categoryName), "fr", { sensitivity: "base" }) * factor;
     });
 
     useEffect(() => {
@@ -164,7 +186,7 @@ const AdminDashboard = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Produits</h1>
                     <p className="text-sm text-gray-500 mt-1">
-                        {products.length} produits � {activeCount} actifs
+                        {products.length} produits • {activeCount} actifs
                     </p>
                 </div>
                 <div className="flex gap-2">
@@ -318,7 +340,7 @@ const AdminDashboard = () => {
                                             {product.imageId ? (
                                                 <img
                                                     src={`/api/catalog/images/products/${product.id}/${product.imageId}`}
-                                                    alt={product.name}
+                                                    alt={decodeAdminText(product.name)}
                                                     className="w-10 h-10 object-cover rounded"
                                                     onError={(e) => {
                                                         e.currentTarget.src = "/placeholder.svg";
@@ -331,8 +353,8 @@ const AdminDashboard = () => {
                                             )}
                                         </td>
                                         <td className="px-4 py-3">
-                                            <div className="font-medium text-gray-900 truncate max-w-[200px]" title={product.name}>
-                                                {product.name}
+                                            <div className="font-medium text-gray-900 truncate max-w-[200px]" title={decodeAdminText(product.name)}>
+                                                {decodeAdminText(product.name)}
                                             </div>
                                             <div className="flex gap-1 mt-1">
                                                 {product.hasVariants && (
@@ -363,7 +385,7 @@ const AdminDashboard = () => {
                                             {product.stock}
                                         </td>
                                         <td className="px-4 py-3 text-gray-500 max-w-[120px] truncate">
-                                            {product.categoryName}
+                                            {decodeAdminText(product.categoryName)}
                                         </td>
                                         <td className="px-4 py-3">
                                             <button

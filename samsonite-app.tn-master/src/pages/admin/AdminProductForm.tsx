@@ -1,13 +1,36 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Upload } from "lucide-react";
 import {
     fetchAdminProduct,
     createProduct,
     updateProduct,
     fetchAdminCategories,
+    uploadAdminImages,
     type AdminCategory,
 } from "@/lib/admin-api";
+
+const decodeAdminText = (value?: string | null): string => {
+    let text = value || "";
+    const textarea = document.createElement("textarea");
+
+    for (let index = 0; index < 2; index += 1) {
+        textarea.innerHTML = text;
+        text = textarea.value;
+    }
+
+    for (let index = 0; index < 2 && /Ã|Â|â/.test(text); index += 1) {
+        try {
+            const bytes = Uint8Array.from(text, (char) => char.charCodeAt(0) & 0xff);
+            const decoded = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+            if (decoded && decoded !== text) text = decoded;
+        } catch {
+            break;
+        }
+    }
+
+    return text;
+};
 
 const AdminProductForm = () => {
     const navigate = useNavigate();
@@ -15,6 +38,7 @@ const AdminProductForm = () => {
     const isEdit = Boolean(id);
     const [categories, setCategories] = useState<AdminCategory[]>([]);
     const [loading, setLoading] = useState(false);
+    const [uploadingImages, setUploadingImages] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
@@ -85,9 +109,9 @@ const AdminProductForm = () => {
                 setLoading(true);
                 const p = await fetchAdminProduct(parseInt(id!, 10));
                 setForm({
-                    name: p.name,
-                    description: p.description || "",
-                    descriptionShort: p.descriptionShort || "",
+                    name: decodeAdminText(p.name),
+                    description: decodeAdminText(p.description),
+                    descriptionShort: decodeAdminText(p.descriptionShort),
                     price: p.price.toString(),
                     categoryId: p.categoryId.toString(),
                     reference: p.reference,
@@ -101,7 +125,9 @@ const AdminProductForm = () => {
                     quantity: p.quantity?.toString() || "",
                     volume: p.volume || "",
                     imagesText: (p.images || []).join("\n"),
-                    featuresText: (p.features || []).map((f) => `${f.label}|${f.value}`).join("\n"),
+                    featuresText: (p.features || [])
+                        .map((f) => `${decodeAdminText(f.label)}|${decodeAdminText(f.value)}`)
+                        .join("\n"),
                     colorsSelected:
                         p.variants?.map((v) => v.colorHex || v.colorName).filter(Boolean) as string[] || [],
                     sizesSelected:
@@ -197,6 +223,36 @@ const AdminProductForm = () => {
         });
     };
 
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(event.target.files || []);
+        if (files.length === 0) return;
+
+        setError("");
+        setSuccess("");
+        setUploadingImages(true);
+
+        try {
+            const result = await uploadAdminImages(files);
+            if (!result.success || !result.images?.length) {
+                setError(result.error || "Impossible d'importer les images");
+                return;
+            }
+
+            setForm((prev) => ({
+                ...prev,
+                imagesText: [prev.imagesText, ...result.images]
+                    .filter(Boolean)
+                    .join("\n"),
+            }));
+            setSuccess(`${result.images.length} image(s) importee(s)`);
+        } catch {
+            setError("Erreur pendant l'import des images");
+        } finally {
+            setUploadingImages(false);
+            event.target.value = "";
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
@@ -232,21 +288,21 @@ const AdminProductForm = () => {
                 })
                 .filter((f) => f.label && f.value);
             const featuresAuto: Array<{ label: string; value: string }> = [];
-            if (form.model) featuresAuto.push({ label: "ModÃ¨le", value: form.model });
-            if (form.matiere) featuresAuto.push({ label: "MatiÃ¨re", value: form.matiere });
-            if (form.poignees) featuresAuto.push({ label: "PoignÃ©es", value: form.poignees });
+            if (form.model) featuresAuto.push({ label: "Modèle", value: form.model });
+            if (form.matiere) featuresAuto.push({ label: "Matière", value: form.matiere });
+            if (form.poignees) featuresAuto.push({ label: "Poignées", value: form.poignees });
             if (form.poigneeTraction)
-                featuresAuto.push({ label: "PoignÃ©e de traction", value: form.poigneeTraction });
+                featuresAuto.push({ label: "Poignée de traction", value: form.poigneeTraction });
             if (form.roulettes) featuresAuto.push({ label: "Roulettes", value: form.roulettes });
             if (form.typeRoues) featuresAuto.push({ label: "Type de roues", value: form.typeRoues });
             if (form.compartimentInf !== undefined)
                 featuresAuto.push({
-                    label: "Compartiment infÃ©rieur",
+                    label: "Compartiment inférieur",
                     value: form.compartimentInf ? "Oui" : "Non",
                 });
             if (form.compartimentSup !== undefined)
                 featuresAuto.push({
-                    label: "Compartiment supÃ©rieur",
+                    label: "Compartiment supérieur",
                     value: form.compartimentSup ? "Oui" : "Non",
                 });
             if (form.sizesSelected.length)
@@ -575,7 +631,7 @@ const AdminProductForm = () => {
                     </div>
                     {form.colorsSelected.length > 0 && (
                         <p className="text-xs text-gray-500 mt-1">
-                            {form.colorsSelected.length} couleur(s) sÃ©lectionnÃ©e(s)
+                            {form.colorsSelected.length} couleur(s) sélectionnée(s)
                         </p>
                     )}
                 </div>
@@ -618,10 +674,10 @@ const AdminProductForm = () => {
                     />
                 </div>
 
-                {/* ModÃ¨le & matiÃ¨re */}
+                {/* Modèle & matière */}
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">ModÃ¨le</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Modèle</label>
                         <input
                             name="model"
                             value={form.model}
@@ -631,7 +687,7 @@ const AdminProductForm = () => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">MatiÃ¨re</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Matière</label>
                         <input
                             name="matiere"
                             value={form.matiere}
@@ -642,21 +698,21 @@ const AdminProductForm = () => {
                     </div>
                 </div>
 
-                {/* PoignÃ©es / Traction / Roulettes */}
+                {/* Poignées / Traction / Roulettes */}
                 <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">PoignÃ©es</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Poignées</label>
                             <input
                                 name="poignees"
                                 value={form.poignees}
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                                placeholder="PoignÃ©e haute + latÃ©rale"
+                                placeholder="Poignée haute + latérale"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">PoignÃ©e de traction</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Poignée de traction</label>
                             <input
                                 name="poigneeTraction"
                                 value={form.poigneeTraction}
@@ -672,7 +728,7 @@ const AdminProductForm = () => {
                                 value={form.roulettes}
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                                placeholder="4 roues doubles 360Â°"
+                                placeholder="4 roues doubles 360°"
                             />
                         </div>
                     </div>
@@ -697,7 +753,7 @@ const AdminProductForm = () => {
                                 className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
                             />
                             <label htmlFor="compartimentInf" className="text-sm text-gray-700">
-                                Compartiment infÃ©rieur
+                                Compartiment inférieur
                             </label>
                         </div>
                         <div className="flex items-center gap-3">
@@ -710,7 +766,7 @@ const AdminProductForm = () => {
                                 className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
                             />
                             <label htmlFor="compartimentSup" className="text-sm text-gray-700">
-                                Compartiment supÃ©rieur
+                                Compartiment supérieur
                             </label>
                         </div>
                     </div>
@@ -733,25 +789,72 @@ const AdminProductForm = () => {
                 </div>
 
                 {/* Images */}
-                <div>
-                    <label htmlFor="product-images" className="block text-sm font-medium text-gray-700 mb-1">
-                        Images (URLs, une par ligne)
+                <div className="space-y-3">
+                    <div className="flex flex-col gap-3 rounded-md border border-gray-200 bg-gray-50 p-4">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-gray-700">Images du produit</p>
+                                <p className="text-xs text-gray-500">
+                                    Importe des images depuis ton ordinateur ou colle des URLs, une par ligne.
+                                </p>
+                            </div>
+                            <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100">
+                                {uploadingImages ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Upload className="h-4 w-4" />
+                                )}
+                                {uploadingImages ? "Import..." : "Importer"}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                    onChange={handleImageUpload}
+                                    disabled={uploadingImages}
+                                />
+                            </label>
+                        </div>
+                    </div>
+                    {form.imagesText.trim() && (
+                        <div className="grid grid-cols-4 gap-2">
+                            {form.imagesText
+                                .split("\n")
+                                .map((line) => line.trim())
+                                .filter(Boolean)
+                                .slice(0, 8)
+                                .map((image, index) => (
+                                    <div key={`${image}-${index}`} className="aspect-square rounded border border-gray-200 bg-white p-1">
+                                        <img
+                                            src={image}
+                                            alt=""
+                                            className="h-full w-full object-contain"
+                                            onError={(event) => {
+                                                event.currentTarget.src = "/placeholder.svg";
+                                            }}
+                                        />
+                                    </div>
+                                ))}
+                        </div>
+                    )}
+                    <label htmlFor="product-images" className="block text-sm font-medium text-gray-700">
+                        Chemins / URLs des images
                     </label>
                     <textarea
                         id="product-images"
                         name="imagesText"
-                        rows={3}
+                        rows={4}
                         value={form.imagesText}
                         onChange={handleChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none font-mono"
-                        placeholder={"https://.../photo1.jpg\nhttps://.../photo2.jpg"}
+                        placeholder={"/images/admin/photo1.jpg\nhttps://.../photo2.jpg"}
                     />
                 </div>
 
                 {/* Features */}
                 <div>
                     <label htmlFor="product-features" className="block text-sm font-medium text-gray-700 mb-1">
-                        CaractÃ©ristiques (label|valeur par ligne)
+                        Caractéristiques (label|valeur par ligne)
                     </label>
                     <textarea
                         id="product-features"
@@ -760,10 +863,10 @@ const AdminProductForm = () => {
                         value={form.featuresText}
                         onChange={handleChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none font-mono"
-                        placeholder={"ModÃ¨le|Sac Ã  dos pour ordinateur\nMatiÃ¨re|100% Polyester\nVolume|25 L"}
+                        placeholder={"Modèle|Sac à dos pour ordinateur\nMatière|100% Polyester\nVolume|25 L"}
                     />
                     <p className="text-xs text-gray-400 mt-1">
-                        Exemple: <span className="font-mono">MatiÃ¨re|100% Polyester</span>
+                        Exemple: <span className="font-mono">Matière|100% Polyester</span>
                     </p>
                 </div>
 
@@ -780,7 +883,7 @@ const AdminProductForm = () => {
                         </button>
                     </div>
                     {form.variants.length === 0 && (
-                        <p className="text-xs text-gray-400">Aucune variante ajoutÃ©e.</p>
+                        <p className="text-xs text-gray-400">Aucune variante ajoutée.</p>
                     )}
                     {form.variants.map((variant, index) => (
                         <div key={index} className="border rounded-md p-3 space-y-3 bg-gray-50">

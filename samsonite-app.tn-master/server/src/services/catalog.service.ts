@@ -9,6 +9,39 @@ const normalizeSlug = (value: string): string =>
 
 const buildLangField = (value: string) => [{ id: "2", value: value || "" }];
 
+const COLOR_HEX_BY_NAME: Record<string, string> = {
+  blanc: "#f5f5f0",
+  black: "#111111",
+  bleu: "#24384f",
+  "bleu ciel": "#9fb5c8",
+  "bleu petrole": "#1f3b4a",
+  "bleu pétrole": "#1f3b4a",
+  bordeaux: "#6f1d2c",
+  brown: "#5b3a2e",
+  gris: "#7d8580",
+  jaune: "#f2aa2a",
+  marron: "#6f4e37",
+  noir: "#111111",
+  orange: "#d85f2a",
+  rose: "#d9a2b8",
+  rouge: "#df332b",
+  teal: "#08645f",
+  vert: "#586a5a",
+  violet: "#8c83bd",
+};
+
+const normalizeLabel = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+
+const getColorHex = (value: string) => {
+  const normalized = normalizeLabel(value).replace(/_/g, " ");
+  return COLOR_HEX_BY_NAME[normalized] || COLOR_HEX_BY_NAME[normalized.split(" ")[0]] || "#9ca3af";
+};
+
 const mapCategoryToRaw = (category: {
   id: number;
   name: string;
@@ -38,6 +71,8 @@ const mapProductToRaw = (product: {
   quantity?: number | null;
   images: Array<{ id: number; imageUrl: string }>;
   categories: Array<{ category: { id: number; slug?: string | null } }>;
+  variants: Array<{ id: number; groupName: string; value: string }>;
+  features: Array<{ id: number; featureName: string; featureValue: string }>;
 }) => {
   const imageIds = product.images.map((image) => image.id).filter(Boolean);
   const categoryAssociations = product.categories
@@ -65,6 +100,11 @@ const mapProductToRaw = (product: {
     associations: {
       categories: categoryAssociations,
       images: imageIds.map((id) => ({ id, imageUrl: product.images.find((img) => img.id === id)?.imageUrl })),
+      product_option_values: product.variants.map((variant) => ({ id: variant.id })),
+      product_features: product.features.map((feature) => ({
+        id: feature.id,
+        id_feature_value: feature.id,
+      })),
     },
   };
 };
@@ -77,19 +117,79 @@ export const getPublicCatalog = async () => {
       include: {
         images: { orderBy: { position: "asc" } },
         categories: { include: { category: true } },
+        variants: { orderBy: { id: "asc" } },
+        features: { orderBy: { id: "asc" } },
       },
     }),
   ]);
 
+  const groupNameById = new Map<string, number>();
+  const getGroupId = (groupName: string) => {
+    const key = normalizeLabel(groupName);
+    const existing = groupNameById.get(key);
+    if (existing) return existing;
+    const nextId = groupNameById.size + 1;
+    groupNameById.set(key, nextId);
+    return nextId;
+  };
+
+  for (const product of products) {
+    for (const variant of product.variants) {
+      getGroupId(variant.groupName);
+    }
+  }
+
+  const variants = products.flatMap((product) =>
+    product.variants.map((variant) => ({
+      product,
+      variant,
+      groupId: getGroupId(variant.groupName),
+    }))
+  );
+
   return {
     products: products.map(mapProductToRaw),
     categories: categories.map(mapCategoryToRaw),
-    combinations: [],
-    productOptions: [],
-    productOptionValues: [],
-    stockAvailables: [],
-    features: [],
-    featureValues: [],
+    combinations: variants.map(({ product, variant }) => ({
+      id: variant.id,
+      id_product: product.id,
+      price: "0",
+      default_on: "0",
+      associations: {
+        product_option_values: [{ id: variant.id }],
+        images: [],
+      },
+    })),
+    productOptions: Array.from(groupNameById.entries()).map(([groupName, id]) => ({
+      id,
+      name: buildLangField(groupName),
+      public_name: buildLangField(groupName),
+    })),
+    productOptionValues: variants.map(({ variant, groupId }) => ({
+      id: variant.id,
+      id_attribute_group: groupId,
+      color: /couleur|color/i.test(variant.groupName) ? getColorHex(variant.value) : undefined,
+      name: buildLangField(variant.value),
+    })),
+    stockAvailables: variants.map(({ product, variant }) => ({
+      id: variant.id,
+      id_product: product.id,
+      id_product_attribute: variant.id,
+      quantity: product.quantity ?? 0,
+    })),
+    features: products.flatMap((product) =>
+      product.features.map((feature) => ({
+        id: feature.id,
+        name: buildLangField(feature.featureName),
+      }))
+    ),
+    featureValues: products.flatMap((product) =>
+      product.features.map((feature) => ({
+        id: feature.id,
+        id_feature: feature.id,
+        value: buildLangField(feature.featureValue),
+      }))
+    ),
   };
 };
 

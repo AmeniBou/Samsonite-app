@@ -6,6 +6,7 @@ import ProductCard from "@/components/ProductCard";
 import BrandLoader from "@/components/BrandLoader";
 import { fetchDisplayCategories, fetchDisplayProducts } from "@/lib/prestashop/catalog";
 import type { CategoryDisplay, ProductDisplay } from "@/lib/prestashop/types";
+import { useLanguage } from "@/lib/i18n";
 
 interface FiltersState {
   collections: string[];
@@ -22,20 +23,21 @@ const initialFilters: FiltersState = {
 };
 
 const priceRanges = [
-  { key: "under-300", label: "Moins de 300 TND", min: 0, max: 300 },
-  { key: "300-600", label: "300 TND - 600 TND", min: 300, max: 600 },
-  { key: "600-1200", label: "600 TND - 1200 TND", min: 600, max: 1200 },
-  { key: "over-1200", label: "Plus de 1200 TND", min: 1200, max: Number.POSITIVE_INFINITY },
+  { key: "under-300", labelKey: "price.under300", min: 0, max: 300 },
+  { key: "300-600", labelKey: "price.300600", min: 300, max: 600 },
+  { key: "600-1200", labelKey: "price.6001200", min: 600, max: 1200 },
+  { key: "over-1200", labelKey: "price.over1200", min: 1200, max: Number.POSITIVE_INFINITY },
 ];
 
 const sortOptions = [
-  { value: "relevance", label: "PERTINENCE" },
-  { value: "price-asc", label: "PRIX CROISSANT" },
-  { value: "price-desc", label: "PRIX DECROISSANT" },
-  { value: "name", label: "NOM" },
+  { value: "relevance", labelKey: "sort.relevance" },
+  { value: "price-asc", labelKey: "sort.priceAsc" },
+  { value: "price-desc", labelKey: "sort.priceDesc" },
+  { value: "name", labelKey: "sort.name" },
 ];
 
 const Category = () => {
+  const { t } = useLanguage();
   const { slug } = useParams<{ slug: string }>();
   const [sortBy, setSortBy] = useState("relevance");
   const [sortOpen, setSortOpen] = useState(false);
@@ -183,8 +185,8 @@ const Category = () => {
   }, [filteredProducts, sortBy]);
 
   const selectedSortLabel = useMemo(
-    () => sortOptions.find((option) => option.value === sortBy)?.label || "PERTINENCE",
-    [sortBy]
+    () => t(sortOptions.find((option) => option.value === sortBy)?.labelKey || "sort.relevance"),
+    [sortBy, t]
   );
 
   const toggleArrayValue = (
@@ -216,7 +218,7 @@ const Category = () => {
       <div className="samsonite-container py-3">
         <nav className="flex items-center gap-2 text-xs text-muted-foreground">
           <Link to="/" className="hover:text-foreground">
-            Accueil
+            {t("category.home")}
           </Link>
           {rootCategory && (
             <>
@@ -260,7 +262,7 @@ const Category = () => {
               className={`whitespace-nowrap px-4 py-2 text-xs font-bold tracking-wider ${!isChildCategory ? "bg-foreground text-background" : "border border-border hover:bg-accent"
                 }`}
             >
-              TOUT VOIR
+              {t("category.viewAll")}
             </Link>
             {rootCategory.children.map((sub) => (
               <Link
@@ -276,46 +278,48 @@ const Category = () => {
         </div>
       )}
 
-      <div className="border-y border-border">
-        <div className="samsonite-container py-3 flex items-center justify-between">
+      <div className="relative z-[120] overflow-visible border-y border-border bg-white/80 backdrop-blur">
+        <div className="samsonite-container relative z-[120] flex items-center justify-between overflow-visible py-3">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setFiltersOpen((value) => !value)}
-              className="flex items-center gap-2 text-xs font-semibold tracking-wider hover:text-muted-foreground transition-colors"
+              className="premium-control flex items-center gap-2 border border-border bg-white px-3 py-2 text-xs font-semibold tracking-wider transition-colors hover:text-muted-foreground"
             >
               <SlidersHorizontal className="h-4 w-4" />
-              FILTRES
+              {t("category.filters")}
             </button>
-            <span className="text-xs text-muted-foreground">{sortedProducts.length} produits</span>
+            <span className="text-xs text-muted-foreground">
+              {sortedProducts.length} {t("category.products")}
+            </span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
+            <div className="hidden items-center gap-2 sm:flex">
               <button
                 onClick={() => setGridCols(3)}
-                className={`p-1 ${gridCols === 3 ? "text-foreground" : "text-muted-foreground"}`}
+                className={`premium-control p-2 ${gridCols === 3 ? "bg-black text-white" : "text-muted-foreground"}`}
               >
                 <LayoutList className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setGridCols(4)}
-                className={`p-1 ${gridCols === 4 ? "text-foreground" : "text-muted-foreground"}`}
+                className={`premium-control p-2 ${gridCols === 4 ? "bg-black text-white" : "text-muted-foreground"}`}
               >
                 <Grid3X3 className="h-4 w-4" />
               </button>
             </div>
-            <div className="relative">
+            <div className="relative z-[130]">
               <button
                 type="button"
                 onClick={() => setSortOpen((value) => !value)}
                 className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-background text-xs font-semibold tracking-wider hover:bg-accent transition-colors"
               >
-                <span className="text-muted-foreground">TRIER PAR</span>
+                <span className="text-muted-foreground">{t("category.sortBy")}</span>
                 <span>{selectedSortLabel}</span>
                 <ChevronDown className={`h-3 w-3 transition-transform ${sortOpen ? "rotate-180" : ""}`} />
               </button>
 
               {sortOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-md border border-border bg-background shadow-lg z-20">
+                <div className="absolute right-0 top-full z-[140] mt-2 w-56 border border-border bg-background shadow-[0_20px_55px_rgba(0,0,0,0.16)]">
                   {sortOptions.map((option) => (
                     <button
                       key={option.value}
@@ -330,7 +334,7 @@ const Category = () => {
                           : "text-muted-foreground hover:bg-accent hover:text-foreground"
                       }`}
                     >
-                      {option.label}
+                      {t(option.labelKey)}
                     </button>
                   ))}
                 </div>
@@ -340,13 +344,13 @@ const Category = () => {
         </div>
       </div>
 
-      <div className="samsonite-container py-8">
+      <div className="samsonite-container relative z-0 py-8">
         <div className="flex items-start gap-8">
           {filtersOpen && (
-            <aside className="w-72 flex-shrink-0 self-start space-y-6 animate-fade-in">
+            <aside className="premium-surface sticky top-36 z-30 w-72 flex-shrink-0 self-start space-y-6 p-5 animate-fade-in">
               <div>
-                <h3 className="text-xs font-bold tracking-wider mb-3">COLLECTION</h3>
-                <div className="space-y-2 max-h-44 overflow-auto pr-1">
+                <h3 className="text-xs font-bold tracking-wider mb-3">{t("category.collection")}</h3>
+                <div className="soft-scrollbar max-h-44 space-y-2 overflow-auto pr-1">
                   {collectionOptions.map((collection) => (
                     <label key={collection} className="flex items-center gap-2 text-sm cursor-pointer">
                       <input
@@ -362,7 +366,7 @@ const Category = () => {
               </div>
 
               <div>
-                <h3 className="text-xs font-bold tracking-wider mb-3">PRIX</h3>
+                <h3 className="text-xs font-bold tracking-wider mb-3">{t("category.price")}</h3>
                 <div className="space-y-2">
                   {priceRanges.map((range) => (
                     <label key={range.key} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -372,14 +376,14 @@ const Category = () => {
                         checked={draftFilters.priceRanges.includes(range.key)}
                         onChange={() => toggleArrayValue("priceRanges", range.key)}
                       />
-                      {range.label}
+                      {t(range.labelKey)}
                     </label>
                   ))}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-xs font-bold tracking-wider mb-3">COULEUR</h3>
+                <h3 className="text-xs font-bold tracking-wider mb-3">{t("category.color")}</h3>
                 <div className="flex flex-wrap gap-2">
                   {colorOptions.map((color) => (
                     <button
@@ -398,7 +402,7 @@ const Category = () => {
               </div>
 
               <div>
-                <h3 className="text-xs font-bold tracking-wider mb-3">DISPONIBILITE</h3>
+                <h3 className="text-xs font-bold tracking-wider mb-3">{t("category.availability")}</h3>
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
                     type="checkbox"
@@ -411,33 +415,33 @@ const Category = () => {
                       }))
                     }
                   />
-                  En stock uniquement
+                  {t("category.inStockOnly")}
                 </label>
               </div>
 
               <div className="pt-2 flex gap-2">
                 <button
                   type="button"
-                  className="flex-1 border border-border px-3 py-2 text-xs font-semibold tracking-wider hover:bg-accent"
+                  className="premium-control flex-1 border border-border px-3 py-2 text-xs font-semibold tracking-wider hover:bg-accent"
                   onClick={() => {
                     setDraftFilters(initialFilters);
                     setAppliedFilters(initialFilters);
                   }}
                 >
-                  REINITIALISER
+                  {t("category.reset")}
                 </button>
                 <button
                   type="button"
-                  className="flex-1 bg-foreground text-background px-3 py-2 text-xs font-semibold tracking-wider hover:bg-foreground/90"
+                  className="premium-control flex-1 bg-foreground px-3 py-2 text-xs font-semibold tracking-wider text-background hover:bg-foreground/90"
                   onClick={() => setAppliedFilters(draftFilters)}
                 >
-                  CONFIRMER MES CHOIX
+                  {t("category.confirm")}
                 </button>
               </div>
             </aside>
           )}
 
-          <div className="flex-1">
+          <div className="relative z-0 flex-1">
             {sortedProducts.length > 0 ? (
               <div
                 className={`grid gap-6 ${gridCols === 4 ? "grid-cols-2 md:grid-cols-4" : "grid-cols-2 md:grid-cols-3"
@@ -449,8 +453,8 @@ const Category = () => {
               </div>
             ) : (
               <div className="text-center py-20 text-muted-foreground">
-                <p className="text-lg">Aucun produit trouvé pour ces critères.</p>
-                <p className="text-sm mt-2">Essayez de modifier vos filtres.</p>
+                <p className="text-lg">{t("category.empty")}</p>
+                <p className="text-sm mt-2">{t("category.emptyHint")}</p>
               </div>
             )}
           </div>
@@ -461,4 +465,3 @@ const Category = () => {
 };
 
 export default Category;
-

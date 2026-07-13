@@ -87,6 +87,7 @@
 @layer base {
   html {
     font-family: "Inter", system-ui, sans-serif;
+    scroll-behavior: smooth;
   }
 
   * {
@@ -95,15 +96,59 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
+  }
+
+  ::selection {
+    @apply bg-foreground text-background;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-foreground ring-offset-2 ring-offset-background;
+  }
+
+  img {
+    @apply select-none;
   }
 }
 
 @layer utilities {
   .samsonite-container {
     @apply max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .premium-surface {
+    @apply border border-black/5 bg-white shadow-[0_18px_60px_rgba(0,0,0,0.06)];
+  }
+
+  .premium-control {
+    @apply transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] active:translate-y-0;
+  }
+
+  .soft-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
+  }
+
+  .soft-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .soft-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .soft-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.28);
+    border-radius: 999px;
+  }
+
+  .soft-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.45);
   }
 }
