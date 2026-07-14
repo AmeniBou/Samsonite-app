@@ -1,5 +1,7 @@
-import { HOME_HERO_IMAGE_URL } from "@/config/home";
 import { Link, useLocation } from "react-router-dom";
+
+import { HOME_HERO_IMAGE_URL } from "@/config/home";
+import { useLanguage } from "@/lib/i18n";
 
 interface ErrorState {
   message?: string;
@@ -7,15 +9,13 @@ interface ErrorState {
 
 const DataError = () => {
   const location = useLocation();
-  //const state = (location.state as ErrorState | null) || null;
- // const message = state?.message || "Impossible de charger les données.";
-  const message = "Impossible de charger les données. Veuillez réessayer plus tard.";
-
+  const { t } = useLanguage();
+  const state = (location.state as ErrorState | null) || null;
+  const message = state?.message || t("error.data");
 
   return (
-     <> 
-
-      <section className="relative h-[500px] md:h-[650px] flex items-center overflow-hidden">
+    <>
+      <section className="relative flex h-[500px] items-center overflow-hidden md:h-[650px]">
         <img
           src={HOME_HERO_IMAGE_URL}
           alt="Campagne Samsonite"
@@ -24,40 +24,38 @@ const DataError = () => {
             event.currentTarget.src = "/home-hero.svg";
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 to-foreground/10 z-10" />
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-foreground/80 to-foreground/10" />
         <div className="samsonite-container relative z-20 text-primary-foreground">
-          <p className="text-sm tracking-[0.3em] uppercase mb-4 font-semibold">
-            Nouvelle collection
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.3em]">
+            {t("error.collection")}
           </p>
-          <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-2">
+          <h1 className="mb-2 text-5xl font-bold leading-tight md:text-7xl">
             <em className="not-italic font-extrabold">SOLID</em> AS A ROCK
           </h1>
-          <h2 className="text-4xl md:text-6xl font-light mb-8">
+          <h2 className="mb-8 text-4xl font-light md:text-6xl">
             REMARKABLY <em className="font-extrabold italic">LIGHT</em>
           </h2>
           <Link
             to="/categorie/valises"
-            className="inline-block bg-primary-foreground text-foreground px-8 py-3.5 text-sm font-bold tracking-wider hover:bg-primary-foreground/90 transition-colors"
+            className="inline-block bg-primary-foreground px-8 py-3.5 text-sm font-bold tracking-wider text-foreground transition-colors hover:bg-primary-foreground/90"
           >
-            DÉCOUVREZ LA COLLECTION
+            {t("error.discoverCollection")}
           </Link>
         </div>
       </section>
 
-    <div className="samsonite-container py-20 text-center">
-      
-      <h1 className="text-3xl font-bold mb-4">Erreur de chargement</h1>
-      <p className="text-muted-foreground mb-8">{message}</p>
-      <Link
-        to="/"
-        className="inline-block bg-foreground text-background px-8 py-3 text-sm font-bold tracking-wider hover:bg-foreground/90 transition-colors"
-      >
-        RÉESSAYER
-      </Link>
-    </div>
+      <div className="samsonite-container py-20 text-center">
+        <h1 className="mb-4 text-3xl font-bold">{t("error.loading")}</h1>
+        <p className="mb-8 text-muted-foreground">{message}</p>
+        <Link
+          to="/"
+          className="inline-block bg-foreground px-8 py-3 text-sm font-bold tracking-wider text-background transition-colors hover:bg-foreground/90"
+        >
+          {t("error.retry")}
+        </Link>
+      </div>
     </>
   );
 };
 
 export default DataError;
-

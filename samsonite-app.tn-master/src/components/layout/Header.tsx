@@ -12,8 +12,9 @@ import {
 
 import { useCart } from "@/hooks/useCart";
 import { useLanguage } from "@/lib/i18n";
-import { fetchDisplayCategories } from "@/lib/prestashop/catalog";
-import type { CategoryDisplay } from "@/lib/prestashop/types";
+import { fetchDisplayCategories, fetchDisplayProducts } from "@/lib/prestashop/catalog";
+import type { CategoryDisplay, ProductDisplay } from "@/lib/prestashop/types";
+import { getSearchSuggestions } from "@/lib/search";
 
 interface NavItem {
   name: string;
@@ -128,6 +129,7 @@ const Header = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<CategoryDisplay[]>([]);
+  const [products, setProducts] = useState<ProductDisplay[]>([]);
   const { totalItems } = useCart();
   const { language, setLanguage, t } = useLanguage();
   const navigate = useNavigate();
@@ -162,8 +164,14 @@ const Header = () => {
 
     const load = async () => {
       try {
-        const fetchedCategories = await fetchDisplayCategories();
-        if (!cancelled) setCategories(fetchedCategories);
+        const [fetchedCategories, fetchedProducts] = await Promise.all([
+          fetchDisplayCategories(),
+          fetchDisplayProducts(),
+        ]);
+        if (!cancelled) {
+          setCategories(fetchedCategories);
+          setProducts(fetchedProducts);
+        }
       } catch (error) {
         console.error("Unable to load categories in header", error);
       }
@@ -180,6 +188,17 @@ const Header = () => {
     [categories]
   );
 
+  const searchSuggestions = useMemo(
+    () =>
+      getSearchSuggestions({
+        query: searchQuery,
+        products,
+        categories: visibleCategories,
+        limit: 6,
+      }),
+    [products, searchQuery, visibleCategories]
+  );
+
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
     const query = searchQuery.trim();
@@ -187,6 +206,16 @@ const Header = () => {
     setSearchQuery("");
     setSearchOpen(false);
     navigate(`/recherche?q=${encodeURIComponent(query)}`);
+  };
+
+  const chooseSearchSuggestion = (value: string, href?: string) => {
+    setSearchQuery("");
+    setSearchOpen(false);
+    if (href) {
+      navigate(href);
+      return;
+    }
+    navigate(`/recherche?q=${encodeURIComponent(value)}`);
   };
 
   const closeMenus = () => {
@@ -419,6 +448,24 @@ const Header = () => {
                   placeholder={t("nav.search")}
                   className="h-full w-full border-0 bg-transparent text-sm outline-none"
                 />
+                {searchSuggestions.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full z-[90] mt-2 border border-neutral-200 bg-white py-2 shadow-[0_18px_45px_rgba(0,0,0,0.12)]">
+                    {searchSuggestions.map((suggestion) => (
+                      <button
+                        key={`${suggestion.type}-${suggestion.value}`}
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => chooseSearchSuggestion(suggestion.value, suggestion.href)}
+                        className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm hover:bg-neutral-50"
+                      >
+                        <span className="font-semibold">{suggestion.label}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-neutral-500">
+                          {t(`search.type.${suggestion.type}`)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </form>
             )}
             <button
@@ -495,6 +542,23 @@ const Header = () => {
               className="h-full w-full border-0 bg-transparent text-sm outline-none"
             />
           </form>
+          {searchSuggestions.length > 0 && (
+            <div className="border-b border-neutral-200 px-5 py-2">
+              {searchSuggestions.slice(0, 4).map((suggestion) => (
+                <button
+                  key={`${suggestion.type}-${suggestion.value}`}
+                  type="button"
+                  onClick={() => chooseSearchSuggestion(suggestion.value, suggestion.href)}
+                  className="flex w-full items-center justify-between py-2 text-left text-sm"
+                >
+                  <span className="font-semibold">{suggestion.label}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-neutral-500">
+                    {t(`search.type.${suggestion.type}`)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
           <nav className="max-h-[calc(100vh-130px)] overflow-y-auto px-5 py-4">
             {[...PRIMARY_NAV, ...visibleCategories].map((item) => (
               <Link

@@ -1,11 +1,10 @@
+import { useLanguage } from "@/lib/i18n";
 import SimpleInfoPage from "./SimpleInfoPage";
 
-const Account = () => (
-  <SimpleInfoPage
-    title="Mon compte"
-    description="La gestion du compte client sera disponible ici (connexion, commandes, adresses et préférences)."
-  />
-);
+const Account = () => {
+  const { t } = useLanguage();
+
+  return <SimpleInfoPage title={t("info.account.title")} description={t("info.account.text")} />;
+};
 
 export default Account;
-

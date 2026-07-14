@@ -7,6 +7,12 @@ import BrandLoader from "@/components/BrandLoader";
 import { fetchDisplayCategories, fetchDisplayProducts } from "@/lib/prestashop/catalog";
 import type { CategoryDisplay, ProductDisplay } from "@/lib/prestashop/types";
 import { useLanguage } from "@/lib/i18n";
+import {
+  flattenCategories,
+  getSearchSuggestions,
+  normalizeSearchText,
+  scoreProduct,
+} from "@/lib/search";
 
 const sortOptions = [
   { value: "relevance", labelKey: "sort.relevance" },
@@ -15,27 +21,19 @@ const sortOptions = [
   { value: "name", labelKey: "sort.name" },
 ];
 
-const normalizeText = (value: string) =>
-  value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .replace(/&amp;/g, "&")
-    .replace(/[^a-z0-9&]+/g, " ")
-    .trim();
-
 const Search = () => {
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const query = searchParams.get("q") || "";
-  const normalizedQuery = normalizeText(query);
+  const normalizedQuery = normalizeSearchText(query);
   const [searchInput, setSearchInput] = useState(query);
   const [products, setProducts] = useState<ProductDisplay[]>([]);
   const [categories, setCategories] = useState<CategoryDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("relevance");
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
   useEffect(() => {
     setSearchInput(query);
@@ -81,61 +79,26 @@ const Search = () => {
 
   const categorySuggestions = useMemo(() => {
     if (!normalizedQuery) return [];
-    return categories
-      .flatMap((category) => [
-        { name: category.name, slug: category.slug },
-        ...(category.children || []),
-      ])
-      .filter((category, index, source) => source.findIndex((item) => item.slug === category.slug) === index)
-      .filter((category) => normalizeText(category.name).includes(normalizedQuery))
+    return flattenCategories(categories)
+      .filter((category) => normalizeSearchText(category.name).includes(normalizedQuery))
       .slice(0, 5);
   }, [categories, normalizedQuery]);
 
-  const scoredResults = useMemo(() => {
-    const words = normalizedQuery.split(" ").filter(Boolean);
+  const liveSuggestions = useMemo(
+    () =>
+      getSearchSuggestions({
+        query: searchInput,
+        products,
+        categories,
+        limit: 8,
+      }),
+    [categories, products, searchInput]
+  );
 
+  const scoredResults = useMemo(() => {
     return products
       .map((product) => {
-        const searchableParts = [
-          product.name,
-          product.shortDescription,
-          product.description,
-          product.collection,
-          product.dimensions || "",
-          product.weight || "",
-          ...product.categorySlugs.map((slug) => categoryNameBySlug.get(slug) || slug),
-          ...product.colors.map((color) => color.name),
-          ...product.variants.flatMap((variant) => [
-            variant.size || "",
-            variant.dimensions || "",
-            variant.extensibleDimensions || "",
-            variant.weight || "",
-            variant.volume || "",
-            variant.color?.name || "",
-          ]),
-          ...product.characteristics.flatMap((item) => [item.label, item.value]),
-        ];
-
-        const haystack = normalizeText(searchableParts.join(" "));
-        const name = normalizeText(product.name);
-        const collection = normalizeText(product.collection);
-        let score = 0;
-
-        if (!normalizedQuery) {
-          score = 1;
-        } else {
-          if (name === normalizedQuery) score += 120;
-          if (name.startsWith(normalizedQuery)) score += 80;
-          if (name.includes(normalizedQuery)) score += 55;
-          if (collection.includes(normalizedQuery)) score += 25;
-          if (haystack.includes(normalizedQuery)) score += 30;
-          for (const word of words) {
-            if (name.includes(word)) score += 20;
-            if (haystack.includes(word)) score += 8;
-          }
-        }
-
-        return { product, score };
+        return { product, score: scoreProduct(product, normalizedQuery, categoryNameBySlug) };
       })
       .filter(({ product, score }) => score > 0 && (!inStockOnly || (product.stock || 0) > 0));
   }, [categoryNameBySlug, inStockOnly, normalizedQuery, products]);
@@ -156,6 +119,17 @@ const Search = () => {
     const nextQuery = searchInput.trim();
     if (!nextQuery) return;
     navigate(`/recherche?q=${encodeURIComponent(nextQuery)}`);
+    setSuggestionsOpen(false);
+  };
+
+  const chooseSuggestion = (value: string, href?: string) => {
+    setSuggestionsOpen(false);
+    setSearchInput(value);
+    if (href) {
+      navigate(href);
+      return;
+    }
+    navigate(`/recherche?q=${encodeURIComponent(value)}`);
   };
 
   return (
@@ -178,10 +152,14 @@ const Search = () => {
           </p>
         </div>
 
-        <form onSubmit={submitSearch} className="flex min-h-12 w-full border border-border bg-white lg:max-w-xl">
+        <form onSubmit={submitSearch} className="relative flex min-h-12 w-full border border-border bg-white lg:max-w-xl">
           <input
             value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
+            onChange={(event) => {
+              setSearchInput(event.target.value);
+              setSuggestionsOpen(true);
+            }}
+            onFocus={() => setSuggestionsOpen(true)}
             placeholder={t("search.placeholder")}
             className="min-w-0 flex-1 px-4 text-sm outline-none"
           />
@@ -192,6 +170,24 @@ const Search = () => {
           >
             <SearchIcon className="h-5 w-5" />
           </button>
+          {suggestionsOpen && liveSuggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full z-50 mt-2 border border-border bg-white shadow-[0_18px_45px_rgba(0,0,0,0.12)]">
+              {liveSuggestions.map((suggestion) => (
+                <button
+                  key={`${suggestion.type}-${suggestion.value}`}
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => chooseSuggestion(suggestion.value, suggestion.href)}
+                  className="flex w-full items-center justify-between px-4 py-3 text-left text-sm hover:bg-accent"
+                >
+                  <span className="font-semibold">{suggestion.label}</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                    {t(`search.type.${suggestion.type}`)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </form>
       </div>
 

@@ -6,6 +6,7 @@ import { config } from "./config.js";
 import authRoutes from "./routes/auth.routes.js";
 import catalogRoutes from "./routes/catalog.routes.js";
 import productsRoutes from "./routes/products.routes.js";
+import { adminOrdersRouter, publicOrdersRouter } from "./routes/orders.routes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +26,9 @@ app.use("/images", express.static(path.join(__dirname, "../public/images")));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/catalog", catalogRoutes);
+app.use("/api/orders", publicOrdersRouter);
 app.use("/api/admin", productsRoutes);
+app.use("/api/admin/orders", adminOrdersRouter);
 
 // Health check
 app.get("/api/health", (_req, res) => {
@@ -47,7 +50,9 @@ const displayStartupInfo = (port: number) => {
     console.log(`     POST /api/auth/login`);
     console.log(`     GET  /api/catalog`);
     console.log(`     GET  /api/catalog/images/products/:productId/:imageId`);
+    console.log(`     POST /api/orders`);
     console.log(`     GET  /api/admin/products`);
+    console.log(`     GET  /api/admin/orders`);
     console.log(`     POST /api/admin/products`);
     console.log(`     PUT  /api/admin/products/:id`);
     console.log(`     DEL  /api/admin/products/:id`);

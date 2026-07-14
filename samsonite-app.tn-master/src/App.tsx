@@ -23,6 +23,7 @@ import Shipping from "./pages/Shipping";
 import Returns from "./pages/Returns";
 import Newsletter from "./pages/Newsletter";
 import DataError from "./pages/DataError";
+import ContactFaq from "./pages/ContactFaq";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -72,6 +73,7 @@ const App = () => {
                 <Route path="/compte" element={<Account />} />
                 <Route path="/livraison" element={<Shipping />} />
                 <Route path="/retours" element={<Returns />} />
+                <Route path="/contact-faq" element={<ContactFaq />} />
                 <Route path="/newsletter" element={<Newsletter />} />
                 <Route path="/erreur" element={<DataError />} />
                 <Route path="/config" element={<PrestashopConfig />} />

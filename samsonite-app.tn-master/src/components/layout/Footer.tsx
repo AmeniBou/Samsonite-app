@@ -1,13 +1,11 @@
 import { Link } from "react-router-dom";
-import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
+import { Facebook, Instagram } from "lucide-react";
 
 import { useLanguage } from "@/lib/i18n";
 
 const socialLinks = {
-  facebook: "https://www.facebook.com/samsonite.tn",
-  instagram: "https://www.instagram.com/samsonite.tn/",
-  youtube: "https://www.youtube.com/@Samsonite",
-  twitter: "https://x.com/Samsonite",
+  facebook: "https://www.facebook.com/profile.php?id=61590770759317",
+  instagram: "https://www.instagram.com/samsonite_tunisie/",
 };
 
 const Footer = () => {
@@ -57,8 +55,8 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/commande" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
-                  {t("footer.orderTracking")}
+                <Link to="/contact-faq" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
+                  {t("footer.contactFaq")}
                 </Link>
               </li>
               <li>
@@ -103,12 +101,6 @@ const Footer = () => {
               </a>
               <a href={socialLinks.instagram} target="_blank" rel="noreferrer" className="text-primary-foreground/70 transition-colors hover:text-primary-foreground">
                 <Instagram className="h-5 w-5" />
-              </a>
-              <a href={socialLinks.youtube} target="_blank" rel="noreferrer" className="text-primary-foreground/70 transition-colors hover:text-primary-foreground">
-                <Youtube className="h-5 w-5" />
-              </a>
-              <a href={socialLinks.twitter} target="_blank" rel="noreferrer" className="text-primary-foreground/70 transition-colors hover:text-primary-foreground">
-                <Twitter className="h-5 w-5" />
               </a>
             </div>
           </div>

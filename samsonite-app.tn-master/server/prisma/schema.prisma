@@ -48,6 +48,8 @@ model Product {
 
   categories ProductCategory[]
 
+  orderItems OrderItem[]
+
   createdAt DateTime @default(now())
 
   updatedAt DateTime @updatedAt
@@ -129,5 +131,75 @@ model ProductVariant {
   value String
 
   product Product @relation(fields:[productId], references:[id])
+
+}
+
+model Order {
+
+  id Int @id @default(autoincrement())
+
+  reference String @unique
+
+  status String @default("new")
+
+  customerFirstName String
+
+  customerLastName String
+
+  customerPhone String
+
+  customerEmail String
+
+  shippingAddress String
+
+  shippingCity String
+
+  shippingPostalCode String?
+
+  customerNotes String?
+
+  shippingMethod String @default("standard")
+
+  paymentMethod String @default("cash_on_delivery")
+
+  subtotal Decimal @db.Decimal(10,2)
+
+  shippingFee Decimal @db.Decimal(10,2)
+
+  total Decimal @db.Decimal(10,2)
+
+  items OrderItem[]
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+}
+
+model OrderItem {
+
+  id Int @id @default(autoincrement())
+
+  orderId Int
+
+  productId Int?
+
+  productName String
+
+  productSlug String?
+
+  productImage String?
+
+  selectedColor String?
+
+  quantity Int
+
+  unitPrice Decimal @db.Decimal(10,2)
+
+  lineTotal Decimal @db.Decimal(10,2)
+
+  order Order @relation(fields:[orderId], references:[id], onDelete: Cascade)
+
+  product Product? @relation(fields:[productId], references:[id])
 
 }

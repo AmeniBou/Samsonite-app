@@ -1,11 +1,23 @@
 import type { CartItem } from "@/lib/prestashop/types";
 
-const ORDERS_STORAGE_KEY = "samsonite_orders";
+const API_BASE = "/api";
+
+const getToken = (): string | null => localStorage.getItem("samsonite_admin_token");
+
+const authHeaders = (): HeadersInit => {
+  const token = getToken();
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
 
 export type OrderStatus = "new" | "confirmed" | "fulfilled" | "cancelled";
+export type ShippingMethod = "standard" | "express" | "pickup";
+export type PaymentMethod = "cash_on_delivery" | "bank_transfer";
 
 export interface StoredOrderItem {
-  productId: number;
+  productId: number | null;
   slug: string;
   name: string;
   image: string;
@@ -17,8 +29,11 @@ export interface StoredOrderItem {
 
 export interface StoredOrder {
   id: string;
+  databaseId?: number;
   createdAt: string;
   status: OrderStatus;
+  shippingMethod: ShippingMethod;
+  paymentMethod: PaymentMethod;
   customer: {
     firstName: string;
     lastName: string;
@@ -40,74 +55,65 @@ export interface StoredOrder {
 export interface CreateOrderInput {
   customer: StoredOrder["customer"];
   items: CartItem[];
-  subtotal: number;
-  shipping: number;
+  shippingMethod: ShippingMethod;
+  paymentMethod: PaymentMethod;
 }
 
-const readOrders = (): StoredOrder[] => {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
-
-const writeOrders = (orders: StoredOrder[]) => {
-  localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
-};
-
-export const listOrders = () =>
-  readOrders().sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-
-export const getOrder = (id: string) => readOrders().find((order) => order.id === id) || null;
-
-export const updateOrderStatus = (id: string, status: OrderStatus) => {
-  const orders = readOrders();
-  const nextOrders = orders.map((order) => (order.id === id ? { ...order, status } : order));
-  writeOrders(nextOrders);
-  return nextOrders.find((order) => order.id === id) || null;
-};
-
-export const createStoredOrder = ({
+export const createStoredOrder = async ({
   customer,
   items,
-  subtotal,
-  shipping,
+  shippingMethod,
+  paymentMethod,
 }: CreateOrderInput) => {
-  const now = new Date();
-  const id = `CMD-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(
-    now.getDate()
-  ).padStart(2, "0")}-${String(now.getTime()).slice(-6)}`;
+  const res = await fetch(`${API_BASE}/orders`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      customer,
+      shippingMethod,
+      paymentMethod,
+      items: items.map((item) => ({
+        productId: item.product.id,
+        slug: item.product.slug,
+        name: item.product.name,
+        image: item.product.images[0] || "/placeholder.svg",
+        selectedColor: item.selectedColor,
+        quantity: item.quantity,
+        unitPrice: item.product.price,
+      })),
+    }),
+  });
 
-  const order: StoredOrder = {
-    id,
-    createdAt: now.toISOString(),
-    status: "new",
-    customer,
-    items: items.map((item) => ({
-      productId: item.product.id,
-      slug: item.product.slug,
-      name: item.product.name,
-      image: item.product.images[0] || "/placeholder.svg",
-      selectedColor: item.selectedColor,
-      quantity: item.quantity,
-      unitPrice: item.product.price,
-      total: item.product.price * item.quantity,
-    })),
-    totals: {
-      subtotal,
-      shipping,
-      total: subtotal + shipping,
-    },
-  };
+  const data = await res.json();
+  if (!res.ok || !data.order) {
+    throw new Error(data.error || "Impossible de creer la commande");
+  }
+  return data.order as StoredOrder;
+};
 
-  writeOrders([order, ...readOrders()]);
-  return order;
+export const getOrder = async (id: string) => {
+  const res = await fetch(`${API_BASE}/orders/${encodeURIComponent(id)}`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  return (data.order || null) as StoredOrder | null;
+};
+
+export const listOrders = async () => {
+  const res = await fetch(`${API_BASE}/admin/orders`, { headers: authHeaders() });
+  if (!res.ok) throw new Error("Impossible de charger les commandes");
+  const data = await res.json();
+  return (data.orders || []) as StoredOrder[];
+};
+
+export const updateOrderStatus = async (id: string, status: OrderStatus) => {
+  const res = await fetch(`${API_BASE}/admin/orders/${encodeURIComponent(id)}/status`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify({ status }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.order) {
+    throw new Error(data.error || "Impossible de modifier le statut");
+  }
+  return data.order as StoredOrder;
 };

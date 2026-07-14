@@ -36,7 +36,7 @@ const Home = () => {
       } catch (error) {
         console.error("Unable to load Prestashop data on home page", error);
         if (!cancelled) {
-          setDataError(error instanceof Error ? error.message : "Erreur Prestashop");
+          setDataError(error instanceof Error ? error.message : t("error.prestashopLoad"));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -54,7 +54,7 @@ const Home = () => {
       <Navigate
         to="/erreur"
         replace
-        state={{ message: `Erreur de chargement Prestashop: ${dataError}` }}
+        state={{ message: `${t("error.prestashopLoad")}: ${dataError}` }}
       />
     );
   }
