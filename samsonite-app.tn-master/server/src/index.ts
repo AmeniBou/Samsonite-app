@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth.routes.js";
 import catalogRoutes from "./routes/catalog.routes.js";
 import productsRoutes from "./routes/products.routes.js";
 import { adminOrdersRouter, publicOrdersRouter } from "./routes/orders.routes.js";
+import { adminContactRouter, publicContactRouter } from "./routes/contact.routes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,6 +20,7 @@ const app = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "25mb" }));
 app.use("/images", express.static(path.join(__dirname, "../public/images")));
+app.use("/attachments", express.static(path.join(__dirname, "../public/attachments")));
 
 // ---------------------------------------------------------------------------
 // Routes
@@ -27,8 +29,10 @@ app.use("/images", express.static(path.join(__dirname, "../public/images")));
 app.use("/api/auth", authRoutes);
 app.use("/api/catalog", catalogRoutes);
 app.use("/api/orders", publicOrdersRouter);
+app.use("/api/contact", publicContactRouter);
 app.use("/api/admin", productsRoutes);
 app.use("/api/admin/orders", adminOrdersRouter);
+app.use("/api/admin/contact-messages", adminContactRouter);
 
 // Health check
 app.get("/api/health", (_req, res) => {
@@ -51,8 +55,10 @@ const displayStartupInfo = (port: number) => {
     console.log(`     GET  /api/catalog`);
     console.log(`     GET  /api/catalog/images/products/:productId/:imageId`);
     console.log(`     POST /api/orders`);
+    console.log(`     POST /api/contact`);
     console.log(`     GET  /api/admin/products`);
     console.log(`     GET  /api/admin/orders`);
+    console.log(`     GET  /api/admin/contact-messages`);
     console.log(`     POST /api/admin/products`);
     console.log(`     PUT  /api/admin/products/:id`);
     console.log(`     DEL  /api/admin/products/:id`);

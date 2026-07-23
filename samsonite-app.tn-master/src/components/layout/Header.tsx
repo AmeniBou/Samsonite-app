@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
@@ -69,56 +69,6 @@ const FALLBACK_CATEGORIES: CategoryDisplay[] = [
   { id: 5, name: "Promos", slug: "promos" },
 ];
 
-const EXPLORER_GROUPS: MenuGroup[] = [
-  {
-    title: "Valises",
-    slug: "valises",
-    links: [
-      { name: "Rigides", slug: "rigides" },
-      { name: "Souples", slug: "souples" },
-      { name: "Bagages a main", slug: "bagages-a-main" },
-      { name: "Ensembles de valises", slug: "ensembles-de-valises" },
-      { name: "Valise enfant", slug: "valise-enfant" },
-    ],
-  },
-  {
-    title: "Sacs",
-    slug: "sacs",
-    links: [
-      { name: "Sacs a dos", slug: "sac-a-dos" },
-      { name: "Sac ordinateur", slug: "sac-ordinateur" },
-    ],
-  },
-  {
-    title: "Business",
-    slug: "business",
-    links: [
-      { name: "Pilot Case", slug: "pilot-case" },
-      { name: "Portefeuille", slug: "portefeuille" },
-    ],
-  },
-  {
-    title: "Accessoires",
-    slug: "accessoires",
-    links: [
-      { name: "Cadenas", slug: "cadenas" },
-      { name: "Sangles", slug: "sangles" },
-      { name: "Housse de valise", slug: "housse-de-valise" },
-      { name: "Coussin de voyage", slug: "coussin-de-voyage" },
-      { name: "Parapluie", slug: "parapluie" },
-      { name: "Masques", slug: "masques" },
-    ],
-  },
-  {
-    title: "Disney & Enfant",
-    slug: "disney-amp-enfant",
-    links: [
-      { name: "Disney & Enfant / Valise Disney", slug: "disney-amp-enfant" },
-      { name: "Sacs enfants & scolaire", slug: "sac-scolaire" },
-    ],
-  },
-];
-
 const Header = () => {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [valisesOpen, setValisesOpen] = useState(false);
@@ -157,7 +107,10 @@ const Header = () => {
     "pilot-case": "Pilot Case",
   };
 
-  const getNavLabel = (item: NavItem | CategoryDisplay) => labelBySlug[item.slug] || item.name;
+  const getNavLabel = (item: NavItem | CategoryDisplay) => {
+    if ("id" in item) return item.name;
+    return labelBySlug[item.slug] || item.name;
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -186,6 +139,19 @@ const Header = () => {
   const visibleCategories = useMemo(
     () => (categories.length ? categories : FALLBACK_CATEGORIES),
     [categories]
+  );
+
+  const explorerGroups = useMemo<MenuGroup[]>(
+    () =>
+      visibleCategories.map((category) => ({
+        title: category.name,
+        slug: category.slug,
+        links: (category.children || []).map((child) => ({
+          name: child.name,
+          slug: child.slug,
+        })),
+      })),
+    [visibleCategories]
   );
 
   const searchSuggestions = useMemo(
@@ -503,14 +469,14 @@ const Header = () => {
           <div className="mx-auto max-w-[1760px] px-10 py-9">
             <p className="mb-6 text-xs font-bold uppercase tracking-[0.22em] text-neutral-500">{t("nav.categories")}</p>
             <div className="grid grid-cols-5 gap-10">
-              {EXPLORER_GROUPS.map((group) => (
+              {explorerGroups.map((group) => (
                 <div key={group.slug} className="space-y-4">
                   <Link
                     to={`/categorie/${group.slug}`}
                     onClick={closeMenus}
                     className="block text-lg font-black uppercase leading-tight hover:text-[#ff263d]"
                   >
-                    {labelBySlug[group.slug] || group.title}
+                    {group.title}
                   </Link>
                   <div className="space-y-3 border-t border-neutral-200 pt-4">
                     {group.links.map((item) => (
@@ -520,7 +486,7 @@ const Header = () => {
                         onClick={closeMenus}
                         className="block text-sm font-semibold text-neutral-600 hover:text-black"
                       >
-                        {getNavLabel(item)}
+                        {item.name}
                       </Link>
                     ))}
                   </div>

@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+﻿import { Router, Request, Response } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import {
   createOrder,
@@ -36,9 +36,9 @@ publicOrdersRouter.get("/:reference", async (req: Request, res: Response): Promi
 
 adminOrdersRouter.use(requireAuth);
 
-adminOrdersRouter.get("/", async (_req: Request, res: Response): Promise<void> => {
+adminOrdersRouter.get("/", async (req: Request, res: Response): Promise<void> => {
   try {
-    const orders = await listOrders();
+    const orders = await listOrders(String(req.query.reference || ""));
     res.json({ orders, total: orders.length });
   } catch (err) {
     const detail = err instanceof Error ? err.message : "Erreur inconnue";

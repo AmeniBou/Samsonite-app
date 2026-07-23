@@ -1,4 +1,4 @@
-import { getPrestashopConfig, isPrestashopConfigured } from "./config";
+﻿import { getPrestashopConfig, isPrestashopConfigured } from "./config";
 import type {
   PSCategory,
   PSCombination,
@@ -221,8 +221,17 @@ let catalogCache:
   | null = null;
 let catalogInFlightPromise: Promise<PSCatalogData> | null = null;
 
+export const clearCatalogCache = () => {
+  catalogCache = null;
+  catalogInFlightPromise = null;
+};
+
+if (typeof window !== "undefined") {
+  window.addEventListener("samsonite:catalog-updated", clearCatalogCache);
+}
+
 const fetchAppCatalog = async (): Promise<PSCatalogData> => {
-  const response = await fetch("/api/catalog");
+  const response = await fetch("/api/catalog", { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Backend catalog error (${response.status})`);
   }

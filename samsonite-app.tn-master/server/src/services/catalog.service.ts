@@ -8,6 +8,22 @@ const normalizeSlug = (value: string): string =>
     .replace(/^-+|-+$/g, "");
 
 const buildLangField = (value: string) => [{ id: "2", value: value || "" }];
+const isAvailabilityInStock = (availability?: string | null) =>
+  /instock|in_stock|available|disponible|active/i.test(availability || "");
+
+const isAvailabilityInactive = (availability?: string | null) =>
+  /inactive|disabled|desactive/i.test(availability || "");
+
+const isAvailabilityOutOfStock = (availability?: string | null) =>
+  /outofstock|out_of_stock|rupture|unavailable/i.test(availability || "");
+
+const getCatalogQuantity = (availability?: string | null, quantity?: number | null) => {
+  if (typeof quantity === "number" && quantity > 0) return quantity;
+  if (isAvailabilityInStock(availability)) return 1;
+  return 0;
+};
+
+const isRemoteUrl = (value: string) => /^https?:\/\//i.test(value);
 
 const COLOR_HEX_BY_NAME: Record<string, string> = {
   blanc: "#f5f5f0",
@@ -46,9 +62,10 @@ const mapCategoryToRaw = (category: {
   id: number;
   name: string;
   slug?: string | null;
+  parentId?: number | null;
 }) => ({
   id: category.id,
-  id_parent: 2,
+  id_parent: category.parentId ?? 2,
   name: buildLangField(category.name),
   description: buildLangField(""),
   link_rewrite: buildLangField(category.slug || normalizeSlug(category.name)),
@@ -63,6 +80,7 @@ const mapProductToRaw = (product: {
   price: { toString(): string };
   sku?: string | null;
   availability?: string | null;
+  brand?: { id: number; name: string } | null;
   url?: string | null;
   weight?: string | null;
   width?: string | null;
@@ -71,10 +89,11 @@ const mapProductToRaw = (product: {
   quantity?: number | null;
   images: Array<{ id: number; imageUrl: string }>;
   categories: Array<{ category: { id: number; slug?: string | null } }>;
-  variants: Array<{ id: number; groupName: string; value: string }>;
+  variants: Array<{ id: number; groupName: string; value: string; colorName?: string | null; colorHex?: string | null; size?: string | null; price?: { toString(): string; toNumber?: () => number } | null; stock?: number | null; images?: string[] }>;
   features: Array<{ id: number; featureName: string; featureValue: string }>;
 }) => {
   const imageIds = product.images.map((image) => image.id).filter(Boolean);
+  const quantity = getCatalogQuantity(product.availability, product.quantity);
   const categoryAssociations = product.categories
     .map((relation) => ({ id: relation.category.id }))
     .filter(Boolean);
@@ -89,14 +108,15 @@ const mapProductToRaw = (product: {
     ),
     price: product.price.toString(),
     reference: product.sku || "",
-    active: product.availability === "inactive" ? "0" : "1",
+    active: isAvailabilityInactive(product.availability) ? "0" : "1",
+    manufacturer_name: product.brand?.name || "Samsonite",
     id_category_default: product.categories[0]?.category.id ?? 0,
     id_default_image: imageIds.length > 0 ? imageIds[0] : undefined,
     weight: product.weight || "",
     width: product.width || "",
     height: product.height || "",
     depth: product.depth || "",
-    quantity: product.quantity ?? 0,
+    quantity,
     associations: {
       categories: categoryAssociations,
       images: imageIds.map((id) => ({ id, imageUrl: product.images.find((img) => img.id === id)?.imageUrl })),
@@ -117,6 +137,7 @@ export const getPublicCatalog = async () => {
       include: {
         images: { orderBy: { position: "asc" } },
         categories: { include: { category: true } },
+        brand: true,
         variants: { orderBy: { id: "asc" } },
         features: { orderBy: { id: "asc" } },
       },
@@ -153,11 +174,11 @@ export const getPublicCatalog = async () => {
     combinations: variants.map(({ product, variant }) => ({
       id: variant.id,
       id_product: product.id,
-      price: "0",
+      price: variant.price?.toString() || "0",
       default_on: "0",
       associations: {
         product_option_values: [{ id: variant.id }],
-        images: [],
+        images: (variant.images || []).map((imageUrl, index) => ({ id: variant.id * 1000 + index + 1, imageUrl })),
       },
     })),
     productOptions: Array.from(groupNameById.entries()).map(([groupName, id]) => ({
@@ -175,7 +196,7 @@ export const getPublicCatalog = async () => {
       id: variant.id,
       id_product: product.id,
       id_product_attribute: variant.id,
-      quantity: product.quantity ?? 0,
+      quantity: variant.stock ?? getCatalogQuantity(product.availability, product.quantity),
     })),
     features: products.flatMap((product) =>
       product.features.map((feature) => ({
@@ -193,11 +214,15 @@ export const getPublicCatalog = async () => {
   };
 };
 
+export const getBrands = async () => {
+  return prisma.brand.findMany({ orderBy: { name: "asc" } });
+};
+
 export const getCategories = async () => {
   const categories = await prisma.category.findMany({ orderBy: { name: "asc" } });
   return categories.map((category) => ({
     id: category.id,
-    id_parent: 2,
+    id_parent: category.parentId ?? 2,
     name: buildLangField(category.name),
     description: buildLangField(""),
     link_rewrite: buildLangField(category.slug || normalizeSlug(category.name)),
@@ -205,16 +230,155 @@ export const getCategories = async () => {
   }));
 };
 
+export const getAdminCategories = async () => {
+  const categories = await prisma.category.findMany({
+    orderBy: [{ parentId: "asc" }, { name: "asc" }],
+    include: {
+      parent: { select: { id: true, name: true } },
+      _count: { select: { products: true, children: true } },
+    },
+  });
+
+  return categories.map((category) => ({
+    id: category.id,
+    name: category.name,
+    slug: category.slug || normalizeSlug(category.name),
+    parentId: category.parentId ?? 0,
+    parentName: category.parent?.name || "",
+    productCount: category._count.products,
+    childCount: category._count.children,
+  }));
+};
+
+const normalizeCategoryParentId = (parentId?: number | null) => {
+  if (!parentId || parentId <= 0) return null;
+  return parentId;
+};
+
+const ensureCategoryParent = async (parentId: number | null) => {
+  if (!parentId) return null;
+  const parent = await prisma.category.findUnique({ where: { id: parentId } });
+  if (!parent) {
+    throw new Error(`Categorie parente introuvable: ${parentId}`);
+  }
+  if (parent.parentId) {
+    throw new Error("Une sous-categorie ne peut pas devenir categorie parente");
+  }
+  return parent;
+};
+
+const wouldCreateCategoryCycle = async (categoryId: number, parentId: number | null) => {
+  let currentParentId = parentId;
+  while (currentParentId) {
+    if (currentParentId === categoryId) return true;
+    const current = await prisma.category.findUnique({
+      where: { id: currentParentId },
+      select: { parentId: true },
+    });
+    currentParentId = current?.parentId ?? null;
+  }
+  return false;
+};
+
+export const createCategory = async (fields: {
+  name?: string;
+  slug?: string;
+  parentId?: number | null;
+}) => {
+  try {
+    const name = fields.name?.trim();
+    if (!name) return { success: false, error: "Le nom de la categorie est requis" };
+
+    const parentId = normalizeCategoryParentId(fields.parentId);
+    await ensureCategoryParent(parentId);
+
+    const category = await prisma.category.create({
+      data: {
+        name,
+        slug: fields.slug?.trim() || normalizeSlug(name),
+        parentId,
+      },
+    });
+
+    return { success: true, id: category.id };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erreur inconnue",
+    };
+  }
+};
+
+export const updateCategory = async (
+  id: number,
+  fields: Partial<{ name: string; slug: string; parentId: number | null }>
+) => {
+  try {
+    const existing = await prisma.category.findUnique({ where: { id } });
+    if (!existing) return { success: false, error: "Categorie introuvable" };
+
+    const data: { name?: string; slug?: string; parentId?: number | null } = {};
+    if (fields.name !== undefined) {
+      const name = fields.name.trim();
+      if (!name) return { success: false, error: "Le nom de la categorie est requis" };
+      data.name = name;
+    }
+    if (fields.slug !== undefined) {
+      data.slug = fields.slug.trim() || normalizeSlug(data.name || existing.name);
+    }
+    if (fields.parentId !== undefined) {
+      const parentId = normalizeCategoryParentId(fields.parentId);
+      await ensureCategoryParent(parentId);
+      if (await wouldCreateCategoryCycle(id, parentId)) {
+        return { success: false, error: "Une categorie ne peut pas etre son propre parent" };
+      }
+      data.parentId = parentId;
+    }
+
+    await prisma.category.update({ where: { id }, data });
+    return { success: true };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erreur inconnue",
+    };
+  }
+};
+
+export const deleteCategory = async (id: number) => {
+  try {
+    const category = await prisma.category.findUnique({
+      where: { id },
+      include: { _count: { select: { products: true, children: true } } },
+    });
+    if (!category) return { success: false, error: "Categorie introuvable" };
+    if (category._count.products > 0 || category._count.children > 0) {
+      return {
+        success: false,
+        error: "Impossible de supprimer une categorie utilisee par des produits ou des sous-categories",
+      };
+    }
+
+    await prisma.category.delete({ where: { id } });
+    return { success: true };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erreur inconnue",
+    };
+  }
+};
 const mapAdminProduct = (product: {
   id: number;
   name: string;
   sku?: string | null;
   price: { toNumber(): number; toString(): string };
   availability?: string | null;
+  brand?: { id: number; name: string } | null;
   category: { id: number; name: string } | null;
   images: Array<{ id: number; imageUrl: string }>;
   features: Array<{ featureName: string; featureValue: string }>;
-  variants: Array<{ groupName: string; value: string }>;
+  variants: Array<{ groupName: string; value: string; colorName?: string | null; colorHex?: string | null; size?: string | null; price?: { toNumber?: () => number; toString(): string } | null; stock?: number | null; images?: string[] }>;
   description?: string | null;
   quantity?: number | null;
   weight?: string | null;
@@ -222,26 +386,37 @@ const mapAdminProduct = (product: {
   height?: string | null;
   depth?: string | null;
 }) => {
-  const imageId = product.images[0]?.id ?? null;
-  const stock = product.quantity ?? 0;
-  const variants = product.variants.map((variant, index) => ({
-    colorName: variant.groupName || undefined,
-    colorHex: undefined,
-    size: variant.value || undefined,
-    price: Number(product.price) || undefined,
-    stock: 0,
-    images: [],
-  }));
+  const mainImage = product.images[0] ?? null;
+  const imageId = mainImage?.id ?? null;
+  const stock = getCatalogQuantity(product.availability, product.quantity);
+  const variants = product.variants.map((variant) => {
+    const group = normalizeLabel(variant.groupName);
+    const isColor = /couleur|color/.test(group);
+    const isSize = /taille|size/.test(group);
+    const colorName = variant.colorName || (isColor ? variant.value : undefined);
+    const size = variant.size || (isSize ? variant.value : !isColor ? variant.value : undefined);
+    return {
+      colorName,
+      colorHex: variant.colorHex || (colorName ? getColorHex(colorName) : undefined),
+      size,
+      price: variant.price ? Number(variant.price) : Number(product.price) || undefined,
+      stock: variant.stock ?? stock,
+      images: variant.images || [],
+    };
+  });
 
   return {
     id: product.id,
     name: product.name,
     reference: product.sku || "",
     price: Number(product.price) || 0,
-    active: product.availability !== "inactive",
+    active: !isAvailabilityInactive(product.availability),
+    brandId: product.brand?.id ?? 0,
+    brandName: product.brand?.name ?? "Sans marque",
     categoryId: product.category?.id ?? 0,
     categoryName: product.category?.name ?? "Sans catégorie",
     imageId,
+    imageUrl: mainImage?.imageUrl ?? null,
     stock,
     hasVariants: variants.length > 0,
     description: product.description || "",
@@ -252,7 +427,7 @@ const mapAdminProduct = (product: {
     depth: product.depth || "",
     onSale: false,
     onlineOnly: false,
-    quantity: product.quantity ?? 0,
+    quantity: stock,
     volume: undefined,
     colorName: variants[0]?.colorName,
     colorHex: variants[0]?.colorHex,
@@ -271,6 +446,7 @@ export const getMappedAdminProducts = async () => {
     include: {
       images: { orderBy: { position: "asc" } },
       categories: { include: { category: true } },
+      brand: true,
       features: true,
       variants: true,
     },
@@ -290,6 +466,7 @@ export const getMappedAdminProduct = async (id: number) => {
     include: {
       images: { orderBy: { position: "asc" } },
       categories: { include: { category: true } },
+      brand: true,
       features: true,
       variants: true,
     },
@@ -301,6 +478,15 @@ export const getMappedAdminProduct = async (id: number) => {
     ...product,
     category: product.categories[0]?.category ?? null,
   });
+};
+
+const ensureBrand = async (brandId?: number) => {
+  if (!brandId) return null;
+  const brand = await prisma.brand.findUnique({ where: { id: brandId } });
+  if (!brand) {
+    throw new Error(`Marque introuvable: ${brandId}`);
+  }
+  return brand;
 };
 
 const ensureCategory = async (categoryId: number) => {
@@ -349,25 +535,43 @@ const createOrUpdateFeatures = async (
 
 const createOrUpdateVariants = async (
   productId: number,
-  variants: Array<{ colorName?: string; colorHex?: string; size?: string; price?: string; stock?: string; imagesText?: string }>
+  variants: Array<{ colorName?: string; colorHex?: string; size?: string; price?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>
 ) => {
-  if (!variants.length) return;
   await prisma.productVariant.deleteMany({ where: { productId } });
-  await prisma.productVariant.createMany({
-    data: variants.map((variant) => ({
-      productId,
-      groupName: variant.colorName || variant.size || "",
-      value: variant.size || variant.colorName || "",
-    })),
-  });
+  const data = variants
+    .map((variant) => {
+      const colorName = variant.colorName?.trim() || undefined;
+      const size = variant.size?.trim() || undefined;
+      const images = variant.images || variant.imagesText
+        ?.split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean) || [];
+      if (!colorName && !size && variant.price === undefined && variant.stock === undefined && images.length === 0) {
+        return null;
+      }
+      return {
+        productId,
+        groupName: colorName ? "Couleur" : size ? "Taille" : "Variante",
+        value: colorName || size || "Variante",
+        colorName,
+        colorHex: variant.colorHex?.trim() || undefined,
+        size,
+        price: variant.price !== undefined && variant.price !== "" ? Number(variant.price) : undefined,
+        stock: variant.stock !== undefined && variant.stock !== "" ? Math.max(0, Math.floor(Number(variant.stock))) : undefined,
+        images,
+      };
+    })
+    .filter((variant): variant is NonNullable<typeof variant> => Boolean(variant));
+  if (!data.length) return;
+  await prisma.productVariant.createMany({ data });
 };
-
 export const createProduct = async (fields: {
   name: string;
   description?: string;
   descriptionShort?: string;
   price: number;
   categoryId: number;
+  brandId?: number;
   active?: boolean;
   reference?: string;
   weight?: string | number;
@@ -379,9 +583,11 @@ export const createProduct = async (fields: {
   quantity?: number;
   images?: string[];
   features?: Array<{ label: string; value: string }>;
+  variants?: Array<{ colorName?: string; colorHex?: string; size?: string; price?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
 }) => {
   try {
     const category = await ensureCategory(fields.categoryId);
+    const brand = await ensureBrand(fields.brandId);
     const maxScraped = await prisma.product.aggregate({ _max: { scrapedId: true } });
     const nextScrapedId = (maxScraped._max.scrapedId ?? 0) + 1;
 
@@ -400,6 +606,7 @@ export const createProduct = async (fields: {
         height: fields.height?.toString() || "",
         depth: fields.depth?.toString() || "",
         quantity: fields.quantity ?? 0,
+        brandId: brand?.id,
         categories: {
           create: { categoryId: category.id },
         },
@@ -408,6 +615,7 @@ export const createProduct = async (fields: {
 
     await createOrUpdateImages(product.id, fields.images || []);
     await createOrUpdateFeatures(product.id, fields.features || []);
+    await createOrUpdateVariants(product.id, fields.variants || []);
 
     return { success: true, id: product.id };
   } catch (err) {
@@ -436,7 +644,9 @@ export const updateProduct = async (
     quantity: number;
     images: string[];
     features: Array<{ label: string; value: string }>;
+    variants: Array<{ colorName?: string; colorHex?: string; size?: string; price?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
     categoryId: number;
+    brandId: number;
   }>
 ) => {
   try {
@@ -456,6 +666,10 @@ export const updateProduct = async (
     if (fields.depth !== undefined) data.depth = fields.depth.toString();
     if (fields.quantity !== undefined) data.quantity = fields.quantity;
     if (fields.active !== undefined) data.availability = fields.active ? "active" : "inactive";
+    if (fields.brandId !== undefined) {
+      const brand = await ensureBrand(fields.brandId);
+      data.brandId = brand?.id ?? null;
+    }
 
     await prisma.product.update({ where: { id }, data });
 
@@ -470,6 +684,10 @@ export const updateProduct = async (
 
     if (fields.features) {
       await createOrUpdateFeatures(id, fields.features);
+    }
+
+    if (fields.variants) {
+      await createOrUpdateVariants(id, fields.variants);
     }
 
     return { success: true };
@@ -503,6 +721,7 @@ export const proxyProductImage = async (
 ): Promise<{ buffer: Buffer; contentType: string } | null> => {
   const image = await prisma.productImage.findUnique({ where: { id: imageId } });
   if (!image || image.productId !== productId) return null;
+  if (!isRemoteUrl(image.imageUrl)) return null;
 
   try {
     const response = await fetch(image.imageUrl, {

@@ -12,6 +12,11 @@ const authHeaders = (): HeadersInit => {
     };
 };
 
+const notifyCatalogUpdated = () => {
+    if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("samsonite:catalog-updated"));
+    }
+};
 // ---------------------------------------------------------------------------
 // Products
 // ---------------------------------------------------------------------------
@@ -22,9 +27,12 @@ export interface AdminProduct {
     reference: string;
     price: number;
     active: boolean;
+    brandId: number;
+    brandName: string;
     categoryId: number;
     categoryName: string;
     imageId: number | null;
+    imageUrl?: string | null;
     stock: number;
     hasVariants: boolean;
     description?: string;
@@ -73,6 +81,7 @@ export const createProduct = async (product: {
     descriptionShort?: string;
     price: number;
     categoryId: number;
+    brandId: number;
     active?: boolean;
     reference?: string;
     weight?: string | number;
@@ -91,7 +100,9 @@ export const createProduct = async (product: {
         headers: authHeaders(),
         body: JSON.stringify(product),
     });
-    return res.json();
+    const result = await res.json();
+    if (result.success) notifyCatalogUpdated();
+    return result;
 };
 
 export const updateProduct = async (
@@ -104,6 +115,7 @@ export const updateProduct = async (
         active: boolean;
         reference: string;
         categoryId: number;
+        brandId: number;
         weight: string | number;
         width: string | number;
         height: string | number;
@@ -121,7 +133,9 @@ export const updateProduct = async (
         headers: authHeaders(),
         body: JSON.stringify(fields),
     });
-    return res.json();
+    const result = await res.json();
+    if (result.success) notifyCatalogUpdated();
+    return result;
 };
 
 export const uploadAdminImages = async (
@@ -156,7 +170,9 @@ export const deleteProduct = async (id: number): Promise<{ success: boolean; err
         method: "DELETE",
         headers: authHeaders(),
     });
-    return res.json();
+    const result = await res.json();
+    if (result.success) notifyCatalogUpdated();
+    return result;
 };
 
 // ---------------------------------------------------------------------------
@@ -166,12 +182,68 @@ export const deleteProduct = async (id: number): Promise<{ success: boolean; err
 export interface AdminCategory {
     id: number;
     name: string;
+    slug?: string;
     parentId: number;
+    parentName?: string;
+    productCount?: number;
+    childCount?: number;
 }
+
+export interface AdminBrand {
+    id: number;
+    name: string;
+}
+
+export const fetchAdminBrands = async (): Promise<AdminBrand[]> => {
+    const res = await fetch(`${API_BASE}/admin/brands`, { headers: authHeaders() });
+    if (!res.ok) throw new Error("Erreur chargement marques");
+    const data = await res.json();
+    return data.brands;
+};
 
 export const fetchAdminCategories = async (): Promise<AdminCategory[]> => {
     const res = await fetch(`${API_BASE}/admin/categories`, { headers: authHeaders() });
     if (!res.ok) throw new Error("Erreur chargement catégories");
     const data = await res.json();
     return data.categories;
+};
+
+
+export const createCategory = async (category: {
+    name: string;
+    slug?: string;
+    parentId?: number | null;
+}): Promise<{ success: boolean; id?: number; error?: string }> => {
+    const res = await fetch(`${API_BASE}/admin/categories`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(category),
+    });
+    const result = await res.json();
+    if (result.success) notifyCatalogUpdated();
+    return result;
+};
+
+export const updateCategory = async (
+    id: number,
+    fields: Partial<{ name: string; slug: string; parentId: number | null }>
+): Promise<{ success: boolean; error?: string }> => {
+    const res = await fetch(`${API_BASE}/admin/categories/${id}`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify(fields),
+    });
+    const result = await res.json();
+    if (result.success) notifyCatalogUpdated();
+    return result;
+};
+
+export const deleteCategory = async (id: number): Promise<{ success: boolean; error?: string }> => {
+    const res = await fetch(`${API_BASE}/admin/categories/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+    });
+    const result = await res.json();
+    if (result.success) notifyCatalogUpdated();
+    return result;
 };

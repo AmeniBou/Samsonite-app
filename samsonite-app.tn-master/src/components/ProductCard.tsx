@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
 
 import type { ProductDisplay } from "@/lib/prestashop/types";
@@ -50,6 +50,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
       </div>
 
       <div className="mt-4 space-y-2">
+        {product.brandName && (
+          <span className="inline-flex w-fit rounded-full border border-border bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground">
+            {product.brandName}
+          </span>
+        )}
         <p className="line-clamp-2 text-sm font-black uppercase leading-tight tracking-wide text-foreground">
           {product.name}
         </p>

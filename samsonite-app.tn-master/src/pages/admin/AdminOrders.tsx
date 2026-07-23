@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
+  ChevronDown,
+  ChevronUp,
   Download,
   Eye,
+  Filter,
   Mail,
   MapPin,
   PackageCheck,
@@ -61,24 +64,32 @@ const formatOrderDate = (date: string) =>
   }).format(new Date(date));
 
 const csvEscape = (value: string | number | null | undefined) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+const htmlEscape = (value: string | number | null | undefined) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState<StoredOrder[]>([]);
   const [search, setSearch] = useState("");
+  const [referenceSearch, setReferenceSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [shippingFilter, setShippingFilter] = useState<ShippingFilter>("all");
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("dateDesc");
   const [selectedOrder, setSelectedOrder] = useState<StoredOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingReference, setUpdatingReference] = useState<string | null>(null);
 
-  const loadOrders = async () => {
+  const loadOrders = async (reference = referenceSearch) => {
     try {
       setLoading(true);
       setError("");
-      setOrders(await listOrders());
+      setOrders(await listOrders(reference));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Impossible de charger les commandes");
     } finally {
@@ -98,7 +109,6 @@ const AdminOrders = () => {
       total: orders.length,
       newOrders: orders.filter((order) => order.status === "new").length,
       confirmed: orders.filter((order) => order.status === "confirmed").length,
-      revenue: activeOrders.reduce((sum, order) => sum + order.totals.total, 0),
       today: orders.filter((order) => new Date(order.createdAt).toDateString() === today).length,
     };
   }, [orders]);
@@ -146,14 +156,109 @@ const AdminOrders = () => {
     }
   };
 
+  const activeFilterCount = [
+    referenceSearch.trim(),
+    search.trim(),
+    statusFilter !== "all",
+    shippingFilter !== "all",
+    paymentFilter !== "all",
+    sortKey !== "dateDesc",
+  ].filter(Boolean).length;
+  const hasActiveFilters = activeFilterCount > 0;
+  const filterLabelClass = "space-y-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-500";
+  const filterControlClass =
+    "h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm font-medium normal-case text-gray-900 shadow-sm transition-colors hover:border-gray-300 focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10";
+
   const clearFilters = () => {
     setSearch("");
+    setReferenceSearch("");
     setStatusFilter("all");
     setShippingFilter("all");
     setPaymentFilter("all");
     setSortKey("dateDesc");
+    loadOrders("");
   };
 
+
+  const buildOrderPrintHtml = (order: StoredOrder) => {
+    const rows = order.items
+      .map(
+        (item) => `
+          <tr>
+            <td>${htmlEscape(item.name)}${item.selectedColor ? `<br><small>Couleur: ${htmlEscape(item.selectedColor)}</small>` : ""}</td>
+            <td>${item.quantity}</td>
+            <td>${formatTnd(item.unitPrice)}</td>
+            <td>${formatTnd(item.total)}</td>
+          </tr>`
+      )
+      .join("");
+
+    return `<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Commande ${order.id}</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #111; margin: 32px; }
+    header { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #111; padding-bottom: 18px; margin-bottom: 24px; }
+    h1 { margin: 0; font-size: 24px; letter-spacing: .04em; }
+    h2 { font-size: 14px; text-transform: uppercase; margin: 26px 0 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: top; }
+    th:nth-child(n+2), td:nth-child(n+2) { text-align: right; }
+    .muted { color: #666; font-size: 12px; }
+    .box { border: 1px solid #ddd; padding: 14px; margin-top: 12px; }
+    .totals { margin-left: auto; width: 280px; }
+    .totals div { display: flex; justify-content: space-between; padding: 6px 0; }
+    .total { border-top: 2px solid #111; margin-top: 6px; padding-top: 10px !important; font-weight: 700; font-size: 16px; }
+    @media print { button { display: none; } body { margin: 18mm; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>SAMSONITE TUNISIE</h1>
+      <p class="muted">9, Rue 8601 Zone Industrielle, Charguia 1, 2035 Ariana</p>
+    </div>
+    <div>
+      <strong>Commande ${htmlEscape(order.id)}</strong><br />
+      <span class="muted">${formatOrderDate(order.createdAt)}</span><br />
+      <span class="muted">Statut: ${htmlEscape(statusLabels[order.status])}</span>
+    </div>
+  </header>
+  <section class="box">
+    <strong>${htmlEscape(order.customer.firstName)} ${htmlEscape(order.customer.lastName)}</strong><br />
+    ${htmlEscape(order.customer.phone)} - ${htmlEscape(order.customer.email)}<br />
+    ${htmlEscape(order.customer.address)}, ${htmlEscape(order.customer.city)}${order.customer.postalCode ? ` ${htmlEscape(order.customer.postalCode)}` : ""}
+  </section>
+  <h2>Articles</h2>
+  <table>
+    <thead><tr><th>Article</th><th>Qté</th><th>Prix unitaire</th><th>Total</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="totals">
+    <div><span>Sous-total</span><span>${formatTnd(order.totals.subtotal)}</span></div>
+    <div><span>Livraison</span><span>${order.totals.shipping === 0 ? "Gratuite" : formatTnd(order.totals.shipping)}</span></div>
+    <div class="total"><span>Total</span><span>${formatTnd(order.totals.total)}</span></div>
+  </div>
+  <h2>Livraison et paiement</h2>
+  <p>${htmlEscape(shippingLabels[order.shippingMethod])} - ${htmlEscape(paymentLabels[order.paymentMethod])}</p>
+  ${order.customer.notes ? `<h2>Notes</h2><p>${htmlEscape(order.customer.notes)}</p>` : ""}
+  <script>window.onload = () => { window.print(); };</script>
+</body>
+</html>`;
+  };
+
+  const printOrder = (order: StoredOrder) => {
+    const printWindow = window.open("", "_blank", "width=900,height=1100");
+    if (!printWindow) {
+      setError("Impossible d ouvrir la fenêtre d impression. Vérifie le bloqueur de pop-up.");
+      return;
+    }
+    printWindow.document.open();
+    printWindow.document.write(buildOrderPrintHtml(order));
+    printWindow.document.close();
+  };
   const exportOrders = () => {
     const rows = filteredOrders.map((order) => [
       order.id,
@@ -224,60 +329,158 @@ const AdminOrders = () => {
         </div>
       </div>
 
-      <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={ShoppingBag} label="Total commandes" value={stats.total} />
         <StatCard icon={PackageCheck} label="Nouvelles" value={stats.newOrders} tone="blue" />
         <StatCard icon={Truck} label="A confirmer" value={stats.confirmed} tone="amber" />
         <StatCard icon={CalendarDays} label="Aujourd'hui" value={stats.today} />
-        <StatCard icon={PackageCheck} label="CA actif" value={formatTnd(stats.revenue)} tone="emerald" />
       </div>
 
       {error && <div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
 
-      <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px_210px_170px_auto]">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Reference, client, telephone, email, ville ou produit..."
-              className="h-10 w-full rounded-md border border-gray-300 pl-10 pr-3 text-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black"
-            />
+      <div className="mb-5 rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-950 text-white">
+              <Filter className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-wide text-gray-950">Filtres commandes</h2>
+              <p className="text-xs text-gray-500">
+                {filteredOrders.length} resultat{filteredOrders.length > 1 ? "s" : ""} sur {orders.length} commandes
+              </p>
+            </div>
           </div>
 
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)} className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm">
-            <option value="all">Tous les statuts</option>
-            {Object.entries(statusLabels).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-
-          <select value={shippingFilter} onChange={(event) => setShippingFilter(event.target.value as ShippingFilter)} className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm">
-            <option value="all">Toutes livraisons</option>
-            {Object.entries(shippingLabels).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-
-          <select value={paymentFilter} onChange={(event) => setPaymentFilter(event.target.value as PaymentFilter)} className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm">
-            <option value="all">Tous paiements</option>
-            {Object.entries(paymentLabels).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-
-          <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)} className="h-10 rounded-md border border-gray-300 bg-white px-3 text-sm">
-            <option value="dateDesc">Plus recentes</option>
-            <option value="dateAsc">Plus anciennes</option>
-            <option value="totalDesc">Total eleve</option>
-            <option value="totalAsc">Total faible</option>
-          </select>
-
-          <button type="button" onClick={clearFilters} className="h-10 rounded-md border border-gray-300 px-3 text-sm transition-colors hover:bg-gray-50">
-            Reinitialiser
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((previous) => !previous)}
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-gray-950 px-4 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-gray-800"
+              aria-expanded={filtersOpen}
+            >
+              {filtersOpen ? "Masquer les filtres" : "Afficher les filtres"}
+              {activeFilterCount > 0 && (
+                <span className="rounded-full bg-white px-2 py-0.5 text-[10px] text-gray-950">
+                  {activeFilterCount}
+                </span>
+              )}
+              {filtersOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </button>
+            <button
+              type="button"
+              onClick={clearFilters}
+              disabled={!hasActiveFilters}
+              className="inline-flex h-9 items-center justify-center rounded-full border border-gray-200 px-4 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Reinitialiser
+            </button>
+          </div>
         </div>
+
+        {filtersOpen && (
+          <div className="p-4">
+          <div className="grid gap-3 lg:grid-cols-[240px_minmax(0,1fr)]">
+            <label className={filterLabelClass}>
+              Reference commande
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  value={referenceSearch}
+                  onChange={(event) => setReferenceSearch(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") loadOrders(referenceSearch);
+                  }}
+                  placeholder="Ex: CMD-..."
+                  className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm font-medium text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 hover:bg-white focus:border-black focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
+                />
+              </div>
+            </label>
+
+            <label className={filterLabelClass}>
+              Recherche globale
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Client, telephone, email, ville ou produit..."
+                  className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm font-medium text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 hover:bg-white focus:border-black focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
+                />
+              </div>
+            </label>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <label className={filterLabelClass}>
+              Statut
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)} className={filterControlClass}>
+                <option value="all">Tous les statuts</option>
+                {Object.entries(statusLabels).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className={filterLabelClass}>
+              Livraison
+              <select value={shippingFilter} onChange={(event) => setShippingFilter(event.target.value as ShippingFilter)} className={filterControlClass}>
+                <option value="all">Toutes livraisons</option>
+                {Object.entries(shippingLabels).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className={filterLabelClass}>
+              Paiement
+              <select value={paymentFilter} onChange={(event) => setPaymentFilter(event.target.value as PaymentFilter)} className={filterControlClass}>
+                <option value="all">Tous paiements</option>
+                {Object.entries(paymentLabels).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className={filterLabelClass}>
+              Tri
+              <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)} className={filterControlClass}>
+                <option value="dateDesc">Plus recentes</option>
+                <option value="dateAsc">Plus anciennes</option>
+                <option value="totalDesc">Total eleve</option>
+                <option value="totalAsc">Total faible</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="mt-3 flex min-h-7 flex-wrap items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => loadOrders(referenceSearch)}
+              className="inline-flex h-9 items-center justify-center rounded-full bg-gray-950 px-4 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-gray-800"
+            >
+              Rechercher
+            </button>
+            <div className="flex flex-wrap items-center gap-2">
+            {statusFilter !== "all" && (
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Statut: {statusLabels[statusFilter]}</span>
+            )}
+            {shippingFilter !== "all" && (
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Livraison: {shippingLabels[shippingFilter]}</span>
+            )}
+            {paymentFilter !== "all" && (
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Paiement: {paymentLabels[paymentFilter]}</span>
+            )}
+            {sortKey !== "dateDesc" && (
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Tri personnalise</span>
+            )}
+              {!hasActiveFilters && (
+                <span className="text-xs font-medium text-gray-400">Aucun filtre actif</span>
+              )}
+            </div>
+          </div>
+        </div>
+        )}
       </div>
 
       {loading ? (
@@ -367,7 +570,7 @@ const AdminOrders = () => {
       )}
 
       {selectedOrder && (
-        <OrderDetailPanel order={selectedOrder} onClose={() => setSelectedOrder(null)} onStatusChange={handleStatusChange} updating={updatingReference === selectedOrder.id} />
+        <OrderDetailPanel order={selectedOrder} onClose={() => setSelectedOrder(null)} onStatusChange={handleStatusChange} onPrint={printOrder} updating={updatingReference === selectedOrder.id} />
       )}
     </div>
   );
@@ -411,10 +614,12 @@ const OrderDetailPanel = ({
   onClose,
   onStatusChange,
   updating,
+  onPrint,
 }: {
   order: StoredOrder;
   onClose: () => void;
   onStatusChange: (id: string, status: OrderStatus) => void;
+  onPrint: (order: StoredOrder) => void;
   updating: boolean;
 }) => (
   <div className="fixed inset-0 z-50 flex justify-end bg-black/35">
@@ -425,9 +630,15 @@ const OrderDetailPanel = ({
           <h2 className="mt-1 text-xl font-bold text-gray-900">Detail commande</h2>
           <p className="mt-1 text-sm text-gray-500">{formatOrderDate(order.createdAt)}</p>
         </div>
-        <button type="button" onClick={onClose} className="rounded-full border border-gray-200 p-2 transition-colors hover:bg-gray-50">
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => onPrint(order)} className="inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-xs font-semibold transition-colors hover:bg-gray-50">
+            <Download className="h-4 w-4" />
+            PDF / imprimer
+          </button>
+          <button type="button" onClick={onClose} className="rounded-full border border-gray-200 p-2 transition-colors hover:bg-gray-50">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       <div className="space-y-6 p-6">

@@ -1,4 +1,13 @@
+﻿import fs from "fs/promises";
+import net from "net";
+import path from "path";
+import tls from "tls";
+import { fileURLToPath } from "url";
 import { prisma } from "../db/prisma.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const orderEmailsDir = path.join(__dirname, "../../public/order-emails");
 
 const ORDER_STATUSES = new Set(["new", "confirmed", "fulfilled", "cancelled"]);
 const PAYMENT_METHODS = new Set(["cash_on_delivery", "bank_transfer"]);
@@ -43,6 +52,200 @@ const generateReference = () => {
   ).padStart(2, "0")}-${String(now.getTime()).slice(-6)}`;
 };
 
+
+const escapeHtml = (value: unknown) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+const formatTnd = (value: number) =>
+  new Intl.NumberFormat("fr-TN", {
+    style: "currency",
+    currency: "TND",
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+  }).format(value);
+
+
+const encodeBase64 = (value: string) => Buffer.from(value, "utf8").toString("base64");
+
+const sanitizeMailHeader = (value: string) => value.replace(/[\r\n]+/g, " ").trim();
+
+const smtpRead = (socket: net.Socket | tls.TLSSocket) =>
+  new Promise<string>((resolve, reject) => {
+    let buffer = "";
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error("SMTP timeout"));
+    }, 15000);
+
+    const cleanup = () => {
+      clearTimeout(timeout);
+      socket.off("data", onData);
+      socket.off("error", onError);
+    };
+
+    const onError = (error: Error) => {
+      cleanup();
+      reject(error);
+    };
+
+    const onData = (chunk: Buffer) => {
+      buffer += chunk.toString("utf8");
+      const lines = buffer.split(/\r?\n/).filter(Boolean);
+      const lastLine = lines[lines.length - 1] || "";
+      if (/^\d{3}\s/.test(lastLine)) {
+        cleanup();
+        resolve(buffer);
+      }
+    };
+
+    socket.on("data", onData);
+    socket.on("error", onError);
+  });
+
+const smtpWrite = async (socket: net.Socket | tls.TLSSocket, command: string, expected: number[]) => {
+  socket.write(`${command}\r\n`);
+  const response = await smtpRead(socket);
+  const code = Number(response.slice(0, 3));
+  if (!expected.includes(code)) {
+    throw new Error(`SMTP command failed (${command}): ${response.trim()}`);
+  }
+  return response;
+};
+
+const connectSmtp = (host: string, port: number, secure: boolean) =>
+  new Promise<net.Socket | tls.TLSSocket>((resolve, reject) => {
+    const socket = secure
+      ? tls.connect({ host, port, servername: host }, () => resolve(socket))
+      : net.connect({ host, port }, () => resolve(socket));
+
+    socket.setTimeout(20000);
+    socket.once("error", reject);
+    socket.once("timeout", () => reject(new Error("SMTP connection timeout")));
+  });
+
+const sendSmtpMail = async ({ to, subject, html }: { to: string; subject: string; html: string }) => {
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT || 587);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const from = process.env.SMTP_FROM || user;
+  const secure = String(process.env.SMTP_SECURE || "").toLowerCase() === "true" || port === 465;
+
+  if (!host || !from) {
+    return { sent: false, reason: "SMTP_HOST/SMTP_FROM missing" };
+  }
+
+  let socket = await connectSmtp(host, port, secure);
+
+  try {
+    await smtpRead(socket);
+    await smtpWrite(socket, `EHLO ${host}`, [250]);
+
+    if (!secure && port !== 25) {
+      await smtpWrite(socket, "STARTTLS", [220]);
+      socket = tls.connect({ socket, servername: host });
+      await new Promise<void>((resolve, reject) => {
+        socket.once("secureConnect", () => resolve());
+        socket.once("error", reject);
+      });
+      await smtpWrite(socket, `EHLO ${host}`, [250]);
+    }
+
+    if (user && pass) {
+      await smtpWrite(socket, "AUTH LOGIN", [334]);
+      await smtpWrite(socket, encodeBase64(user), [334]);
+      await smtpWrite(socket, encodeBase64(pass), [235]);
+    }
+
+    const safeFrom = sanitizeMailHeader(from);
+    const safeTo = sanitizeMailHeader(to);
+    const safeSubject = sanitizeMailHeader(subject);
+    const message = [
+      `From: ${safeFrom}`,
+      `To: ${safeTo}`,
+      `Subject: ${safeSubject}`,
+      "MIME-Version: 1.0",
+      'Content-Type: text/html; charset="UTF-8"',
+      "Content-Transfer-Encoding: 8bit",
+      "",
+      html,
+      ".",
+    ].join("\r\n");
+
+    await smtpWrite(socket, `MAIL FROM:<${safeFrom.replace(/^.*<|>.*$/g, "")}>`, [250]);
+    await smtpWrite(socket, `RCPT TO:<${safeTo}>`, [250, 251]);
+    await smtpWrite(socket, "DATA", [354]);
+    await smtpWrite(socket, message, [250]);
+    await smtpWrite(socket, "QUIT", [221]);
+    return { sent: true };
+  } finally {
+    socket.end();
+  }
+};
+const buildOrderConfirmationHtml = (order: any) => {
+  const items = order.items
+    .map(
+      (item: any) => `
+        <tr>
+          <td style="padding:10px;border-bottom:1px solid #eee;">${escapeHtml(item.name)}${item.selectedColor ? `<br><small>Couleur: ${escapeHtml(item.selectedColor)}</small>` : ""}</td>
+          <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;">${item.quantity}</td>
+          <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">${formatTnd(item.unitPrice)}</td>
+          <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">${formatTnd(item.total)}</td>
+        </tr>`
+    )
+    .join("");
+
+  return `<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>Confirmation ${escapeHtml(order.id)}</title></head>
+<body style="font-family:Arial,sans-serif;color:#111;line-height:1.5;margin:0;background:#f6f6f6;padding:24px;">
+  <main style="max-width:720px;margin:0 auto;background:#fff;border:1px solid #e5e5e5;padding:28px;">
+    <h1 style="margin:0 0 8px;font-size:24px;">Commande reçue</h1>
+    <p style="margin:0 0 24px;color:#555;">Bonjour ${escapeHtml(order.customer.firstName)}, votre commande <strong>${escapeHtml(order.id)}</strong> a bien été enregistrée.</p>
+    <h2 style="font-size:16px;margin:0 0 10px;">Résumé</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <thead><tr style="background:#f8f8f8;"><th style="padding:10px;text-align:left;">Article</th><th style="padding:10px;">Qté</th><th style="padding:10px;text-align:right;">Prix</th><th style="padding:10px;text-align:right;">Total</th></tr></thead>
+      <tbody>${items}</tbody>
+    </table>
+    <div style="margin-top:18px;border-top:1px solid #eee;padding-top:14px;">
+      <p style="margin:4px 0;text-align:right;">Sous-total: ${formatTnd(order.totals.subtotal)}</p>
+      <p style="margin:4px 0;text-align:right;">Livraison: ${order.totals.shipping === 0 ? "Gratuite" : formatTnd(order.totals.shipping)}</p>
+      <p style="margin:8px 0 0;text-align:right;font-size:18px;font-weight:bold;">Total: ${formatTnd(order.totals.total)}</p>
+    </div>
+    <h2 style="font-size:16px;margin:24px 0 10px;">Livraison</h2>
+    <p style="margin:0;color:#555;">${escapeHtml(order.customer.address)}, ${escapeHtml(order.customer.city)} ${escapeHtml(order.customer.postalCode || "")}</p>
+    <p style="margin:24px 0 0;color:#555;">Nous vous contacterons pour confirmer les détails de livraison.</p>
+  </main>
+</body>
+</html>`;
+};
+
+const sendOrderConfirmation = async (order: any) => {
+  const html = buildOrderConfirmationHtml(order);
+  await fs.mkdir(orderEmailsDir, { recursive: true });
+  const filename = `${order.id.replace(/[^a-zA-Z0-9-]/g, "-")}.html`;
+  await fs.writeFile(path.join(orderEmailsDir, filename), html, "utf8");
+
+  const mailResult = await sendSmtpMail({
+    to: order.customer.email,
+    subject: `Confirmation de commande ${order.id}`,
+    html,
+  });
+
+  if (mailResult.sent) {
+    console.info(`Confirmation commande envoyee a ${order.customer.email}`);
+  } else {
+    console.info(
+      `Confirmation commande non envoyee (${mailResult.reason}). Apercu: /order-emails/${filename}`
+    );
+  }
+
+  return { saved: true, sent: mailResult.sent, previewUrl: `/order-emails/${filename}` };
+};
 const getShippingFee = (method: string, subtotal: number) => {
   if (method === "pickup") return 0;
   if (method === "express") return 12;
@@ -176,7 +379,15 @@ export const createOrder = async (input: CreateOrderInput) => {
     include: { items: true },
   });
 
-  return mapOrder(order);
+  const mappedOrder = mapOrder(order);
+
+  try {
+    await sendOrderConfirmation(mappedOrder);
+  } catch (error) {
+    console.error("Erreur confirmation commande:", error);
+  }
+
+  return mappedOrder;
 };
 
 export const getOrderByReference = async (reference: string) => {
@@ -187,8 +398,14 @@ export const getOrderByReference = async (reference: string) => {
   return order ? mapOrder(order) : null;
 };
 
-export const listOrders = async () => {
+export const listOrders = async (reference?: string) => {
+  const query = String(reference || "").trim();
   const orders = await prisma.order.findMany({
+    where: query
+      ? {
+          reference: { contains: query, mode: "insensitive" },
+        }
+      : undefined,
     orderBy: { createdAt: "desc" },
     include: { items: true },
   });
@@ -204,5 +421,13 @@ export const updateOrderStatus = async (reference: string, status: string) => {
     data: { status },
     include: { items: true },
   });
-  return mapOrder(order);
+  const mappedOrder = mapOrder(order);
+
+  try {
+    await sendOrderConfirmation(mappedOrder);
+  } catch (error) {
+    console.error("Erreur confirmation commande:", error);
+  }
+
+  return mappedOrder;
 };

@@ -1,13 +1,35 @@
 import { Link, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowRight } from "lucide-react";
 
 import BrandLoader from "@/components/BrandLoader";
 import ProductCard from "@/components/ProductCard";
-import { HOME_LOOK_IMAGE_URL } from "@/config/home";
 import { fetchDisplayCategories, fetchDisplayProducts } from "@/lib/prestashop/catalog";
 import type { CategoryDisplay, ProductDisplay } from "@/lib/prestashop/types";
 import { useLanguage } from "@/lib/i18n";
+
+const homeCategoryImageMap = [
+  {
+    match: ["valise", "valises", "rigide", "souple"],
+    image: "/assets/home-category-valises.png",
+  },
+  {
+    match: ["sac", "sacs", "sac-a-dos", "backpack"],
+    image: "/assets/home-category-sacs.png",
+  },
+  {
+    match: ["business", "ordinateur", "pilot", "portefeuille"],
+    image: "/assets/home-category-business.png",
+  },
+  {
+    match: ["disney", "enfant", "kids"],
+    image: "/assets/home-category-disney.png",
+  },
+];
+
+const getHomeCategoryImage = (category: CategoryDisplay) => {
+  const haystack = `${category.slug} ${category.name}`.toLowerCase();
+  return homeCategoryImageMap.find((entry) => entry.match.some((keyword) => haystack.includes(keyword)))?.image || category.image || "/placeholder.svg";
+};
 
 const Home = () => {
   const { t } = useLanguage();
@@ -120,10 +142,15 @@ const Home = () => {
               className="group premium-surface relative aspect-[9/10] overflow-hidden bg-accent"
             >
               <img
-                src={cat.image || "/placeholder.svg"}
+                src={getHomeCategoryImage(cat)}
                 alt={cat.name}
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 onError={(event) => {
+                  if (event.currentTarget.dataset.fallback !== "category" && cat.image) {
+                    event.currentTarget.dataset.fallback = "category";
+                    event.currentTarget.src = cat.image;
+                    return;
+                  }
                   event.currentTarget.src = "/placeholder.svg";
                 }}
               />
@@ -137,36 +164,6 @@ const Home = () => {
         {displayCategoryBlocks.length === 0 && (
           <p className="text-sm text-muted-foreground">{t("home.noCategories")}</p>
         )}
-      </section>
-
-      <section className="border-b border-border bg-accent">
-        <div className="samsonite-container py-16">
-          <div className="grid items-center gap-8 md:grid-cols-2">
-            <img
-              src={HOME_LOOK_IMAGE_URL}
-              alt="Shop the look"
-              className="aspect-[4/5] w-full object-cover"
-              onError={(event) => {
-                event.currentTarget.src = "/home-look.svg";
-              }}
-            />
-            <div className="space-y-6">
-              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                {t("home.lookEyebrow")}
-              </p>
-              <h2 className="font-display text-3xl leading-tight md:text-4xl">
-                {t("home.lookTitle")}
-              </h2>
-              <p className="text-muted-foreground">{t("home.lookText")}</p>
-              <Link
-                to="/categorie/valises"
-              className="premium-control inline-flex items-center gap-2 border border-black px-5 py-3 text-sm font-bold tracking-wider transition-all hover:bg-black hover:text-white"
-              >
-                {t("home.discover")} <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-        </div>
       </section>
 
       <section className="samsonite-container border-b border-border py-16">
@@ -189,8 +186,8 @@ const Home = () => {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border-2 border-foreground">
               <span className="text-lg font-bold">★</span>
             </div>
-            <h3 className="text-sm font-bold tracking-wider">{t("home.personalization")}</h3>
-            <p className="text-sm text-muted-foreground">{t("home.personalizationText")}</p>
+            <h3 className="text-sm font-bold tracking-wider">{t("product.freeShipping")}</h3>
+            <p className="text-sm text-muted-foreground">{t("checkout.shipping.standardDesc")}</p>
           </div>
         </div>
       </section>

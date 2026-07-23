@@ -1,4 +1,4 @@
-import type { CartItem } from "@/lib/prestashop/types";
+﻿import type { CartItem } from "@/lib/prestashop/types";
 
 const API_BASE = "/api";
 
@@ -98,8 +98,9 @@ export const getOrder = async (id: string) => {
   return (data.order || null) as StoredOrder | null;
 };
 
-export const listOrders = async () => {
-  const res = await fetch(`${API_BASE}/admin/orders`, { headers: authHeaders() });
+export const listOrders = async (reference?: string) => {
+  const query = reference?.trim() ? `?reference=${encodeURIComponent(reference.trim())}` : "";
+  const res = await fetch(`${API_BASE}/admin/orders${query}`, { headers: authHeaders() });
   if (!res.ok) throw new Error("Impossible de charger les commandes");
   const data = await res.json();
   return (data.orders || []) as StoredOrder[];

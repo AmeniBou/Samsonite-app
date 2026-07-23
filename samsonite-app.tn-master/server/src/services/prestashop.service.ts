@@ -55,6 +55,8 @@ export interface PSProductRaw {
     active: string;
     id_category_default: number | string;
     id_default_image?: number | string;
+    id_manufacturer?: number | string;
+    manufacturer_name?: string;
     weight: string;
     width: string;
     height: string;
@@ -93,7 +95,7 @@ export const getProducts = async (): Promise<PSProductRaw[]> => {
     const data = await fetchJson(
         psUrl("products", {
             display:
-                "[id,name,description,description_short,price,reference,active,id_category_default,id_default_image,weight,quantity]",
+                "[id,name,description,description_short,price,reference,active,id_category_default,id_default_image,id_manufacturer,manufacturer_name,weight,quantity]",
         })
     );
     return extractCollection<PSProductRaw>(data, "products", "product");

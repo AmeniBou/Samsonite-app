@@ -1,4 +1,4 @@
-// ---------- MULTILANG ----------
+﻿// ---------- MULTILANG ----------
 export interface PSLangField {
   id: string;
   value: string;
@@ -67,6 +67,8 @@ export interface PSProduct {
   id: number | string;
   id_default_image?: number | string;
   id_default_combination?: number | string;
+  id_manufacturer?: number | string;
+  manufacturer_name?: string;
 
   name: PSLangField[];
   description: PSLangField[];
@@ -141,6 +143,7 @@ export interface ProductCharacteristic {
 export interface ProductDisplay {
   id: number;
   name: string;
+  brandName: string;
   collection: string;
   shortDescription: string;
   description: string;
@@ -153,6 +156,7 @@ export interface ProductDisplay {
   characteristics: ProductCharacteristic[];
   dimensions?: string;
   weight?: string;
+  volume?: string;
   slug: string;
   categorySlug: string;
   categorySlugs: string[];

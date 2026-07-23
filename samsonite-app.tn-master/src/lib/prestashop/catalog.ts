@@ -1,4 +1,4 @@
-import { getCatalogData, getCategoryImageUrl } from "./api";
+﻿import { getCatalogData, getCategoryImageUrl } from "./api";
 import { decodeHtmlEntities, getLangValue } from "./helpers";
 import { mapPSProductToDisplay } from "./mappers";
 import type {
@@ -95,31 +95,39 @@ const mapCategoryNode = (category: PSCategory): CategoryNode => {
 };
 
 export const fetchDisplayCategories = async (): Promise<CategoryDisplay[]> => {
-  const { categories: rawCategories, products: rawProducts } = await getCatalogData();
-  const activeProducts = rawProducts.filter((product) => product.active === "1");
+  const { categories: rawCategories } = await getCatalogData();
   const nodes = rawCategories
     .map(mapCategoryNode)
     .filter((node) => node.active && Boolean(node.name && node.slug));
   const nodeBySlug = new Map(nodes.map((node) => [node.slug, node]));
-  const productCountByCategoryId = activeProducts.reduce<Record<number, number>>((acc, product) => {
-    for (const category of product.associations?.categories || []) {
-      const categoryId = Number(category.id);
-      acc[categoryId] = (acc[categoryId] || 0) + 1;
-    }
-    return acc;
-  }, {});
-  const productCountBySlug = nodes.reduce<Record<string, number>>((acc, node) => {
-    acc[node.slug] = productCountByCategoryId[node.id] || 0;
+  const childrenByParentId = nodes.reduce<Record<number, CategoryNode[]>>((acc, node) => {
+    if (!node.parentId || node.parentId === 2) return acc;
+    if (!acc[node.parentId]) acc[node.parentId] = [];
+    acc[node.parentId].push(node);
     return acc;
   }, {});
 
-  return CATEGORY_GROUPS.map((group, index) => {
+  const usedSlugs = new Set<string>();
+  const toChildDisplay = (node: CategoryNode) => ({ name: node.name, slug: node.slug });
+  const sortChildren = (items: Array<{ name: string; slug: string }>) =>
+    items.sort((a, b) => a.name.localeCompare(b.name, "fr", { sensitivity: "base" }));
+
+  const groupedCategories = CATEGORY_GROUPS.map((group, index) => {
     const node = nodeBySlug.get(group.slug);
-    const children = group.childSlugs
-      .map((childSlug) => nodeBySlug.get(childSlug))
-      .filter((child): child is CategoryNode => Boolean(child))
-      .filter((child) => (productCountBySlug[child.slug] || 0) > 0)
-      .map((child) => ({ name: child.name, slug: child.slug }));
+    const childNodes = [
+      ...group.childSlugs
+        .map((childSlug) => nodeBySlug.get(childSlug))
+        .filter((child): child is CategoryNode => Boolean(child)),
+      ...(node ? childrenByParentId[node.id] || [] : []),
+    ];
+    const children = sortChildren(
+      Array.from(new Map(childNodes.map((child) => [child.slug, toChildDisplay(child)])).values())
+        .filter((child) => child.slug !== group.slug)
+    );
+
+    usedSlugs.add(group.slug);
+    children.forEach((child) => usedSlugs.add(child.slug));
+
     return {
       id: node?.id || 1000 + index,
       name: node?.name || group.name,
@@ -128,11 +136,41 @@ export const fetchDisplayCategories = async (): Promise<CategoryDisplay[]> => {
       image: node ? getCategoryImageUrl(node.id) : undefined,
       children,
     };
-  }).filter((category) => {
-    const childCount = category.children?.length || 0;
-    const node = nodeBySlug.get(category.slug);
-    return childCount > 0 || (node ? (productCountBySlug[node.slug] || 0) > 0 : false);
   });
+
+  const extraRootCategories = nodes
+    .filter((node) => !usedSlugs.has(node.slug))
+    .filter((node) => !node.parentId || node.parentId === 2 || !nodes.some((parent) => parent.id === node.parentId))
+    .map((node) => {
+      const children = sortChildren(
+        (childrenByParentId[node.id] || [])
+          .filter((child) => child.slug !== node.slug)
+          .map(toChildDisplay)
+      );
+      children.forEach((child) => usedSlugs.add(child.slug));
+      usedSlugs.add(node.slug);
+      return {
+        id: node.id,
+        name: node.name,
+        slug: node.slug,
+        description: node.description,
+        image: getCategoryImageUrl(node.id),
+        children,
+      };
+    });
+
+  const orphanChildren = nodes
+    .filter((node) => !usedSlugs.has(node.slug))
+    .map((node) => ({
+      id: node.id,
+      name: node.name,
+      slug: node.slug,
+      description: node.description,
+      image: getCategoryImageUrl(node.id),
+      children: [],
+    }));
+
+  return [...groupedCategories, ...extraRootCategories, ...orphanChildren];
 };
 
 export const fetchDisplayProducts = async (): Promise<ProductDisplay[]> => {

@@ -22,6 +22,9 @@ import {
 type SortKey = "id" | "name" | "reference" | "price" | "stock" | "categoryName" | "active";
 type SortDirection = "asc" | "desc";
 type StatusFilter = "all" | "active" | "inactive";
+type StockFilter = "all" | "available" | "out" | "low";
+type VariantFilter = "all" | "with" | "without";
+type ImageFilter = "all" | "with" | "without";
 
 const decodeAdminText = (value?: string | null): string => {
     let text = value || "";
@@ -45,6 +48,10 @@ const decodeAdminText = (value?: string | null): string => {
     return text;
 };
 
+const getAdminProductImageSrc = (product: AdminProduct): string | null => {
+    return product.imageUrl || product.images?.[0] || null;
+};
+
 const AdminDashboard = () => {
     const [products, setProducts] = useState<AdminProduct[]>([]);
     const [loading, setLoading] = useState(true);
@@ -57,6 +64,14 @@ const AdminDashboard = () => {
     const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
     const [statusFilterOpen, setStatusFilterOpen] = useState(false);
+    const [filtersOpen, setFiltersOpen] = useState(false);
+    const [brandFilter, setBrandFilter] = useState("all");
+    const [categoryFilter, setCategoryFilter] = useState("all");
+    const [stockFilter, setStockFilter] = useState<StockFilter>("all");
+    const [variantFilter, setVariantFilter] = useState<VariantFilter>("all");
+    const [imageFilter, setImageFilter] = useState<ImageFilter>("all");
+    const [minPrice, setMinPrice] = useState("");
+    const [maxPrice, setMaxPrice] = useState("");
 
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -114,24 +129,77 @@ const AdminDashboard = () => {
         }
     };
 
+    const brandOptions = Array.from(
+        new Set(products.map((product) => decodeAdminText(product.brandName || "Sans marque")).filter(Boolean))
+    ).sort((first, second) => first.localeCompare(second, "fr", { sensitivity: "base" }));
+
+    const categoryOptions = Array.from(
+        new Set(products.map((product) => decodeAdminText(product.categoryName || "Sans categorie")).filter(Boolean))
+    ).sort((first, second) => first.localeCompare(second, "fr", { sensitivity: "base" }));
+
+    const minPriceValue = minPrice.trim() ? Number(minPrice) : null;
+    const maxPriceValue = maxPrice.trim() ? Number(maxPrice) : null;
+
     const filteredBySearch = products.filter((p) => {
         if (!search.trim()) return true;
         const q = search.toLowerCase();
         return (
             decodeAdminText(p.name).toLowerCase().includes(q) ||
             p.reference.toLowerCase().includes(q) ||
+            decodeAdminText(p.brandName).toLowerCase().includes(q) ||
             decodeAdminText(p.categoryName).toLowerCase().includes(q) ||
             String(p.id).includes(q)
         );
     });
 
-    const filteredByStatus = filteredBySearch.filter((p) => {
-        if (statusFilter === "all") return true;
-        if (statusFilter === "active") return p.active;
-        return !p.active;
+    const filtered = filteredBySearch.filter((p) => {
+        const productBrand = decodeAdminText(p.brandName || "Sans marque");
+        const productCategory = decodeAdminText(p.categoryName || "Sans categorie");
+        const hasImage = Boolean(getAdminProductImageSrc(p));
+
+        if (statusFilter === "active" && !p.active) return false;
+        if (statusFilter === "inactive" && p.active) return false;
+        if (brandFilter !== "all" && productBrand !== brandFilter) return false;
+        if (categoryFilter !== "all" && productCategory !== categoryFilter) return false;
+        if (stockFilter === "available" && p.stock <= 0) return false;
+        if (stockFilter === "out" && p.stock > 0) return false;
+        if (stockFilter === "low" && (p.stock <= 0 || p.stock > 5)) return false;
+        if (variantFilter === "with" && !p.hasVariants) return false;
+        if (variantFilter === "without" && p.hasVariants) return false;
+        if (imageFilter === "with" && !hasImage) return false;
+        if (imageFilter === "without" && hasImage) return false;
+        if (minPriceValue !== null && Number.isFinite(minPriceValue) && p.price < minPriceValue) return false;
+        if (maxPriceValue !== null && Number.isFinite(maxPriceValue) && p.price > maxPriceValue) return false;
+        return true;
     });
 
-    const sorted = [...filteredByStatus].sort((a, b) => {
+    const activeFilterCount = [
+        search.trim(),
+        statusFilter !== "all",
+        brandFilter !== "all",
+        categoryFilter !== "all",
+        stockFilter !== "all",
+        variantFilter !== "all",
+        imageFilter !== "all",
+        minPrice.trim(),
+        maxPrice.trim(),
+    ].filter(Boolean).length;
+
+    const hasActiveFilters = activeFilterCount > 0;
+
+    const resetFilters = () => {
+        setSearch("");
+        setStatusFilter("all");
+        setBrandFilter("all");
+        setCategoryFilter("all");
+        setStockFilter("all");
+        setVariantFilter("all");
+        setImageFilter("all");
+        setMinPrice("");
+        setMaxPrice("");
+    };
+
+    const sorted = [...filtered].sort((a, b) => {
         const factor = sortDirection === "asc" ? 1 : -1;
 
         if (sortKey === "id") return (a.id - b.id) * factor;
@@ -146,7 +214,20 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [search, statusFilter, sortKey, sortDirection, itemsPerPage]);
+    }, [
+        search,
+        statusFilter,
+        brandFilter,
+        categoryFilter,
+        stockFilter,
+        variantFilter,
+        imageFilter,
+        minPrice,
+        maxPrice,
+        sortKey,
+        sortDirection,
+        itemsPerPage,
+    ]);
 
     const totalPages = Math.max(1, Math.ceil(sorted.length / itemsPerPage));
     const safeCurrentPage = Math.min(currentPage, totalPages);
@@ -180,6 +261,10 @@ const AdminDashboard = () => {
         );
     };
 
+    const filterLabelClass = "space-y-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-500";
+    const filterControlClass =
+        "h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm font-medium normal-case text-gray-900 shadow-sm transition-colors hover:border-gray-300 focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10";
+
     return (
         <div className="p-6">
             <div className="flex items-center justify-between mb-6">
@@ -208,15 +293,185 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                    type="text"
-                    placeholder="Rechercher par nom, reference, categorie ou ID..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                />
+            <div className="mb-5 rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-950 text-white">
+                            <Filter className="h-4 w-4" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm font-bold uppercase tracking-wide text-gray-950">Filtres catalogue</h2>
+                            <p className="text-xs text-gray-500">
+                                {sorted.length} resultat{sorted.length > 1 ? "s" : ""} sur {products.length} produits
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setFiltersOpen((prev) => !prev)}
+                            className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-gray-950 px-4 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-gray-800"
+                            aria-expanded={filtersOpen}
+                        >
+                            {filtersOpen ? "Masquer les filtres" : "Afficher les filtres"}
+                            {activeFilterCount > 0 && (
+                                <span className="rounded-full bg-white px-2 py-0.5 text-[10px] text-gray-950">
+                                    {activeFilterCount}
+                                </span>
+                            )}
+                            {filtersOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={resetFilters}
+                            disabled={!hasActiveFilters}
+                            className="inline-flex h-9 items-center justify-center rounded-full border border-gray-200 px-4 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            Reinitialiser
+                        </button>
+                    </div>
+                </div>
+
+                <div className="p-4">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Nom, reference, marque, categorie ou ID..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="h-11 w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm font-medium text-gray-900 transition-colors placeholder:text-gray-400 hover:bg-white focus:border-black focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
+                        />
+                    </div>
+
+                    {filtersOpen && (
+                        <>
+                    <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                        <label className={filterLabelClass}>
+                            Marque
+                            <select
+                                value={brandFilter}
+                                onChange={(e) => setBrandFilter(e.target.value)}
+                                className={filterControlClass}
+                            >
+                                <option value="all">Toutes les marques</option>
+                                {brandOptions.map((brand) => (
+                                    <option key={brand} value={brand}>{brand}</option>
+                                ))}
+                            </select>
+                        </label>
+
+                        <label className={filterLabelClass}>
+                            Categorie
+                            <select
+                                value={categoryFilter}
+                                onChange={(e) => setCategoryFilter(e.target.value)}
+                                className={filterControlClass}
+                            >
+                                <option value="all">Toutes les categories</option>
+                                {categoryOptions.map((category) => (
+                                    <option key={category} value={category}>{category}</option>
+                                ))}
+                            </select>
+                        </label>
+
+                        <label className={filterLabelClass}>
+                            Stock
+                            <select
+                                value={stockFilter}
+                                onChange={(e) => setStockFilter(e.target.value as StockFilter)}
+                                className={filterControlClass}
+                            >
+                                <option value="all">Tous les stocks</option>
+                                <option value="available">Disponible</option>
+                                <option value="low">Stock faible (1 a 5)</option>
+                                <option value="out">Rupture de stock</option>
+                            </select>
+                        </label>
+
+                        <label className={filterLabelClass}>
+                            Variantes
+                            <select
+                                value={variantFilter}
+                                onChange={(e) => setVariantFilter(e.target.value as VariantFilter)}
+                                className={filterControlClass}
+                            >
+                                <option value="all">Tous les produits</option>
+                                <option value="with">Avec variantes</option>
+                                <option value="without">Sans variantes</option>
+                            </select>
+                        </label>
+
+                        <label className={filterLabelClass}>
+                            Images
+                            <select
+                                value={imageFilter}
+                                onChange={(e) => setImageFilter(e.target.value as ImageFilter)}
+                                className={filterControlClass}
+                            >
+                                <option value="all">Tous</option>
+                                <option value="with">Avec image</option>
+                                <option value="without">Sans image</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-[180px_180px_minmax(0,1fr)]">
+                        <label className={filterLabelClass}>
+                            Prix min
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.001"
+                                value={minPrice}
+                                onChange={(e) => setMinPrice(e.target.value)}
+                                placeholder="0.000"
+                                className={filterControlClass}
+                            />
+                        </label>
+
+                        <label className={filterLabelClass}>
+                            Prix max
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.001"
+                                value={maxPrice}
+                                onChange={(e) => setMaxPrice(e.target.value)}
+                                placeholder="9999.000"
+                                className={filterControlClass}
+                            />
+                        </label>
+
+                        <div className="flex flex-wrap items-end gap-2">
+                            {statusFilter !== "all" && (
+                                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
+                                    Statut: {statusFilter === "active" ? "actifs" : "inactifs"}
+                                </span>
+                            )}
+                            {brandFilter !== "all" && (
+                                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
+                                    Marque: {brandFilter}
+                                </span>
+                            )}
+                            {categoryFilter !== "all" && (
+                                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
+                                    Categorie: {categoryFilter}
+                                </span>
+                            )}
+                            {stockFilter !== "all" && (
+                                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
+                                    Stock: {stockFilter === "available" ? "disponible" : stockFilter === "low" ? "faible" : "rupture"}
+                                </span>
+                            )}
+                            {!hasActiveFilters && (
+                                <span className="text-xs font-medium text-gray-400">Aucun filtre actif</span>
+                            )}
+                        </div>
+                    </div>
+                        </>
+                    )}
+                </div>
             </div>
 
             {error && (
@@ -326,7 +581,7 @@ const AdminDashboard = () => {
                             {!loading && sorted.length === 0 && (
                                 <tr>
                                     <td colSpan={9} className="px-4 py-12 text-center text-gray-400">
-                                        {search ? "Aucun produit trouve" : "Aucun produit"}
+                                        {hasActiveFilters ? "Aucun produit ne correspond aux filtres" : "Aucun produit"}
                                     </td>
                                 </tr>
                             )}
@@ -337,11 +592,11 @@ const AdminDashboard = () => {
                                             {product.id}
                                         </td>
                                         <td className="px-4 py-3">
-                                            {product.imageId ? (
+                                            {getAdminProductImageSrc(product) ? (
                                                 <img
-                                                    src={`/api/catalog/images/products/${product.id}/${product.imageId}`}
+                                                    src={getAdminProductImageSrc(product) || "/placeholder.svg"}
                                                     alt={decodeAdminText(product.name)}
-                                                    className="w-10 h-10 object-cover rounded"
+                                                    className="w-10 h-10 object-cover rounded bg-white"
                                                     onError={(e) => {
                                                         e.currentTarget.src = "/placeholder.svg";
                                                     }}

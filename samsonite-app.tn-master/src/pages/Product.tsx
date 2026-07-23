@@ -232,7 +232,7 @@ const Product = () => {
   const colorOptions = useMemo(() => {
     const byKey = new Map<
       string,
-      { key: string; name: string; hex: string; combinationId: number; score: number }
+      { key: string; name: string; hex: string; combinationId: number; stock: number; images: string[]; score: number }
     >();
     for (const variant of variants) {
       if (!variant.color) continue;
@@ -246,6 +246,8 @@ const Product = () => {
           name: variant.color.name,
           hex: variant.color.hex,
           combinationId: variant.combinationId,
+          stock: variant.stock || 0,
+          images: variant.images || [],
           score,
         });
       }
@@ -376,7 +378,7 @@ const Product = () => {
   const sizeOptions = useMemo(() => {
     const scopedVariants = variants;
 
-    const byLabel = new Map<string, { label: string; combinationId: number; score: number }>();
+    const byLabel = new Map<string, { label: string; combinationId: number; stock: number; score: number }>();
     for (const variant of scopedVariants) {
       const label = (variant.size || "").trim();
       if (!label) continue;
@@ -384,7 +386,7 @@ const Product = () => {
       const key = label.toLowerCase();
       const existing = byLabel.get(key);
       if (!existing || score > existing.score) {
-        byLabel.set(key, { label, combinationId: variant.combinationId, score });
+        byLabel.set(key, { label, combinationId: variant.combinationId, stock: variant.stock || 0, score });
       }
     }
     return Array.from(byLabel.values()).map(({ score: _score, ...size }) => size);
@@ -398,19 +400,28 @@ const Product = () => {
 
     if (selectedSize) {
       const sizeMatches = compatibleVariants.filter((v) => (v.size || "").trim() === selectedSize);
-      targetVariant = sizeMatches.find((v) => (v.dimensions || "").trim()) || sizeMatches[0];
+      targetVariant =
+        sizeMatches.find((v) => (v.stock || 0) > 0 && v.images.length > 0) ||
+        sizeMatches.find((v) => v.images.length > 0) ||
+        sizeMatches.find((v) => (v.dimensions || "").trim()) ||
+        sizeMatches[0];
     }
 
     if (!targetVariant) {
       const defaultMatches = compatibleVariants.filter((v) => v.isDefault);
       targetVariant =
+        defaultMatches.find((v) => (v.stock || 0) > 0 && v.images.length > 0) ||
+        defaultMatches.find((v) => v.images.length > 0) ||
         defaultMatches.find((v) => (v.dimensions || "").trim()) ||
         defaultMatches[0] ||
+        compatibleVariants.find((v) => (v.stock || 0) > 0 && v.images.length > 0) ||
+        compatibleVariants.find((v) => v.images.length > 0) ||
         compatibleVariants.find((v) => (v.dimensions || "").trim()) ||
         compatibleVariants[0];
     }
 
     setSelectedCombinationId(targetVariant?.combinationId ?? colorCombinationId);
+    setSelectedImageIdx(0);
   };
 
   const handleSizeSelect = (sizeLabel: string, sizeCombinationId: number) => {
@@ -421,10 +432,15 @@ const Product = () => {
       const compatibles = variants.filter(
         (v) => (v.size || "").trim() === sizeLabel && getColorKey(v) === selectedColorKey
       );
-      targetVariant = compatibles.find((v) => (v.dimensions || "").trim()) || compatibles[0];
+      targetVariant =
+        compatibles.find((v) => (v.stock || 0) > 0 && v.images.length > 0) ||
+        compatibles.find((v) => v.images.length > 0) ||
+        compatibles.find((v) => (v.dimensions || "").trim()) ||
+        compatibles[0];
     }
 
     setSelectedCombinationId(targetVariant?.combinationId ?? sizeCombinationId);
+    setSelectedImageIdx(0);
   };
 
   const dimensionScopedVariants = useMemo(() => {
@@ -507,6 +523,16 @@ const Product = () => {
     dimensionOptions[0]?.label ||
     product?.dimensions ||
     "";
+  const availabilityByColorKey = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const variant of variants) {
+      const key = getColorKey(variant);
+      if (!key) continue;
+      map.set(key, (map.get(key) || 0) + (variant.stock || 0));
+    }
+    return map;
+  }, [variants]);
+
   const technicalCharacteristics = useMemo(() => {
     if (!product) return [];
     const excludedLabelPattern =
@@ -685,13 +711,20 @@ const Product = () => {
                       key={`${size.label}-${size.combinationId}`}
                       type="button"
                       onClick={() => handleSizeSelect(size.label, size.combinationId)}
-                      className={`premium-control min-h-12 min-w-[82px] border px-5 py-3 text-base font-semibold leading-none ${
+                      className={`premium-control relative min-h-12 min-w-[82px] border px-5 py-3 text-base font-semibold leading-none ${
                         selectedSize === size.label
                           ? "border-black bg-black text-white"
-                          : "border-neutral-300 bg-white text-black hover:border-black"
+                          : size.stock <= 0
+                            ? "border-neutral-200 bg-neutral-50 text-muted-foreground opacity-60"
+                            : "border-neutral-300 bg-white text-black hover:border-black"
                       }`}
                     >
-                      {size.label}
+                      <span className={size.stock <= 0 ? "line-through" : ""}>{size.label}</span>
+                      {size.stock <= 0 && (
+                        <span className="absolute -right-2 -top-2 rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-black uppercase text-red-600">
+                          Rupture
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -740,7 +773,9 @@ const Product = () => {
                   ) : null}
                 </p>
                 <div className="flex flex-wrap items-center gap-3">
-                  {displayColorOptions.map((color) => (
+                  {displayColorOptions.map((color) => {
+                    const colorStock = color.inferred ? 1 : availabilityByColorKey.get(color.key) || color.stock || 0;
+                    return (
                     <button
                       key={`${color.key}-${color.combinationId}`}
                       title={color.name}
@@ -754,16 +789,18 @@ const Product = () => {
                         setSelectedInferredColorKey("");
                         handleColorSelect(color.key, color.combinationId);
                       }}
-                      className={`premium-control flex h-12 w-12 items-center justify-center rounded-full border ${
+                      className={`premium-control relative flex h-12 w-12 items-center justify-center rounded-full border ${
                         activeColorKey === color.key ? "border-black shadow-[0_0_0_4px_rgba(0,0,0,0.06)]" : "border-neutral-300"
-                      }`}
+                      } ${colorStock <= 0 ? "opacity-45" : ""}`}
                     >
                       <span
                         className="block h-8 w-8 rounded-full border border-black/10"
                         style={{ backgroundColor: color.hex }}
                       />
+                      {colorStock <= 0 && <span className="absolute h-px w-10 rotate-45 bg-red-600" />}
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -866,14 +903,17 @@ const Product = () => {
             {technicalCharacteristics.length > 0 && (
               <section className="border-t border-border pt-6 space-y-3">
                 <h2 className="text-sm font-bold tracking-wider uppercase">{t("product.specs")}</h2>
-                <div className="border border-border divide-y divide-border">
+                <dl className="overflow-hidden rounded-md border border-border bg-white">
                   {technicalCharacteristics.map((item, index) => (
-                    <div key={`${item.label}-${index}`} className="grid grid-cols-2 text-sm">
-                      <div className="px-3 py-2 font-semibold bg-accent/40">{item.label}</div>
-                      <div className="px-3 py-2 text-muted-foreground">{item.value}</div>
+                    <div
+                      key={`${item.label}-${index}`}
+                      className="grid gap-1 border-b border-border px-4 py-3 text-sm last:border-b-0 sm:grid-cols-[180px_minmax(0,1fr)] sm:gap-4"
+                    >
+                      <dt className="font-black uppercase tracking-wide text-foreground">{item.label}</dt>
+                      <dd className="leading-6 text-muted-foreground">{item.value}</dd>
                     </div>
                   ))}
-                </div>
+                </dl>
               </section>
             )}
 

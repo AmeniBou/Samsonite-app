@@ -55,7 +55,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/contact-faq" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
+                <Link to="/nous-contacter" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
                   {t("footer.contactFaq")}
                 </Link>
               </li>
@@ -86,15 +86,40 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/personnalisation" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
-                  {t("home.personalization")}
+                <Link to="/plan-du-site" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
+                  {t("footer.siteMap")}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="mb-4 text-xs font-bold tracking-wider">{t("footer.follow")}</h4>
+            <h4 className="mb-4 text-xs font-bold tracking-wider">{t("footer.info")}</h4>
+            <div className="space-y-1 text-sm leading-6 text-primary-foreground/70">
+              <p className="font-semibold text-primary-foreground">Samsonite</p>
+              <p>9, Rue 8601 Zone Industriel</p>
+              <p>Charguia 1</p>
+              <p>2035 Ariana</p>
+              <p>Tunisie</p>
+              <p className="pt-2">
+                {t("footer.callUs")} :{" "}
+                <a href="tel:+21626528103" className="transition-colors hover:text-primary-foreground">
+                  26 528 103
+                </a>{" "}
+                /{" "}
+                <a href="tel:+21671809209" className="transition-colors hover:text-primary-foreground">
+                  71 809 209
+                </a>
+              </p>
+              <p>Fax : 71 809 080</p>
+              <p>
+                {t("footer.emailUs")} :{" "}
+                <a href="mailto:commercial@samsonite.com.tn" className="break-all transition-colors hover:text-primary-foreground">
+                  commercial@samsonite.com.tn
+                </a>
+              </p>
+            </div>
+            <h4 className="mb-4 mt-6 text-xs font-bold tracking-wider">{t("footer.follow")}</h4>
             <div className="flex items-center gap-4">
               <a href={socialLinks.facebook} target="_blank" rel="noreferrer" className="text-primary-foreground/70 transition-colors hover:text-primary-foreground">
                 <Facebook className="h-5 w-5" />
@@ -121,6 +146,9 @@ const Footer = () => {
             </Link>
             <Link to="/services" className="hover:text-primary-foreground">
               Cookies
+            </Link>
+            <Link to="/plan-du-site" className="hover:text-primary-foreground">
+              {t("footer.siteMap")}
             </Link>
           </div>
         </div>

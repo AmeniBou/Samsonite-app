@@ -50,7 +50,7 @@ export const mapPSProductToDisplay = (
   const isWeightText = (value: string) =>
     /poids|weight|\bkg\b/i.test(value.trim());
   const isDimensionText = (value: string) =>
-    /dimension|\bcm\b|\bmm\b|\d+\s*[x�]\s*\d+/i.test(value.trim());
+    /dimension|\bcm\b|\bmm\b|\d+\s*[x]\s*\d+/i.test(value.trim());
   const isLikelySizeText = (value: string) =>
     /^(xxs|xs|s|m|l|xl|xxl|xxxl)$/i.test(value.trim()) ||
     /^\d{2,3}\s*(cm|")$/i.test(value.trim()) ||
@@ -102,7 +102,7 @@ export const mapPSProductToDisplay = (
     if (!normalized) return false;
 
     const lower = normalized.toLowerCase();
-    if (["null", "undefined", "n/a", "na", "-", "--", ":", "...", "�"].includes(lower)) {
+    if (["null", "undefined", "n/a", "na", "-", "--", ":", "...", ""].includes(lower)) {
       return false;
     }
 
@@ -338,7 +338,7 @@ export const mapPSProductToDisplay = (
       const normalized = value.toLowerCase();
       const isWeight = /poids|weight|\bkg\b/.test(normalized);
       const isDimension =
-        /dimension|\bcm\b|\bmm\b|\d+\s*[x�]\s*\d+/.test(normalized) &&
+        /dimension|\bcm\b|\bmm\b|\d+\s*[x]\s*\d+/.test(normalized) &&
         !isLikelySizeText(value);
 
       if (isWeight) return { label: "Poids", value };
@@ -369,12 +369,24 @@ export const mapPSProductToDisplay = (
   const characteristicWeight = allCharacteristics.find((item) =>
     /poids|weight/i.test(item.label)
   )?.value;
+  const characteristicVolume = allCharacteristics.find((item) =>
+    /volume/i.test(item.label)
+  )?.value || variants.find((variant) => variant.volume)?.volume;
 
   const collectionName = getCollectionName(name, slug || "");
+  const rawBrandName =
+    typeof product.manufacturer_name === "string"
+      ? stripHtml(product.manufacturer_name).replace(/\s+/g, " ").trim()
+      : "";
+  const brandSearchText = `${rawBrandName} ${name} ${shortDesc} ${fullDesc} ${slug}`;
+  const brandName = /american\s*tourister/i.test(brandSearchText)
+    ? "American Tourister"
+    : rawBrandName || "Samsonite";
 
   return {
     id: productId,
     name,
+    brandName,
     collection: collectionName,
     shortDescription: shortDesc,
     description: fullDesc,
@@ -388,6 +400,7 @@ export const mapPSProductToDisplay = (
     characteristics: allCharacteristics,
     dimensions: numericDimensions || characteristicDimensions,
     weight: numericWeight ? `${numericWeight} kg` : characteristicWeight,
+    volume: characteristicVolume,
     slug: slug || `product-${productId}`,
     categorySlug: options?.categorySlugById?.[categoryId] || `category-${categoryId}`,
     categorySlugs,

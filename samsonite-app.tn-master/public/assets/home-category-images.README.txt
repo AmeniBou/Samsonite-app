@@ -1,0 +1,8 @@
+Place the home category images here with these exact filenames:
+
+- home-category-valises.png
+- home-category-sacs.png
+- home-category-business.png
+- home-category-disney.png 
+
+The home page uses these images before falling back to category images or placeholder.svg.

@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, Loader2, Upload } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Upload, ImageOff } from "lucide-react";
 import {
     fetchAdminProduct,
     createProduct,
     updateProduct,
     fetchAdminCategories,
+    fetchAdminBrands,
     uploadAdminImages,
     type AdminCategory,
+    type AdminBrand,
 } from "@/lib/admin-api";
 
 const decodeAdminText = (value?: string | null): string => {
@@ -19,7 +21,7 @@ const decodeAdminText = (value?: string | null): string => {
         text = textarea.value;
     }
 
-    for (let index = 0; index < 2 && /Ã|Â|â/.test(text); index += 1) {
+    for (let index = 0; index < 2 && ["\u00c3", "\u00c2", "\u00e2"].some((marker) => text.includes(marker)); index += 1) {
         try {
             const bytes = Uint8Array.from(text, (char) => char.charCodeAt(0) & 0xff);
             const decoded = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
@@ -32,11 +34,36 @@ const decodeAdminText = (value?: string | null): string => {
     return text;
 };
 
+
+const isValidImageReference = (value: string): boolean => {
+    const trimmed = value.trim();
+    if (!trimmed) return true;
+    return /^(https?:\/\/|\/)([^\s]+)\.(jpe?g|png|webp|gif|avif)(\?.*)?$/i.test(trimmed);
+};
+
+const parseLines = (value: string): string[] =>
+    value
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+const isValidNonNegativeNumber = (value: string): boolean => {
+    if (!value.trim()) return true;
+    const number = Number(value);
+    return Number.isFinite(number) && number >= 0;
+};
+
+const isValidPositiveNumber = (value: string): boolean => {
+    if (!value.trim()) return false;
+    const number = Number(value);
+    return Number.isFinite(number) && number > 0;
+};
 const AdminProductForm = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const isEdit = Boolean(id);
     const [categories, setCategories] = useState<AdminCategory[]>([]);
+    const [brands, setBrands] = useState<AdminBrand[]>([]);
     const [loading, setLoading] = useState(false);
     const [uploadingImages, setUploadingImages] = useState(false);
     const [error, setError] = useState("");
@@ -60,7 +87,9 @@ const AdminProductForm = () => {
         description: "",
         descriptionShort: "",
         price: "",
+        parentCategoryId: "",
         categoryId: "",
+        brandId: "",
         reference: "",
         weight: "",
         width: "",
@@ -94,12 +123,16 @@ const AdminProductForm = () => {
     });
 
     useEffect(() => {
-        const loadCategories = async () => {
+        const loadReferences = async () => {
             try {
-                const cats = await fetchAdminCategories();
+                const [cats, fetchedBrands] = await Promise.all([
+                    fetchAdminCategories(),
+                    fetchAdminBrands(),
+                ]);
                 setCategories(cats);
+                setBrands(fetchedBrands);
             } catch {
-                setError("Impossible de charger les catégories");
+                setError("Impossible de charger les catégories ou les marques");
             }
         };
 
@@ -113,7 +146,9 @@ const AdminProductForm = () => {
                     description: decodeAdminText(p.description),
                     descriptionShort: decodeAdminText(p.descriptionShort),
                     price: p.price.toString(),
+                    parentCategoryId: "",
                     categoryId: p.categoryId.toString(),
+                    brandId: p.brandId?.toString() || "",
                     reference: p.reference,
                     weight: p.weight || "",
                     width: p.width || "",
@@ -156,9 +191,19 @@ const AdminProductForm = () => {
             }
         };
 
-        loadCategories();
+        loadReferences();
         loadProduct();
     }, [id, isEdit]);
+
+    useEffect(() => {
+        if (!form.categoryId || form.parentCategoryId || categories.length === 0) return;
+        const category = categories.find((item) => String(item.id) === form.categoryId);
+        if (!category) return;
+        setForm((prev) => ({
+            ...prev,
+            parentCategoryId: category.parentId ? String(category.parentId) : String(category.id),
+        }));
+    }, [categories, form.categoryId, form.parentCategoryId]);
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -167,9 +212,9 @@ const AdminProductForm = () => {
         setForm((prev) => ({
             ...prev,
             [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+            ...(name === "parentCategoryId" ? { categoryId: "" } : {}),
         }));
     };
-
     const handleVariantChange = (
         index: number,
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -227,6 +272,20 @@ const AdminProductForm = () => {
         const files = Array.from(event.target.files || []);
         if (files.length === 0) return;
 
+        const invalidFile = files.find((file) => !file.type.startsWith("image/"));
+        if (invalidFile) {
+            setError(`Image invalide: ${invalidFile.name}. Choisis un fichier JPG, PNG, WEBP ou GIF.`);
+            event.target.value = "";
+            return;
+        }
+
+        const oversizedFile = files.find((file) => file.size > 5 * 1024 * 1024);
+        if (oversizedFile) {
+            setError(`Image trop lourde: ${oversizedFile.name}. Maximum 5 Mo par image.`);
+            event.target.value = "";
+            return;
+        }
+
         setError("");
         setSuccess("");
         setUploadingImages(true);
@@ -253,6 +312,25 @@ const AdminProductForm = () => {
         }
     };
 
+    const removeProductImage = (imageToRemove: string) => {
+        setForm((prev) => ({
+            ...prev,
+            imagesText: parseLines(prev.imagesText)
+                .filter((image) => image !== imageToRemove)
+                .join("\n"),
+        }));
+    };
+
+    const moveProductImage = (index: number, direction: -1 | 1) => {
+        setForm((prev) => {
+            const images = parseLines(prev.imagesText);
+            const nextIndex = index + direction;
+            if (nextIndex < 0 || nextIndex >= images.length) return prev;
+            [images[index], images[nextIndex]] = [images[nextIndex], images[index]];
+            return { ...prev, imagesText: images.join("\n") };
+        });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
@@ -262,22 +340,53 @@ const AdminProductForm = () => {
             setError("Le nom est requis");
             return;
         }
-        if (!form.price || parseFloat(form.price) < 0) {
-            setError("Le prix est invalide");
+        if (!isValidPositiveNumber(form.price)) {
+            setError("Le prix est obligatoire et doit etre superieur a 0.");
+            return;
+        }
+        if (!form.brandId) {
+            setError("La marque est requise.");
+            return;
+        }
+        if (!form.parentCategoryId) {
+            setError("La categorie parent est requise.");
             return;
         }
         if (!form.categoryId) {
-            setError("La catégorie est requise");
+            setError("La sous-categorie est requise.");
             return;
+        }
+        if (!isValidNonNegativeNumber(form.quantity)) {
+            setError("Le stock doit etre un nombre positif ou zero.");
+            return;
+        }
+
+        const images = parseLines(form.imagesText);
+        const invalidImage = images.find((image) => !isValidImageReference(image));
+        if (invalidImage) {
+            setError(`Image invalide: ${invalidImage}. Utilise une URL ou un chemin /images/... en JPG, PNG, WEBP, GIF ou AVIF.`);
+            return;
+        }
+
+        for (const [index, variant] of form.variants.entries()) {
+            if (!isValidNonNegativeNumber(variant.stock)) {
+                setError(`Le stock de la variante #${index + 1} doit etre numerique.`);
+                return;
+            }
+            if (variant.price && !isValidPositiveNumber(variant.price)) {
+                setError(`Le prix de la variante #${index + 1} doit etre superieur a 0.`);
+                return;
+            }
+            const invalidVariantImage = parseLines(variant.imagesText).find((image) => !isValidImageReference(image));
+            if (invalidVariantImage) {
+                setError(`Image invalide dans la variante #${index + 1}: ${invalidVariantImage}`);
+                return;
+            }
         }
 
         setLoading(true);
 
         try {
-            const images = form.imagesText
-                .split("\n")
-                .map((line) => line.trim())
-                .filter(Boolean);
             const featuresFree = form.featuresText
                 .split("\n")
                 .map((line) => line.trim())
@@ -310,10 +419,7 @@ const AdminProductForm = () => {
             const features = [...featuresAuto, ...featuresFree];
             const variants = form.variants
                 .map((variant) => {
-                    const images = variant.imagesText
-                        .split("\n")
-                        .map((line) => line.trim())
-                        .filter(Boolean);
+                    const images = parseLines(variant.imagesText);
                     return {
                         colorName: variant.colorName.trim() || undefined,
                         colorHex: variant.colorHex.trim() || undefined,
@@ -355,6 +461,7 @@ const AdminProductForm = () => {
                 description: form.description.trim(),
                 descriptionShort: form.descriptionShort.trim(),
                 price: parseFloat(form.price),
+                brandId: parseInt(form.brandId, 10),
                 categoryId: parseInt(form.categoryId, 10),
                 reference: form.reference.trim(),
                 weight: form.weight.trim() || undefined,
@@ -391,11 +498,24 @@ const AdminProductForm = () => {
         }
     };
 
-    // Only show categories that are not root (id > 2)
-    const selectableCategories = categories.filter((c) => c.id > 2);
+    const rootCategories = categories
+        .filter((category) => !category.parentId)
+        .sort((first, second) => first.name.localeCompare(second.name, "fr"));
+    const selectedParent = categories.find((category) => String(category.id) === form.parentCategoryId);
+    const childCategories = categories
+        .filter((category) => String(category.parentId) === form.parentCategoryId)
+        .sort((first, second) => first.name.localeCompare(second.name, "fr"));
+    const categoryOptions = selectedParent ? [selectedParent, ...childCategories] : [];
+    const imagePreviewItems = parseLines(form.imagesText).slice(0, 12);
+    const allProductImages = parseLines(form.imagesText);
+    const selectedBrandName = brands.find((brand) => String(brand.id) === form.brandId)?.name || "Samsonite";
+    const selectedCategoryName = categories.find((category) => String(category.id) === form.categoryId)?.name || selectedParent?.name || "Categorie";
+    const previewImage = allProductImages[0] || "/placeholder.svg";
+    const previewDescription = form.descriptionShort || form.description || "Description courte du produit.";
+    const previewPrice = form.price && Number.isFinite(Number(form.price)) ? Number(form.price).toLocaleString("fr-TN", { minimumFractionDigits: 3 }) : "0,000";
 
     return (
-        <div className="p-6 max-w-2xl">
+        <div className="p-6 max-w-7xl">
             {/* Header */}
             <div className="mb-6">
                 <button
@@ -424,6 +544,7 @@ const AdminProductForm = () => {
             )}
 
             {/* Form */}
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
             <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-5">
                 {/* Name */}
                 <div>
@@ -477,39 +598,68 @@ const AdminProductForm = () => {
                     </div>
                 </div>
 
-                {/* Category Selection with Hierarchy */}
-                <div>
-                    <label htmlFor="product-category" className="block text-sm font-medium text-gray-700 mb-1">
-                        Catégorie *
-                    </label>
-                    <select
-                        id="product-category"
-                        name="categoryId"
-                        value={form.categoryId}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black bg-white"
-                        required
-                    >
-                        <option value="">Sélectionner une catégorie</option>
-                        {categories
-                            .filter(c => c.id > 2) // Ignore Root/Home
-                            .map((cat) => {
-                                // Simple breadcrumb building
-                                const path = [];
-                                let current: AdminCategory | undefined = cat;
-                                while (current && current.id > 2) {
-                                    path.unshift(current.name);
-                                    current = categories.find(c => c.id === current?.parentId);
-                                }
-                                return (
-                                    <option key={cat.id} value={cat.id}>
-                                        {path.join(" > ")}
-                                    </option>
-                                );
-                            })
-                            .sort((a, b) => a.props.children.localeCompare(b.props.children))
-                        }
-                    </select>
+                <div className="grid gap-4 md:grid-cols-3">
+                    <div>
+                        <label htmlFor="product-brand" className="block text-sm font-medium text-gray-700 mb-1">
+                            Marque *
+                        </label>
+                        <select
+                            id="product-brand"
+                            name="brandId"
+                            value={form.brandId}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black bg-white"
+                            required
+                        >
+                            <option value="">Sélectionner une marque</option>
+                            {brands.map((brand) => (
+                                <option key={brand.id} value={brand.id}>
+                                    {brand.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="product-parent-category" className="block text-sm font-medium text-gray-700 mb-1">
+                            Catégorie parent *
+                        </label>
+                        <select
+                            id="product-parent-category"
+                            name="parentCategoryId"
+                            value={form.parentCategoryId}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black bg-white"
+                            required
+                        >
+                            <option value="">Choisir un parent</option>
+                            {rootCategories.map((category) => (
+                                <option key={category.id} value={category.id}>
+                                    {category.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="product-category" className="block text-sm font-medium text-gray-700 mb-1">
+                            Sous-catégorie *
+                        </label>
+                        <select
+                            id="product-category"
+                            name="categoryId"
+                            value={form.categoryId}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black bg-white"
+                            required
+                            disabled={!form.parentCategoryId}
+                        >
+                            <option value="">Choisir une sous-catégorie</option>
+                            {categoryOptions.map((category) => (
+                                <option key={category.id} value={category.id}>
+                                    {category.id === selectedParent?.id ? `Toutes - ${category.name}` : category.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
 
                 {/* Dimensions & Weight */}
@@ -789,66 +939,66 @@ const AdminProductForm = () => {
                 </div>
 
                 {/* Images */}
-                <div className="space-y-3">
-                    <div className="flex flex-col gap-3 rounded-md border border-gray-200 bg-gray-50 p-4">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <p className="text-sm font-medium text-gray-700">Images du produit</p>
-                                <p className="text-xs text-gray-500">
-                                    Importe des images depuis ton ordinateur ou colle des URLs, une par ligne.
-                                </p>
-                            </div>
-                            <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100">
-                                {uploadingImages ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Upload className="h-4 w-4" />
-                                )}
-                                {uploadingImages ? "Import..." : "Importer"}
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    multiple
-                                    className="hidden"
-                                    onChange={handleImageUpload}
-                                    disabled={uploadingImages}
-                                />
-                            </label>
+                <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p className="text-sm font-bold text-gray-900">Images du produit</p>
+                            <p className="text-xs text-gray-500">Importe les photos depuis ton ordinateur. La première image devient l'image principale.</p>
                         </div>
+                        <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-black px-4 py-2 text-xs font-bold text-white hover:bg-gray-800">
+                            {uploadingImages ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                            {uploadingImages ? "Import..." : "Importer des images"}
+                            <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="hidden"
+                                onChange={handleImageUpload}
+                                disabled={uploadingImages}
+                            />
+                        </label>
                     </div>
-                    {form.imagesText.trim() && (
-                        <div className="grid grid-cols-4 gap-2">
-                            {form.imagesText
-                                .split("\n")
-                                .map((line) => line.trim())
-                                .filter(Boolean)
-                                .slice(0, 8)
-                                .map((image, index) => (
-                                    <div key={`${image}-${index}`} className="aspect-square rounded border border-gray-200 bg-white p-1">
-                                        <img
-                                            src={image}
-                                            alt=""
-                                            className="h-full w-full object-contain"
-                                            onError={(event) => {
-                                                event.currentTarget.src = "/placeholder.svg";
-                                            }}
-                                        />
+
+                    {imagePreviewItems.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            {imagePreviewItems.map((image, index) => {
+                                const valid = isValidImageReference(image);
+                                return (
+                                    <div key={`${image}-${index}`} className={`overflow-hidden rounded-md border bg-white ${valid ? "border-gray-200" : "border-red-300"}`}>
+                                        <div className="aspect-square bg-white">
+                                            {valid ? (
+                                                <img
+                                                    src={image}
+                                                    alt={`Aperçu produit ${index + 1}`}
+                                                    className="h-full w-full object-contain"
+                                                    onError={(event) => {
+                                                        event.currentTarget.src = "/placeholder.svg";
+                                                    }}
+                                                />
+                                            ) : (
+                                                <div className="flex h-full flex-col items-center justify-center gap-2 text-red-500">
+                                                    <ImageOff className="h-5 w-5" />
+                                                    <span className="px-2 text-center text-xs font-semibold">Image invalide</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center justify-between gap-1 border-t border-gray-100 px-2 py-1">
+                                            <span className="text-[11px] font-semibold text-gray-500">#{index + 1}</span>
+                                            <div className="flex gap-1">
+                                                <button type="button" onClick={() => moveProductImage(index, -1)} disabled={index === 0} className="text-[11px] text-gray-500 hover:text-black disabled:opacity-30">Haut</button>
+                                                <button type="button" onClick={() => moveProductImage(index, 1)} disabled={index === imagePreviewItems.length - 1} className="text-[11px] text-gray-500 hover:text-black disabled:opacity-30">Bas</button>
+                                                <button type="button" onClick={() => removeProductImage(image)} className="text-[11px] font-bold text-red-600 hover:underline">Retirer</button>
+                                            </div>
+                                        </div>
                                     </div>
-                                ))}
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="flex min-h-36 items-center justify-center rounded-md border border-dashed border-gray-300 bg-white text-sm text-gray-500">
+                            Aucune image importée pour le moment.
                         </div>
                     )}
-                    <label htmlFor="product-images" className="block text-sm font-medium text-gray-700">
-                        Chemins / URLs des images
-                    </label>
-                    <textarea
-                        id="product-images"
-                        name="imagesText"
-                        rows={4}
-                        value={form.imagesText}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none font-mono"
-                        placeholder={"/images/admin/photo1.jpg\nhttps://.../photo2.jpg"}
-                    />
                 </div>
 
                 {/* Features */}
@@ -923,6 +1073,9 @@ const AdminProductForm = () => {
                                 />
                                 <input
                                     name="price"
+                                    type="number"
+                                    step="0.001"
+                                    min="0"
                                     value={variant.price}
                                     onChange={(e) => handleVariantChange(index, e)}
                                     className="px-3 py-2 border border-gray-300 rounded-md text-sm"
@@ -930,6 +1083,9 @@ const AdminProductForm = () => {
                                 />
                                 <input
                                     name="stock"
+                                    type="number"
+                                    step="1"
+                                    min="0"
                                     value={variant.stock}
                                     onChange={(e) => handleVariantChange(index, e)}
                                     className="px-3 py-2 border border-gray-300 rounded-md text-sm"
@@ -942,7 +1098,7 @@ const AdminProductForm = () => {
                                 value={variant.imagesText}
                                 onChange={(e) => handleVariantChange(index, e)}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none font-mono"
-                                placeholder="URLs d'images de la variante (une par ligne)"
+                                placeholder="Images de la variante (optionnel, une par ligne)"
                             />
                         </div>
                     ))}
@@ -1003,6 +1159,40 @@ const AdminProductForm = () => {
                     </button>
                 </div>
             </form>
+
+            <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
+                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                    <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Aperçu page détail</p>
+                    <div className="mt-4 overflow-hidden rounded-md border border-gray-100 bg-white">
+                        <div className="aspect-square bg-white p-4">
+                            <img
+                                src={previewImage}
+                                alt="Aperçu produit"
+                                className="h-full w-full object-contain"
+                                onError={(event) => {
+                                    event.currentTarget.src = "/placeholder.svg";
+                                }}
+                            />
+                        </div>
+                    </div>
+                    <div className="mt-5 space-y-3">
+                        <div>
+                            <p className="text-xs font-bold uppercase text-gray-400">{selectedBrandName}</p>
+                            <h2 className="mt-1 text-2xl font-black uppercase leading-tight text-gray-950">{form.name || "Nom du produit"}</h2>
+                            <p className="mt-1 text-sm text-gray-500">{selectedCategoryName}</p>
+                        </div>
+                        <p className="text-xl font-black text-gray-950">{previewPrice} DT</p>
+                        <p className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${form.active ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+                            {form.active ? "Visible sur le site" : "Non visible"}
+                        </p>
+                        <p className="line-clamp-4 text-sm leading-6 text-gray-600">{previewDescription}</p>
+                        <button type="button" className="w-full rounded-md bg-black px-4 py-3 text-sm font-black uppercase text-white">
+                            Ajouter au panier
+                        </button>
+                    </div>
+                </div>
+            </aside>
+            </div>
         </div>
     );
 };
