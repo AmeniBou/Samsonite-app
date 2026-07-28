@@ -58,6 +58,43 @@ const isValidPositiveNumber = (value: string): boolean => {
     const number = Number(value);
     return Number.isFinite(number) && number > 0;
 };
+
+type ProductVariantForm = {
+    colorName: string;
+    colorHex: string;
+    size: string;
+    weight: string;
+    width: string;
+    height: string;
+    depth: string;
+    volume: string;
+    price: string;
+    stockInitial: string;
+    stock: string;
+    imagesText: string;
+};
+
+type ProductFormStep = 1 | 2 | 3;
+
+const createEmptyVariant = (overrides: Partial<ProductVariantForm> = {}): ProductVariantForm => ({
+    colorName: "",
+    colorHex: "",
+    size: "",
+    weight: "",
+    width: "",
+    height: "",
+    depth: "",
+    volume: "",
+    price: "",
+    stockInitial: "",
+    stock: "",
+    imagesText: "",
+    ...overrides,
+});
+
+const getVariantUniqueKey = (variant: Pick<ProductVariantForm, "colorName" | "size">): string =>
+    [variant.colorName.trim().toLowerCase(), variant.size.trim().toLowerCase()].join("::");
+
 const AdminProductForm = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
@@ -68,6 +105,7 @@ const AdminProductForm = () => {
     const [uploadingImages, setUploadingImages] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const [currentStep, setCurrentStep] = useState<ProductFormStep>(1);
 
     const colorOptions = [
         { name: "Noir", hex: "#000000" },
@@ -112,14 +150,7 @@ const AdminProductForm = () => {
         typeRoues: "",
         compartimentInf: false,
         compartimentSup: false,
-        variants: [] as Array<{
-            colorName: string;
-            colorHex: string;
-            size: string;
-            price: string;
-            stock: string;
-            imagesText: string;
-        }>,
+        variants: [createEmptyVariant()] as ProductVariantForm[],
     });
 
     useEffect(() => {
@@ -171,14 +202,24 @@ const AdminProductForm = () => {
                             .map((f) => f.value)
                             .filter(Boolean) || [],
                     variants:
-                        p.variants?.map((v) => ({
-                            colorName: v.colorName || "",
-                            colorHex: v.colorHex || "",
-                            size: v.size || "",
-                            price: v.price?.toString() || "",
-                            stock: v.stock?.toString() || "",
-                            imagesText: (v.images || []).join("\n"),
-                        })) || [],
+                        p.variants && p.variants.length > 0
+                            ? p.variants.map((v) =>
+                                  createEmptyVariant({
+                                      colorName: v.colorName || "",
+                                      colorHex: v.colorHex || "",
+                                      size: v.size || "",
+                                      weight: v.weight || "",
+                                      width: v.width || "",
+                                      height: v.height || "",
+                                      depth: v.depth || "",
+                                      volume: v.volume || "",
+                                      price: v.price?.toString() || "",
+                                      stockInitial: v.stockInitial?.toString() || "",
+                                      stock: v.stock?.toString() || "",
+                                      imagesText: (v.images || []).join("\n"),
+                                  })
+                              )
+                            : [createEmptyVariant()],
                 });
 
                 // Fetch full details if needed - the getMappedAdminProduct might not have everything
@@ -254,11 +295,20 @@ const AdminProductForm = () => {
     const addVariant = () => {
         setForm((prev) => ({
             ...prev,
+            variants: [...prev.variants, createEmptyVariant()],
+        }));
+    };
+
+    const duplicateVariant = (index: number) => {
+        setForm((prev) => ({
+            ...prev,
             variants: [
-                ...prev.variants,
-                { colorName: "", colorHex: "", size: "", price: "", stock: "", imagesText: "" },
+                ...prev.variants.slice(0, index + 1),
+                createEmptyVariant({ ...prev.variants[index] }),
+                ...prev.variants.slice(index + 1),
             ],
         }));
+        setSuccess("Variante dupliquée. Modifie au moins la couleur ou la taille avant d'enregistrer.");
     };
 
     const removeVariant = (index: number) => {
@@ -312,6 +362,70 @@ const AdminProductForm = () => {
         }
     };
 
+    const handleVariantImageUpload = async (
+        index: number,
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        const files = Array.from(event.target.files || []);
+        if (files.length === 0) return;
+
+        const invalidFile = files.find((file) => !file.type.startsWith("image/"));
+        if (invalidFile) {
+            setError(`Image invalide: ${invalidFile.name}. Choisis un fichier JPG, PNG, WEBP ou GIF.`);
+            event.target.value = "";
+            return;
+        }
+
+        const oversizedFile = files.find((file) => file.size > 5 * 1024 * 1024);
+        if (oversizedFile) {
+            setError(`Image trop lourde: ${oversizedFile.name}. Maximum 5 Mo par image.`);
+            event.target.value = "";
+            return;
+        }
+
+        setError("");
+        setSuccess("");
+        setUploadingImages(true);
+
+        try {
+            const result = await uploadAdminImages(files);
+            if (!result.success || !result.images?.length) {
+                setError(result.error || "Impossible d'importer les images");
+                return;
+            }
+
+            setForm((prev) => {
+                const variants = [...prev.variants];
+                variants[index] = {
+                    ...variants[index],
+                    imagesText: [variants[index].imagesText, ...result.images]
+                        .filter(Boolean)
+                        .join("\n"),
+                };
+                return { ...prev, variants };
+            });
+            setSuccess(`${result.images.length} image(s) importee(s) dans la variante #${index + 1}`);
+        } catch {
+            setError("Erreur pendant l'import des images");
+        } finally {
+            setUploadingImages(false);
+            event.target.value = "";
+        }
+    };
+
+    const removeVariantImage = (variantIndex: number, imageToRemove: string) => {
+        setForm((prev) => {
+            const variants = [...prev.variants];
+            variants[variantIndex] = {
+                ...variants[variantIndex],
+                imagesText: parseLines(variants[variantIndex].imagesText)
+                    .filter((image) => image !== imageToRemove)
+                    .join("\n"),
+            };
+            return { ...prev, variants };
+        });
+    };
+
     const removeProductImage = (imageToRemove: string) => {
         setForm((prev) => ({
             ...prev,
@@ -340,10 +454,6 @@ const AdminProductForm = () => {
             setError("Le nom est requis");
             return;
         }
-        if (!isValidPositiveNumber(form.price)) {
-            setError("Le prix est obligatoire et doit etre superieur a 0.");
-            return;
-        }
         if (!form.brandId) {
             setError("La marque est requise.");
             return;
@@ -356,25 +466,49 @@ const AdminProductForm = () => {
             setError("La sous-categorie est requise.");
             return;
         }
-        if (!isValidNonNegativeNumber(form.quantity)) {
-            setError("Le stock doit etre un nombre positif ou zero.");
-            return;
-        }
-
-        const images = parseLines(form.imagesText);
-        const invalidImage = images.find((image) => !isValidImageReference(image));
-        if (invalidImage) {
-            setError(`Image invalide: ${invalidImage}. Utilise une URL ou un chemin /images/... en JPG, PNG, WEBP, GIF ou AVIF.`);
+        if (form.variants.length === 0) {
+            setError("Ajoute au moins une variante avec couleur, taille, prix, stock et images.");
             return;
         }
 
         for (const [index, variant] of form.variants.entries()) {
-            if (!isValidNonNegativeNumber(variant.stock)) {
-                setError(`Le stock de la variante #${index + 1} doit etre numerique.`);
+            if (!variant.colorName.trim()) {
+                setError(`La couleur de la variante #${index + 1} est requise.`);
                 return;
             }
-            if (variant.price && !isValidPositiveNumber(variant.price)) {
-                setError(`Le prix de la variante #${index + 1} doit etre superieur a 0.`);
+            if (!variant.size.trim()) {
+                setError(`La taille de la variante #${index + 1} est requise.`);
+                return;
+            }
+            if (!isValidPositiveNumber(variant.price)) {
+                setError(`Le prix de la variante #${index + 1} est requis et doit etre superieur a 0.`);
+                return;
+            }
+            if (!variant.stock.trim()) {
+                setError(`Le stock de la variante #${index + 1} est requis.`);
+                return;
+            }
+            if (parseLines(variant.imagesText).length === 0) {
+                setError(`Ajoute au moins une image pour la variante #${index + 1}.`);
+                return;
+            }
+            const duplicateIndex = form.variants.findIndex(
+                (candidate, candidateIndex) =>
+                    candidateIndex !== index &&
+                    getVariantUniqueKey(candidate) === getVariantUniqueKey(variant)
+            );
+            if (duplicateIndex !== -1) {
+                setError(
+                    `La variante #${index + 1} existe déjà en variante #${duplicateIndex + 1}. Change la couleur ou la taille.`
+                );
+                return;
+            }
+            if (!isValidNonNegativeNumber(variant.stockInitial)) {
+                setError(`Le stock initial de la variante #${index + 1} doit etre numerique.`);
+                return;
+            }
+            if (!isValidNonNegativeNumber(variant.stock)) {
+                setError(`Le stock de la variante #${index + 1} doit etre numerique.`);
                 return;
             }
             const invalidVariantImage = parseLines(variant.imagesText).find((image) => !isValidImageReference(image));
@@ -424,7 +558,13 @@ const AdminProductForm = () => {
                         colorName: variant.colorName.trim() || undefined,
                         colorHex: variant.colorHex.trim() || undefined,
                         size: variant.size.trim() || undefined,
+                        weight: variant.weight.trim() || undefined,
+                        width: variant.width.trim() || undefined,
+                        height: variant.height.trim() || undefined,
+                        depth: variant.depth.trim() || undefined,
+                        volume: variant.volume.trim() || undefined,
                         price: variant.price ? parseFloat(variant.price) : undefined,
+                        stockInitial: variant.stockInitial ? parseFloat(variant.stockInitial) : undefined,
                         stock: variant.stock ? parseFloat(variant.stock) : undefined,
                         images,
                     };
@@ -434,48 +574,44 @@ const AdminProductForm = () => {
                         v.colorName ||
                         v.colorHex ||
                         v.size ||
+                        v.weight ||
+                        v.width ||
+                        v.height ||
+                        v.depth ||
+                        v.volume ||
                         typeof v.price === "number" ||
+                        typeof v.stockInitial === "number" ||
                         typeof v.stock === "number" ||
                         (v.images && v.images.length > 0)
                 );
 
-            const paletteVariants =
-                form.colorsSelected.length > 0
-                    ? form.colorsSelected.map((c) => {
-                          const paletteColor = colorOptions.find(
-                              (opt) => opt.hex.toLowerCase() === c.toLowerCase() || opt.name === c
-                          );
-                          return {
-                              colorName: paletteColor?.name || c,
-                              colorHex: paletteColor?.hex || (c.startsWith("#") ? c : undefined),
-                              size: form.sizesSelected[0],
-                              price: undefined,
-                              stock: form.quantity ? parseFloat(form.quantity) : undefined,
-                              images: [],
-                          };
-                      })
-                    : [];
+            const variantImages = Array.from(
+                new Set(variants.flatMap((variant) => variant.images || []))
+            );
+            const firstVariant = variants[0];
+            const derivedPrice = firstVariant?.price || (form.price ? parseFloat(form.price) : 0);
+            const derivedStock = variants.reduce((sum, variant) => sum + (variant.stock || 0), 0);
 
             const productData = {
                 name: form.name.trim(),
                 description: form.description.trim(),
                 descriptionShort: form.descriptionShort.trim(),
-                price: parseFloat(form.price),
+                price: derivedPrice,
                 brandId: parseInt(form.brandId, 10),
                 categoryId: parseInt(form.categoryId, 10),
                 reference: form.reference.trim(),
-                weight: form.weight.trim() || undefined,
-                width: form.width.trim() || undefined,
-                height: form.height.trim() || undefined,
-                depth: form.depth.trim() || undefined,
+                weight: firstVariant?.weight || undefined,
+                width: firstVariant?.width || undefined,
+                height: firstVariant?.height || undefined,
+                depth: firstVariant?.depth || undefined,
                 active: form.active,
                 onSale: form.onSale,
                 onlineOnly: form.onlineOnly,
-                quantity: form.quantity ? parseFloat(form.quantity) : undefined,
-                volume: form.volume.trim() || undefined,
-                images,
+                quantity: derivedStock,
+                volume: firstVariant?.volume || undefined,
+                images: variantImages,
                 features,
-                variants: variants.length > 0 ? variants : paletteVariants,
+                variants,
             };
 
             const result = isEdit
@@ -506,13 +642,112 @@ const AdminProductForm = () => {
         .filter((category) => String(category.parentId) === form.parentCategoryId)
         .sort((first, second) => first.name.localeCompare(second.name, "fr"));
     const categoryOptions = selectedParent ? [selectedParent, ...childCategories] : [];
-    const imagePreviewItems = parseLines(form.imagesText).slice(0, 12);
-    const allProductImages = parseLines(form.imagesText);
+    const allVariantImages = form.variants.flatMap((variant) => parseLines(variant.imagesText));
+    const imagePreviewItems = allVariantImages.slice(0, 12);
+    const allProductImages = allVariantImages;
     const selectedBrandName = brands.find((brand) => String(brand.id) === form.brandId)?.name || "Samsonite";
     const selectedCategoryName = categories.find((category) => String(category.id) === form.categoryId)?.name || selectedParent?.name || "Categorie";
     const previewImage = allProductImages[0] || "/placeholder.svg";
     const previewDescription = form.descriptionShort || form.description || "Description courte du produit.";
-    const previewPrice = form.price && Number.isFinite(Number(form.price)) ? Number(form.price).toLocaleString("fr-TN", { minimumFractionDigits: 3 }) : "0,000";
+    const firstPreviewVariant = form.variants.find((variant) => variant.price.trim());
+    const previewPrice =
+        firstPreviewVariant?.price && Number.isFinite(Number(firstPreviewVariant.price))
+            ? Number(firstPreviewVariant.price).toLocaleString("fr-TN", { minimumFractionDigits: 3 })
+            : "0,000";
+    const steps: Array<{ id: ProductFormStep; label: string; helper: string }> = [
+        { id: 1, label: "Informations", helper: "Produit" },
+        { id: 2, label: "Variantes", helper: "Couleurs, tailles, stock" },
+        { id: 3, label: "Aperçu", helper: "Validation finale" },
+    ];
+
+    const validateGeneralStep = () => {
+        if (!form.name.trim()) {
+            setError("Le nom est requis.");
+            return false;
+        }
+        if (!form.brandId) {
+            setError("La marque est requise.");
+            return false;
+        }
+        if (!form.parentCategoryId) {
+            setError("La catégorie parent est requise.");
+            return false;
+        }
+        if (!form.categoryId) {
+            setError("La sous-catégorie est requise.");
+            return false;
+        }
+        setError("");
+        return true;
+    };
+
+    const validateVariantsStep = () => {
+        if (form.variants.length === 0) {
+            setError("Ajoute au moins une variante avec couleur, taille, prix, stock et images.");
+            return false;
+        }
+
+        for (const [index, variant] of form.variants.entries()) {
+            if (!variant.colorName.trim()) {
+                setError(`La couleur de la variante #${index + 1} est requise.`);
+                return false;
+            }
+            if (!variant.size.trim()) {
+                setError(`La taille de la variante #${index + 1} est requise.`);
+                return false;
+            }
+            if (!isValidPositiveNumber(variant.price)) {
+                setError(`Le prix de la variante #${index + 1} est requis et doit être supérieur à 0.`);
+                return false;
+            }
+            if (!variant.stock.trim()) {
+                setError(`Le stock de la variante #${index + 1} est requis.`);
+                return false;
+            }
+            if (parseLines(variant.imagesText).length === 0) {
+                setError(`Ajoute au moins une image pour la variante #${index + 1}.`);
+                return false;
+            }
+            const duplicateIndex = form.variants.findIndex(
+                (candidate, candidateIndex) =>
+                    candidateIndex !== index &&
+                    getVariantUniqueKey(candidate) === getVariantUniqueKey(variant)
+            );
+            if (duplicateIndex !== -1) {
+                setError(
+                    `La variante #${index + 1} existe déjà en variante #${duplicateIndex + 1}. Change la couleur ou la taille.`
+                );
+                return false;
+            }
+            if (!isValidNonNegativeNumber(variant.stockInitial)) {
+                setError(`Le stock initial de la variante #${index + 1} doit être numérique.`);
+                return false;
+            }
+            if (!isValidNonNegativeNumber(variant.stock)) {
+                setError(`Le stock de la variante #${index + 1} doit être numérique.`);
+                return false;
+            }
+            const invalidVariantImage = parseLines(variant.imagesText).find((image) => !isValidImageReference(image));
+            if (invalidVariantImage) {
+                setError(`Image invalide dans la variante #${index + 1}: ${invalidVariantImage}`);
+                return false;
+            }
+        }
+
+        setError("");
+        return true;
+    };
+
+    const goToStep = (step: ProductFormStep) => {
+        if (step < currentStep) {
+            setError("");
+            setCurrentStep(step);
+            return;
+        }
+        if (step >= 2 && !validateGeneralStep()) return;
+        if (step >= 3 && !validateVariantsStep()) return;
+        setCurrentStep(step);
+    };
 
     return (
         <div className="p-6 max-w-7xl">
@@ -544,8 +779,35 @@ const AdminProductForm = () => {
             )}
 
             {/* Form */}
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-5">
+            <div className="max-w-5xl">
+            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <div className="grid gap-3 md:grid-cols-3">
+                        {steps.map((step) => {
+                            const isCurrent = currentStep === step.id;
+                            const isDone = currentStep > step.id;
+                            return (
+                                <button
+                                    key={step.id}
+                                    type="button"
+                                    onClick={() => goToStep(step.id)}
+                                    className={`flex items-center gap-3 rounded-md border px-4 py-3 text-left transition-colors ${isCurrent ? "border-black bg-white shadow-sm" : isDone ? "border-emerald-200 bg-emerald-50" : "border-gray-200 bg-white hover:border-gray-300"}`}
+                                >
+                                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-black ${isCurrent ? "bg-black text-white" : isDone ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-600"}`}>
+                                        {step.id}
+                                    </span>
+                                    <span>
+                                        <span className="block text-sm font-black uppercase text-gray-950">{step.label}</span>
+                                        <span className="block text-xs text-gray-500">{step.helper}</span>
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {currentStep === 1 && (
+                <div className="space-y-5">
                 {/* Name */}
                 <div>
                     <label htmlFor="product-name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -563,23 +825,19 @@ const AdminProductForm = () => {
                     />
                 </div>
 
-                {/* Price + Reference */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
                     <div>
-                        <label htmlFor="product-price" className="block text-sm font-medium text-gray-700 mb-1">
-                            Prix (TND) *
+                        <label htmlFor="product-desc-short" className="block text-sm font-medium text-gray-700 mb-1">
+                            Description courte
                         </label>
-                        <input
-                            id="product-price"
-                            name="price"
-                            type="number"
-                            step="0.001"
-                            min="0"
-                            value={form.price}
+                        <textarea
+                            id="product-desc-short"
+                            name="descriptionShort"
+                            rows={3}
+                            value={form.descriptionShort}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                            placeholder="299.000"
-                            required
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none"
+                            placeholder="Résumé visible sur la fiche produit..."
                         />
                     </div>
                     <div>
@@ -660,168 +918,6 @@ const AdminProductForm = () => {
                             ))}
                         </select>
                     </div>
-                </div>
-
-                {/* Dimensions & Weight */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                        <label htmlFor="product-weight" className="block text-sm font-medium text-gray-700 mb-1">
-                            Poids (kg)
-                        </label>
-                        <input
-                            id="product-weight"
-                            name="weight"
-                            type="text"
-                            value={form.weight}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                            placeholder="2.500"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="product-width" className="block text-sm font-medium text-gray-700 mb-1">
-                            Largeur (cm)
-                        </label>
-                        <input
-                            id="product-width"
-                            name="width"
-                            type="text"
-                            value={form.width}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                            placeholder="40"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="product-height" className="block text-sm font-medium text-gray-700 mb-1">
-                            Hauteur (cm)
-                        </label>
-                        <input
-                            id="product-height"
-                            name="height"
-                            type="text"
-                            value={form.height}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                            placeholder="55"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="product-depth" className="block text-sm font-medium text-gray-700 mb-1">
-                            Profondeur (cm)
-                        </label>
-                        <input
-                            id="product-depth"
-                            name="depth"
-                            type="text"
-                            value={form.depth}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                            placeholder="20"
-                        />
-                    </div>
-                </div>
-
-                {/* Stock & Volume */}
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label htmlFor="product-quantity" className="block text-sm font-medium text-gray-700 mb-1">
-                            Stock initial
-                        </label>
-                        <input
-                            id="product-quantity"
-                            name="quantity"
-                            type="number"
-                            min="0"
-                            value={form.quantity}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                            placeholder="10"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="product-volume" className="block text-sm font-medium text-gray-700 mb-1">
-                            Volume
-                        </label>
-                        <input
-                            id="product-volume"
-                            name="volume"
-                            type="text"
-                            value={form.volume}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                            placeholder="25 L"
-                        />
-                    </div>
-                </div>
-
-                {/* Couleurs disponibles */}
-                <div>
-                    <p className="block text-sm font-medium text-gray-700 mb-2">Couleurs disponibles</p>
-                    <div className="flex flex-wrap gap-2">
-                        {colorOptions.map((color) => {
-                            const selected = form.colorsSelected.includes(color.hex) || form.colorsSelected.includes(color.name);
-                            return (
-                                <button
-                                    key={color.hex}
-                                    type="button"
-                                    onClick={() => toggleColor(color.hex)}
-                                    className={`flex items-center gap-2 px-3 py-2 rounded-md border transition ${
-                                        selected ? "border-black ring-1 ring-black" : "border-gray-200"
-                                    }`}
-                                >
-                                    <span
-                                        className="h-4 w-4 rounded-full border border-gray-200"
-                                        style={{ backgroundColor: color.hex }}
-                                    />
-                                    <span className="text-xs font-medium">{color.name}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                    {form.colorsSelected.length > 0 && (
-                        <p className="text-xs text-gray-500 mt-1">
-                            {form.colorsSelected.length} couleur(s) sélectionnée(s)
-                        </p>
-                    )}
-                </div>
-
-                {/* Tailles */}
-                <div>
-                    <p className="block text-sm font-medium text-gray-700 mb-2">Tailles / formats</p>
-                    <div className="flex flex-wrap gap-2">
-                        {sizeOptions.map((size) => {
-                            const selected = form.sizesSelected.includes(size);
-                            return (
-                                <button
-                                    key={size}
-                                    type="button"
-                                    onClick={() => toggleSize(size)}
-                                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
-                                        selected ? "border-black bg-black text-white" : "border-gray-200 text-gray-700"
-                                    }`}
-                                >
-                                    {size}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Description short */}
-                <div>
-                    <label htmlFor="product-desc-short" className="block text-sm font-medium text-gray-700 mb-1">
-                        Description courte
-                    </label>
-                    <textarea
-                        id="product-desc-short"
-                        name="descriptionShort"
-                        rows={2}
-                        value={form.descriptionShort}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none"
-                        placeholder="Courte description affichée en résumé..."
-                    />
                 </div>
 
                 {/* Modèle & matière */}
@@ -938,73 +1034,10 @@ const AdminProductForm = () => {
                     />
                 </div>
 
-                {/* Images */}
-                <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <p className="text-sm font-bold text-gray-900">Images du produit</p>
-                            <p className="text-xs text-gray-500">Importe les photos depuis ton ordinateur. La première image devient l'image principale.</p>
-                        </div>
-                        <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-black px-4 py-2 text-xs font-bold text-white hover:bg-gray-800">
-                            {uploadingImages ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                            {uploadingImages ? "Import..." : "Importer des images"}
-                            <input
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                className="hidden"
-                                onChange={handleImageUpload}
-                                disabled={uploadingImages}
-                            />
-                        </label>
-                    </div>
-
-                    {imagePreviewItems.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                            {imagePreviewItems.map((image, index) => {
-                                const valid = isValidImageReference(image);
-                                return (
-                                    <div key={`${image}-${index}`} className={`overflow-hidden rounded-md border bg-white ${valid ? "border-gray-200" : "border-red-300"}`}>
-                                        <div className="aspect-square bg-white">
-                                            {valid ? (
-                                                <img
-                                                    src={image}
-                                                    alt={`Aperçu produit ${index + 1}`}
-                                                    className="h-full w-full object-contain"
-                                                    onError={(event) => {
-                                                        event.currentTarget.src = "/placeholder.svg";
-                                                    }}
-                                                />
-                                            ) : (
-                                                <div className="flex h-full flex-col items-center justify-center gap-2 text-red-500">
-                                                    <ImageOff className="h-5 w-5" />
-                                                    <span className="px-2 text-center text-xs font-semibold">Image invalide</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center justify-between gap-1 border-t border-gray-100 px-2 py-1">
-                                            <span className="text-[11px] font-semibold text-gray-500">#{index + 1}</span>
-                                            <div className="flex gap-1">
-                                                <button type="button" onClick={() => moveProductImage(index, -1)} disabled={index === 0} className="text-[11px] text-gray-500 hover:text-black disabled:opacity-30">Haut</button>
-                                                <button type="button" onClick={() => moveProductImage(index, 1)} disabled={index === imagePreviewItems.length - 1} className="text-[11px] text-gray-500 hover:text-black disabled:opacity-30">Bas</button>
-                                                <button type="button" onClick={() => removeProductImage(image)} className="text-[11px] font-bold text-red-600 hover:underline">Retirer</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <div className="flex min-h-36 items-center justify-center rounded-md border border-dashed border-gray-300 bg-white text-sm text-gray-500">
-                            Aucune image importée pour le moment.
-                        </div>
-                    )}
-                </div>
-
                 {/* Features */}
                 <div>
                     <label htmlFor="product-features" className="block text-sm font-medium text-gray-700 mb-1">
-                        Caractéristiques (label|valeur par ligne)
+                        Caractéristiques supplémentaires (optionnel)
                     </label>
                     <textarea
                         id="product-features"
@@ -1020,10 +1053,17 @@ const AdminProductForm = () => {
                     </p>
                 </div>
 
-                {/* Variants */}
+                </div>
+                )}
+
+                {currentStep === 2 && (
                 <div className="space-y-3">
+                {/* Variants */}
                     <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-700">Variantes (couleur/taille)</span>
+                        <div>
+                            <span className="text-sm font-bold text-gray-900">Variantes des valises</span>
+                            <p className="mt-1 text-xs text-gray-500">Chaque variante combine une couleur, une taille, ses dimensions, son prix, son stock et ses images.</p>
+                        </div>
                         <button
                             type="button"
                             onClick={addVariant}
@@ -1033,7 +1073,7 @@ const AdminProductForm = () => {
                         </button>
                     </div>
                     {form.variants.length === 0 && (
-                        <p className="text-xs text-gray-400">Aucune variante ajoutée.</p>
+                        <p className="text-xs text-red-500">Un produit doit avoir au moins une variante.</p>
                     )}
                     {form.variants.map((variant, index) => (
                         <div key={index} className="border rounded-md p-3 space-y-3 bg-gray-50">
@@ -1041,15 +1081,26 @@ const AdminProductForm = () => {
                                 <span className="text-xs uppercase tracking-wide text-gray-500">
                                     Variante #{index + 1}
                                 </span>
-                                <button
-                                    type="button"
-                                    onClick={() => removeVariant(index)}
-                                    className="text-xs text-red-600 hover:underline"
-                                >
-                                    Supprimer
-                                </button>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => duplicateVariant(index)}
+                                        className="text-xs font-semibold text-blue-700 hover:underline"
+                                    >
+                                        Dupliquer
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeVariant(index)}
+                                        disabled={form.variants.length === 1}
+                                        className="text-xs text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-gray-300 disabled:no-underline"
+                                        title={form.variants.length === 1 ? "Un produit doit garder au moins une variante" : "Supprimer cette variante"}
+                                    >
+                                        Supprimer
+                                    </button>
+                                </div>
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                 <input
                                     name="colorName"
                                     value={variant.colorName}
@@ -1057,19 +1108,64 @@ const AdminProductForm = () => {
                                     className="px-3 py-2 border border-gray-300 rounded-md text-sm"
                                     placeholder="Couleur (nom)"
                                 />
-                                <input
-                                    name="colorHex"
-                                    value={variant.colorHex}
-                                    onChange={(e) => handleVariantChange(index, e)}
-                                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                                    placeholder="#HEX"
-                                />
+                                <div className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-2 py-1">
+                                    <input
+                                        name="colorHex"
+                                        type="color"
+                                        value={variant.colorHex || "#000000"}
+                                        onChange={(e) => handleVariantChange(index, e)}
+                                        className="h-8 w-10 cursor-pointer rounded border border-gray-200 bg-white p-0.5"
+                                        title="Choisir la couleur"
+                                    />
+                                    <input
+                                        name="colorHex"
+                                        value={variant.colorHex}
+                                        onChange={(e) => handleVariantChange(index, e)}
+                                        className="min-w-0 flex-1 text-sm outline-none"
+                                        placeholder="#HEX"
+                                    />
+                                </div>
                                 <input
                                     name="size"
                                     value={variant.size}
                                     onChange={(e) => handleVariantChange(index, e)}
                                     className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                                    placeholder="Taille / option"
+                                    placeholder="Taille"
+                                />
+                                <input
+                                    name="volume"
+                                    value={variant.volume}
+                                    onChange={(e) => handleVariantChange(index, e)}
+                                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                    placeholder="Volume"
+                                />
+                                <input
+                                    name="height"
+                                    value={variant.height}
+                                    onChange={(e) => handleVariantChange(index, e)}
+                                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                    placeholder="Hauteur"
+                                />
+                                <input
+                                    name="width"
+                                    value={variant.width}
+                                    onChange={(e) => handleVariantChange(index, e)}
+                                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                    placeholder="Largeur"
+                                />
+                                <input
+                                    name="depth"
+                                    value={variant.depth}
+                                    onChange={(e) => handleVariantChange(index, e)}
+                                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                    placeholder="Profondeur"
+                                />
+                                <input
+                                    name="weight"
+                                    value={variant.weight}
+                                    onChange={(e) => handleVariantChange(index, e)}
+                                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                    placeholder="Poids"
                                 />
                                 <input
                                     name="price"
@@ -1082,6 +1178,16 @@ const AdminProductForm = () => {
                                     placeholder="Prix (TND)"
                                 />
                                 <input
+                                    name="stockInitial"
+                                    type="number"
+                                    step="1"
+                                    min="0"
+                                    value={variant.stockInitial}
+                                    onChange={(e) => handleVariantChange(index, e)}
+                                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                    placeholder="Stock initial"
+                                />
+                                <input
                                     name="stock"
                                     type="number"
                                     step="1"
@@ -1089,20 +1195,101 @@ const AdminProductForm = () => {
                                     value={variant.stock}
                                     onChange={(e) => handleVariantChange(index, e)}
                                     className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                                    placeholder="Stock"
+                                    placeholder="Stock actuel"
                                 />
                             </div>
-                            <textarea
-                                name="imagesText"
-                                rows={2}
-                                value={variant.imagesText}
-                                onChange={(e) => handleVariantChange(index, e)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none font-mono"
-                                placeholder="Images de la variante (optionnel, une par ligne)"
-                            />
+                            <div className="space-y-3 rounded-md border border-gray-200 bg-white p-3">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-wide text-gray-700">Images de cette variante</p>
+                                        <p className="text-xs text-gray-500">Ces images s'afficheront quand la couleur/taille est sélectionnée.</p>
+                                    </div>
+                                    <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-black px-3 py-2 text-xs font-bold text-white hover:bg-gray-800">
+                                        {uploadingImages ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                                        Importer
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            className="hidden"
+                                            onChange={(event) => handleVariantImageUpload(index, event)}
+                                            disabled={uploadingImages}
+                                        />
+                                    </label>
+                                </div>
+                                {parseLines(variant.imagesText).length > 0 && (
+                                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                                        {parseLines(variant.imagesText).slice(0, 10).map((image, imageIndex) => (
+                                            <div key={`${image}-${imageIndex}`} className="overflow-hidden rounded border border-gray-200 bg-white">
+                                                <div className="aspect-square">
+                                                    <img
+                                                        src={image}
+                                                        alt={`Variante ${index + 1} image ${imageIndex + 1}`}
+                                                        className="h-full w-full object-contain"
+                                                        onError={(event) => {
+                                                            event.currentTarget.src = "/placeholder.svg";
+                                                        }}
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeVariantImage(index, image)}
+                                                    className="w-full border-t border-gray-100 py-1 text-[11px] font-bold text-red-600 hover:bg-red-50"
+                                                >
+                                                    Retirer
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <textarea
+                                    name="imagesText"
+                                    rows={2}
+                                    value={variant.imagesText}
+                                    onChange={(e) => handleVariantChange(index, e)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none font-mono"
+                                    placeholder="Images de la variante, une par ligne"
+                                />
+                            </div>
                         </div>
                     ))}
                 </div>
+                )}
+
+                {currentStep === 3 && (
+                <div className="space-y-5">
+                    <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                        <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Aperçu page détail</p>
+                        <div className="mt-4 grid gap-5 md:grid-cols-[260px_minmax(0,1fr)]">
+                            <div className="overflow-hidden rounded-md border border-gray-100 bg-white">
+                                <div className="aspect-square bg-white p-4">
+                                    <img
+                                        src={previewImage}
+                                        alt="Aperçu produit"
+                                        className="h-full w-full object-contain"
+                                        onError={(event) => {
+                                            event.currentTarget.src = "/placeholder.svg";
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-3">
+                                <div>
+                                    <p className="text-xs font-bold uppercase text-gray-400">{selectedBrandName}</p>
+                                    <h2 className="mt-1 text-2xl font-black uppercase leading-tight text-gray-950">{form.name || "Nom du produit"}</h2>
+                                    <p className="mt-1 text-sm text-gray-500">{selectedCategoryName}</p>
+                                </div>
+                                <p className="text-xl font-black text-gray-950">{previewPrice} DT</p>
+                                <p className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${form.active ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+                                    {form.active ? "Visible sur le site" : "Non visible"}
+                                </p>
+                                <p className="line-clamp-4 text-sm leading-6 text-gray-600">{previewDescription}</p>
+                                <button type="button" className="w-full rounded-md bg-black px-4 py-3 text-sm font-black uppercase text-white">
+                                    Ajouter au panier
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
                 {/* Toggles */}
                 <div className="grid md:grid-cols-3 gap-4">
@@ -1141,57 +1328,45 @@ const AdminProductForm = () => {
                     </label>
                 </div>
 
-                {/* Submit */}
-                <div className="pt-2">
+                </div>
+                )}
+
+                {/* Step navigation */}
+                <div className="flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
                     <button
-                        type="submit"
-                        disabled={loading}
-                        className="inline-flex items-center gap-2 px-6 py-2.5 bg-black text-white rounded-md text-sm font-semibold hover:bg-gray-800 transition-colors disabled:opacity-50"
+                        type="button"
+                        onClick={() => goToStep((currentStep - 1) as ProductFormStep)}
+                        disabled={currentStep === 1}
+                        className="inline-flex items-center justify-center rounded-md border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                        {loading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                            <Save className="h-4 w-4" />
-                        )}
-                        {loading
-                            ? (isEdit ? "Mise à jour..." : "Création...")
-                            : (isEdit ? "Enregistrer les modifications" : "Créer le produit")}
+                        Retour à l'étape précédente
                     </button>
+                    {currentStep < 3 ? (
+                        <button
+                            type="button"
+                            onClick={() => goToStep((currentStep + 1) as ProductFormStep)}
+                            className="inline-flex items-center justify-center rounded-md bg-black px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
+                        >
+                            {currentStep === 1 ? "Continuer vers les variantes" : "Continuer vers l'aperçu"}
+                        </button>
+                    ) : (
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="inline-flex items-center justify-center gap-2 rounded-md bg-black px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
+                        >
+                            {loading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <Save className="h-4 w-4" />
+                            )}
+                            {loading
+                                ? (isEdit ? "Mise à jour..." : "Création...")
+                                : (isEdit ? "Enregistrer les modifications" : "Créer le produit")}
+                        </button>
+                    )}
                 </div>
             </form>
-
-            <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start">
-                <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                    <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Aperçu page détail</p>
-                    <div className="mt-4 overflow-hidden rounded-md border border-gray-100 bg-white">
-                        <div className="aspect-square bg-white p-4">
-                            <img
-                                src={previewImage}
-                                alt="Aperçu produit"
-                                className="h-full w-full object-contain"
-                                onError={(event) => {
-                                    event.currentTarget.src = "/placeholder.svg";
-                                }}
-                            />
-                        </div>
-                    </div>
-                    <div className="mt-5 space-y-3">
-                        <div>
-                            <p className="text-xs font-bold uppercase text-gray-400">{selectedBrandName}</p>
-                            <h2 className="mt-1 text-2xl font-black uppercase leading-tight text-gray-950">{form.name || "Nom du produit"}</h2>
-                            <p className="mt-1 text-sm text-gray-500">{selectedCategoryName}</p>
-                        </div>
-                        <p className="text-xl font-black text-gray-950">{previewPrice} DT</p>
-                        <p className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${form.active ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
-                            {form.active ? "Visible sur le site" : "Non visible"}
-                        </p>
-                        <p className="line-clamp-4 text-sm leading-6 text-gray-600">{previewDescription}</p>
-                        <button type="button" className="w-full rounded-md bg-black px-4 py-3 text-sm font-black uppercase text-white">
-                            Ajouter au panier
-                        </button>
-                    </div>
-                </div>
-            </aside>
             </div>
         </div>
     );

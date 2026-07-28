@@ -19,10 +19,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const image = product.images[0] || "/placeholder.svg";
   const productUrl = `/produit/${product.id}-${product.slug}`;
   const isOutOfStock = !product.stock || product.stock <= 0;
-  const visibleColors = product.colors.slice(0, 5);
+  const visibleColors = product.colors.slice(0, 4);
+  const hiddenColorsCount = Math.max(0, product.colors.length - visibleColors.length);
 
   return (
-    <Link to={productUrl} className="group block">
+    <Link to={productUrl} className="group flex h-full flex-col">
       <div className="relative aspect-square overflow-hidden bg-white transition-all duration-300 group-hover:shadow-[0_14px_40px_rgba(0,0,0,0.06)]">
         <span
           className={`absolute left-3 top-3 z-10 rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white ${
@@ -49,38 +50,39 @@ const ProductCard = ({ product }: ProductCardProps) => {
         />
       </div>
 
-      <div className="mt-4 space-y-2">
+      <div className="mt-4 flex min-h-[190px] flex-1 flex-col">
         {product.brandName && (
-          <span className="inline-flex w-fit rounded-full border border-border bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground">
+          <span className="inline-flex h-7 w-fit items-center rounded-full border border-border bg-white px-2.5 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground">
             {product.brandName}
           </span>
         )}
-        <p className="line-clamp-2 text-sm font-black uppercase leading-tight tracking-wide text-foreground">
+        <p className="mt-2 line-clamp-2 min-h-[34px] text-sm font-black uppercase leading-tight tracking-wide text-foreground">
           {product.name}
         </p>
         {product.shortDescription && (
-          <p className="line-clamp-2 min-h-8 text-xs leading-4 text-muted-foreground">
+          <p className="mt-2 line-clamp-2 min-h-8 text-xs leading-4 text-muted-foreground">
             {product.shortDescription}
           </p>
         )}
-        {visibleColors.length > 0 && (
-          <div className="flex h-5 items-center gap-1.5">
-            {visibleColors.map((color) => (
-              <span
-                key={`${product.id}-${color.name}`}
-                className="h-3.5 w-3.5 rounded-full border border-black/15"
-                style={{ backgroundColor: color.hex }}
-                title={color.name}
-              />
-            ))}
-            {product.colors.length > visibleColors.length && (
-              <span className="text-[10px] font-semibold text-muted-foreground">
-                +{product.colors.length - visibleColors.length}
-              </span>
-            )}
-          </div>
-        )}
-        <div className="flex items-end justify-between gap-3 pt-1">
+        <div className="mt-3 flex h-5 items-center gap-1.5">
+          {visibleColors.map((color) => (
+            <span
+              key={`${product.id}-${color.name}`}
+              className="h-3.5 w-3.5 rounded-full border border-black/15"
+              style={{ backgroundColor: color.hex }}
+              title={color.name}
+            />
+          ))}
+          {hiddenColorsCount > 0 && (
+            <span
+              className="inline-flex h-5 items-center rounded-full bg-neutral-100 px-2 text-[10px] font-black text-muted-foreground"
+              title={product.colors.slice(4).map((color) => color.name).join(", ")}
+            >
+              +{hiddenColorsCount}
+            </span>
+          )}
+        </div>
+        <div className="mt-auto flex min-h-8 items-end justify-between gap-3 pt-3">
           <p className="text-base font-black text-cyan-600">{formatPrice(product.price)} TND</p>
           <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
             {t("product.details")}

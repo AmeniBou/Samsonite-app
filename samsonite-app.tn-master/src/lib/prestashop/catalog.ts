@@ -18,6 +18,7 @@ interface CategoryNode {
   slug: string;
   description?: string;
   active: boolean;
+  showInMainMenu: boolean;
 }
 
 const stripHtml = (value: string): string => {
@@ -91,14 +92,17 @@ const mapCategoryNode = (category: PSCategory): CategoryNode => {
       ? stripHtml(getLangValue(category.description))
       : undefined,
     active: category.active === "1",
+    showInMainMenu: category.show_in_main_menu !== "0",
   };
 };
 
 export const fetchDisplayCategories = async (): Promise<CategoryDisplay[]> => {
   const { categories: rawCategories } = await getCatalogData();
-  const nodes = rawCategories
+  const allNodes = rawCategories
     .map(mapCategoryNode)
-    .filter((node) => node.active && Boolean(node.name && node.slug));
+    .filter((node) => Boolean(node.name && node.slug));
+  const inactiveSlugs = new Set(allNodes.filter((node) => !node.active).map((node) => node.slug));
+  const nodes = allNodes.filter((node) => node.active);
   const nodeBySlug = new Map(nodes.map((node) => [node.slug, node]));
   const childrenByParentId = nodes.reduce<Record<number, CategoryNode[]>>((acc, node) => {
     if (!node.parentId || node.parentId === 2) return acc;
@@ -108,11 +112,11 @@ export const fetchDisplayCategories = async (): Promise<CategoryDisplay[]> => {
   }, {});
 
   const usedSlugs = new Set<string>();
-  const toChildDisplay = (node: CategoryNode) => ({ name: node.name, slug: node.slug });
+  const toChildDisplay = (node: CategoryNode) => ({ name: node.name, slug: node.slug, isActive: node.active });
   const sortChildren = (items: Array<{ name: string; slug: string }>) =>
     items.sort((a, b) => a.name.localeCompare(b.name, "fr", { sensitivity: "base" }));
 
-  const groupedCategories = CATEGORY_GROUPS.map((group, index) => {
+  const groupedCategories = CATEGORY_GROUPS.filter((group) => !inactiveSlugs.has(group.slug)).map((group, index) => {
     const node = nodeBySlug.get(group.slug);
     const childNodes = [
       ...group.childSlugs
@@ -134,6 +138,7 @@ export const fetchDisplayCategories = async (): Promise<CategoryDisplay[]> => {
       slug: group.slug,
       description: node?.description,
       image: node ? getCategoryImageUrl(node.id) : undefined,
+      showInMainMenu: node?.showInMainMenu ?? true,
       children,
     };
   });
@@ -155,6 +160,7 @@ export const fetchDisplayCategories = async (): Promise<CategoryDisplay[]> => {
         slug: node.slug,
         description: node.description,
         image: getCategoryImageUrl(node.id),
+        showInMainMenu: node.showInMainMenu,
         children,
       };
     });
@@ -167,6 +173,7 @@ export const fetchDisplayCategories = async (): Promise<CategoryDisplay[]> => {
       slug: node.slug,
       description: node.description,
       image: getCategoryImageUrl(node.id),
+      showInMainMenu: node.showInMainMenu,
       children: [],
     }));
 

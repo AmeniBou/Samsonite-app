@@ -69,6 +69,10 @@ model Category {
 
   slug String?
 
+  isActive Boolean @default(true)
+
+  showInMainMenu Boolean @default(true)
+
   parentId Int?
 
   parent Category? @relation("CategoryChildren", fields: [parentId], references: [id])
@@ -129,13 +133,27 @@ model ProductVariant {
 
   size String?
 
+  weight String?
+
+  width String?
+
+  height String?
+
+  depth String?
+
+  volume String?
+
   price Decimal? @db.Decimal(10, 2)
+
+  stockInitial Int?
 
   stock Int?
 
   images String[] @default([])
 
   product Product @relation(fields: [productId], references: [id])
+
+  @@index([productId, colorName, size])
 }
 
 model Order {

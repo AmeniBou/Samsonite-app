@@ -313,7 +313,7 @@ const Checkout = () => {
             <h2 className="text-sm font-black uppercase tracking-wider">{t("cart.summary")}</h2>
             <div className="max-h-80 space-y-4 overflow-auto pr-1 soft-scrollbar">
               {items.map((item) => (
-                <div key={`${item.product.id}-${item.selectedColor}`} className="flex gap-3">
+                <div key={`${item.product.id}-${item.variantId || item.selectedColor}`} className="flex gap-3">
                   <img
                     src={item.product.images[0] || "/placeholder.svg"}
                     alt={item.product.name}
@@ -324,11 +324,19 @@ const Checkout = () => {
                     <p className="mt-1 text-xs text-muted-foreground">
                       {item.quantity} x {formatTnd(item.product.price)}
                     </p>
-                    {item.selectedColor && (
-                      <p className="text-xs text-muted-foreground">
-                        {t("cart.color")}: {item.selectedColor}
-                      </p>
-                    )}
+                    <div className="space-y-0.5">
+                      {item.selectedColor && (
+                        <p className="text-xs text-muted-foreground">
+                          {t("cart.color")}: {item.selectedColor}
+                        </p>
+                      )}
+                      {item.selectedSize && (
+                        <p className="text-xs text-muted-foreground">Taille: {item.selectedSize}</p>
+                      )}
+                      {item.sku && (
+                        <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

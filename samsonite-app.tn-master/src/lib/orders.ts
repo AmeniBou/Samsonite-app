@@ -22,6 +22,9 @@ export interface StoredOrderItem {
   name: string;
   image: string;
   selectedColor?: string;
+  selectedSize?: string;
+  variantId?: number;
+  sku?: string;
   quantity: number;
   unitPrice: number;
   total: number;
@@ -65,6 +68,16 @@ export const createStoredOrder = async ({
   shippingMethod,
   paymentMethod,
 }: CreateOrderInput) => {
+  const formatVariantLabel = (item: CartItem) =>
+    [
+      item.selectedColor ? `Couleur: ${item.selectedColor}` : "",
+      item.selectedSize ? `Taille: ${item.selectedSize}` : "",
+      item.sku ? `SKU: ${item.sku}` : "",
+      item.variantId ? `Variante: ${item.variantId}` : "",
+    ]
+      .filter(Boolean)
+      .join(" | ");
+
   const res = await fetch(`${API_BASE}/orders`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -77,7 +90,10 @@ export const createStoredOrder = async ({
         slug: item.product.slug,
         name: item.product.name,
         image: item.product.images[0] || "/placeholder.svg",
-        selectedColor: item.selectedColor,
+        selectedColor: formatVariantLabel(item) || item.selectedColor,
+        selectedSize: item.selectedSize,
+        variantId: item.variantId,
+        sku: item.sku,
         quantity: item.quantity,
         unitPrice: item.product.price,
       })),

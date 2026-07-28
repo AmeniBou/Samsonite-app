@@ -25,6 +25,17 @@ export interface PSCombination {
   price?: string;
   reference?: string;
   default_on?: string;
+  colorName?: string;
+  colorHex?: string;
+  size?: string;
+  weight?: string;
+  width?: string;
+  height?: string;
+  depth?: string;
+  volume?: string;
+  stockInitial?: number | string;
+  stock?: number | string;
+  images?: string[];
   associations?: {
     product_option_values?: PSAssociationId[];
     images?: PSAssociationId[];
@@ -108,6 +119,7 @@ export interface PSCategory {
   link_rewrite?: PSLangField[];
 
   active: string;
+  show_in_main_menu?: string;
 }
 
 // ---------- FRONT DISPLAY ----------
@@ -120,13 +132,18 @@ export interface ColorOption {
 
 export interface ProductVariant {
   combinationId: number;
+  sku?: string;
   price: number;
   stock: number;
+  stockInitial?: number;
   isDefault: boolean;
   size?: string;
   dimensions?: string;
   extensibleDimensions?: string;
   weight?: string;
+  width?: string;
+  height?: string;
+  depth?: string;
   volume?: string;
   color?: {
     name: string;
@@ -169,9 +186,11 @@ export interface CategoryDisplay {
   slug: string;
   description?: string;
   image?: string;
+  showInMainMenu?: boolean;
   children?: Array<{
     name: string;
     slug: string;
+    isActive?: boolean;
   }>;
 }
 
@@ -179,4 +198,8 @@ export interface CartItem {
   product: ProductDisplay;
   quantity: number;
   selectedColor?: string;
+  selectedSize?: string;
+  variantId?: number;
+  sku?: string;
+  maxStock?: number;
 }

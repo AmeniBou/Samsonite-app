@@ -36,7 +36,7 @@ const Cart = () => {
       <div className="grid lg:grid-cols-3 gap-10">
         <div className="lg:col-span-2 space-y-6">
           {items.map((item) => (
-            <div key={`${item.product.id}-${item.selectedColor}`} className="flex gap-4 border-b border-border pb-6 transition-colors hover:bg-accent/35 sm:p-3">
+            <div key={`${item.product.id}-${item.variantId || item.selectedColor}`} className="flex gap-4 border-b border-border pb-6 transition-colors hover:bg-accent/35 sm:p-3">
               <Link to={`/produit/${item.product.slug}`} className="h-28 w-28 flex-shrink-0 bg-white">
                 <img
                   src={item.product.images[0]}
@@ -51,14 +51,22 @@ const Cart = () => {
                       {item.product.name}
                     </Link>
                     <p className="text-xs text-muted-foreground">{item.product.shortDescription}</p>
-                    {item.selectedColor && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t("cart.color")}: {item.selectedColor}
-                      </p>
-                    )}
+                    <div className="mt-1 space-y-0.5">
+                      {item.selectedColor && (
+                        <p className="text-xs text-muted-foreground">
+                          {t("cart.color")}: {item.selectedColor}
+                        </p>
+                      )}
+                      {item.selectedSize && (
+                        <p className="text-xs text-muted-foreground">Taille: {item.selectedSize}</p>
+                      )}
+                      {item.sku && (
+                        <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>
+                      )}
+                    </div>
                   </div>
                   <button
-                    onClick={() => removeItem(item.product.id, item.selectedColor)}
+                    onClick={() => removeItem(item.product.id, item.selectedColor, item.variantId)}
                     className="text-muted-foreground hover:text-foreground"
                   >
                     <X className="h-4 w-4" />
@@ -68,7 +76,7 @@ const Cart = () => {
                   <div className="flex items-center border border-border">
                     <button
                       onClick={() =>
-                        updateQuantity(item.product.id, item.quantity - 1, item.selectedColor)
+                        updateQuantity(item.product.id, item.quantity - 1, item.selectedColor, item.variantId)
                       }
                       className="flex h-8 w-8 items-center justify-center transition-colors hover:bg-accent"
                     >
@@ -79,7 +87,7 @@ const Cart = () => {
                     </span>
                     <button
                       onClick={() =>
-                        updateQuantity(item.product.id, item.quantity + 1, item.selectedColor)
+                        updateQuantity(item.product.id, item.quantity + 1, item.selectedColor, item.variantId)
                       }
                       className="flex h-8 w-8 items-center justify-center transition-colors hover:bg-accent"
                     >

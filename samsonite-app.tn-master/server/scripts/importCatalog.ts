@@ -38,6 +38,16 @@ type VariantCsvRow = {
   product_id?: string;
   group?: string;
   value?: string;
+  color_name?: string;
+  color_hex?: string;
+  size?: string;
+  weight?: string;
+  width?: string;
+  height?: string;
+  depth?: string;
+  volume?: string;
+  stock_initial?: string;
+  stock?: string;
 };
 
 type ProductVariantImportData = {
@@ -47,6 +57,12 @@ type ProductVariantImportData = {
   colorName?: string;
   colorHex?: string;
   size?: string;
+  weight?: string;
+  width?: string;
+  height?: string;
+  depth?: string;
+  volume?: string;
+  stockInitial?: number;
   stock?: number;
   images: string[];
 };
@@ -372,17 +388,32 @@ async function importProductVariants() {
       const key = normalizeKey(group);
       const isColor = /couleur|color/.test(key);
       const isSize = /taille|size/.test(key);
-      const colorName = isColor ? value : undefined;
+      const colorName = cleanString(row.color_name) || (isColor ? value : undefined);
+      const size = cleanString(row.size) || (isSize ? value : undefined);
+      const stock =
+        row.stock !== undefined && cleanString(row.stock)
+          ? Number(cleanString(row.stock))
+          : stockMap.get(scrapedProductId);
+      const stockInitial =
+        row.stock_initial !== undefined && cleanString(row.stock_initial)
+          ? Number(cleanString(row.stock_initial))
+          : stock;
       const productImages = imageMap.get(scrapedProductId) ?? [];
 
       return {
         productId: product,
-        groupName: group,
-        value,
+        groupName: "Variante",
+        value: [colorName, size].filter(Boolean).join(" / ") || value,
         colorName,
-        colorHex: colorName ? getColorHex(colorName) : undefined,
-        size: isSize ? value : undefined,
-        stock: stockMap.get(scrapedProductId),
+        colorHex: cleanString(row.color_hex) || (colorName ? getColorHex(colorName) : undefined),
+        size,
+        weight: cleanString(row.weight),
+        width: cleanString(row.width),
+        height: cleanString(row.height),
+        depth: cleanString(row.depth),
+        volume: cleanString(row.volume),
+        stockInitial: Number.isFinite(stockInitial) ? stockInitial : undefined,
+        stock: Number.isFinite(stock) ? stock : undefined,
         images: selectVariantImages(productImages, colorName),
       };
     })

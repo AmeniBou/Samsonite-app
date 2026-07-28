@@ -85,10 +85,10 @@ router.get("/categories", async (_req: Request, res: Response): Promise<void> =>
 });
 
 router.post("/categories", async (req: Request, res: Response): Promise<void> => {
-    const { name, slug, parentId } = req.body as { name?: string; slug?: string; parentId?: number | null };
+    const { name, slug, parentId, isActive, showInMainMenu } = req.body as { name?: string; slug?: string; parentId?: number | null; isActive?: boolean; showInMainMenu?: boolean };
 
     try {
-        const result = await createCategory({ name, slug, parentId });
+        const result = await createCategory({ name, slug, parentId, isActive, showInMainMenu });
         if (!result.success) {
             res.status(400).json({ error: result.error });
             return;
@@ -109,7 +109,7 @@ router.put("/categories/:id", async (req: Request, res: Response): Promise<void>
         return;
     }
 
-    const fields = req.body as Partial<{ name: string; slug: string; parentId: number | null }>;
+    const fields = req.body as Partial<{ name: string; slug: string; parentId: number | null; isActive: boolean; showInMainMenu: boolean }>;
 
     try {
         const result = await updateCategory(id, fields);
@@ -260,7 +260,7 @@ router.post("/products", async (req: Request, res: Response): Promise<void> => {
         quantity?: number | string;
         images?: string[];
         features?: Array<{ label: string; value: string }>;
-        variants?: Array<{ colorName?: string; colorHex?: string; size?: string; price?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
+        variants?: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
     };
 
     const numericPrice = typeof price === "string" ? parseFloat(price) : price;
@@ -350,7 +350,7 @@ router.put("/products/:id", async (req: Request, res: Response): Promise<void> =
         quantity: number | string;
         images: string[];
         features: Array<{ label: string; value: string }>;
-        variants: Array<{ colorName?: string; colorHex?: string; size?: string; price?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
+        variants: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
     }>;
 
     const normalizedFields = { ...fields } as {
@@ -369,7 +369,7 @@ router.put("/products/:id", async (req: Request, res: Response): Promise<void> =
         quantity?: number;
         images?: string[];
         features?: Array<{ label: string; value: string }>;
-        variants?: Array<{ colorName?: string; colorHex?: string; size?: string; price?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
+        variants?: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
     };
 
     if (fields.price !== undefined) {

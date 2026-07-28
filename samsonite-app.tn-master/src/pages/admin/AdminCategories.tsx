@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { CornerDownRight, Folder, FolderTree, Pencil, PlusCircle, RefreshCw, Save, Search, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronRight, CornerDownRight, Folder, FolderTree, Pencil, PlusCircle, RefreshCw, Save, Search, Trash2, X } from "lucide-react";
 import {
     createCategory,
     deleteCategory,
@@ -12,12 +12,18 @@ type CategoryForm = {
     name: string;
     slug: string;
     parentId: number;
+    isActive: boolean;
+    showInMainMenu: boolean;
 };
+
+const MAIN_MENU_LIMIT = 7;
 
 const emptyForm: CategoryForm = {
     name: "",
     slug: "",
     parentId: 0,
+    isActive: true,
+    showInMainMenu: true,
 };
 
 const normalizeText = (value?: string | null) => (value || "").trim();
@@ -30,6 +36,7 @@ const AdminCategories = () => {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [form, setForm] = useState<CategoryForm>(emptyForm);
     const [search, setSearch] = useState("");
+    const [expandedRootIds, setExpandedRootIds] = useState<Set<number>>(new Set());
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
@@ -87,6 +94,24 @@ const AdminCategories = () => {
         [categoryById]
     );
 
+    const getRootCategoryId = useCallback(
+        (category: AdminCategory) => {
+            let rootId = category.id;
+            let parentId = category.parentId;
+            const visited = new Set<number>([category.id]);
+
+            while (parentId && categoryById.has(parentId) && !visited.has(parentId)) {
+                const parent = categoryById.get(parentId)!;
+                rootId = parent.id;
+                visited.add(parent.id);
+                parentId = parent.parentId;
+            }
+
+            return rootId;
+        },
+        [categoryById]
+    );
+
     const filteredCategories = useMemo(() => {
         const query = search.trim().toLowerCase();
         const sorted = [...categories].sort((a, b) =>
@@ -104,6 +129,16 @@ const AdminCategories = () => {
         });
     }, [categories, getCategoryPath, search]);
 
+    const displayedCategories = useMemo(() => {
+        const query = search.trim();
+        if (query) return filteredCategories;
+
+        return filteredCategories.filter((category) => {
+            if (!category.parentId) return true;
+            return expandedRootIds.has(getRootCategoryId(category));
+        });
+    }, [expandedRootIds, filteredCategories, getRootCategoryId, search]);
+
     const startCreate = () => {
         setEditingId(null);
         setForm(emptyForm);
@@ -117,6 +152,8 @@ const AdminCategories = () => {
             name: normalizeText(category.name),
             slug: normalizeText(category.slug),
             parentId: category.parentId || 0,
+            isActive: category.isActive,
+            showInMainMenu: category.showInMainMenu,
         });
         setError("");
         setSuccess("");
@@ -141,10 +178,25 @@ const AdminCategories = () => {
         setSuccess("");
 
         try {
+            const wantsMainMenu = !form.parentId && form.isActive && form.showInMainMenu;
+            const currentCategory = editingId ? categories.find((category) => category.id === editingId) : null;
+            const alreadyCounted =
+                Boolean(currentCategory) &&
+                !currentCategory?.parentId &&
+                currentCategory?.isActive &&
+                currentCategory?.showInMainMenu;
+
+            if (wantsMainMenu && !alreadyCounted && mainMenuCount >= MAIN_MENU_LIMIT) {
+                setError(`Le menu principal peut contenir au maximum ${MAIN_MENU_LIMIT} categories.`);
+                return;
+            }
+
             const payload = {
                 name,
                 slug: form.slug.trim(),
                 parentId: form.parentId || null,
+                isActive: form.isActive,
+                showInMainMenu: form.parentId ? false : form.showInMainMenu,
             };
             const result = editingId ? await updateCategory(editingId, payload) : await createCategory(payload);
 
@@ -195,6 +247,25 @@ const AdminCategories = () => {
     const parentOptions = categories.filter((category) => category.id !== editingId && !category.parentId);
     const rootCount = categories.filter((category) => !category.parentId).length;
     const childCount = categories.length - rootCount;
+    const mainMenuCount = categories.filter(
+        (category) => !category.parentId && category.isActive && category.showInMainMenu
+    ).length;
+    const rootCategoryIds = categories.filter((category) => !category.parentId).map((category) => category.id);
+    const canAddCurrentFormToMainMenu =
+        Boolean(editingId && categories.find((category) => category.id === editingId)?.showInMainMenu) ||
+        mainMenuCount < MAIN_MENU_LIMIT;
+    const mainMenuLimitReached = mainMenuCount >= MAIN_MENU_LIMIT;
+    const toggleRoot = (categoryId: number) => {
+        setExpandedRootIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(categoryId)) {
+                next.delete(categoryId);
+            } else {
+                next.add(categoryId);
+            }
+            return next;
+        });
+    };
 
     return (
         <div className="p-6 space-y-6">
@@ -202,7 +273,7 @@ const AdminCategories = () => {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
                     <p className="text-sm text-gray-500 mt-1">
-                        {categories.length} categories - {rootCount} principales - {childCount} sous-categories
+                        {categories.length} categories - {rootCount} principales - {childCount} sous-categories - {mainMenuCount}/{MAIN_MENU_LIMIT} dans le menu principal
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -278,7 +349,14 @@ const AdminCategories = () => {
                         <span className="text-xs font-bold uppercase tracking-wide text-gray-600">Categorie parente</span>
                         <select
                             value={form.parentId}
-                            onChange={(event) => setForm((prev) => ({ ...prev, parentId: Number(event.target.value) }))}
+                            onChange={(event) => {
+                                const parentId = Number(event.target.value);
+                                setForm((prev) => ({
+                                    ...prev,
+                                    parentId,
+                                    showInMainMenu: parentId ? false : prev.showInMainMenu,
+                                }));
+                            }}
                             className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
                         >
                             <option value={0}>Categorie principale</option>
@@ -288,6 +366,49 @@ const AdminCategories = () => {
                                 </option>
                             ))}
                         </select>
+                    </label>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                    <label className="flex cursor-pointer items-start gap-3 rounded-md border border-gray-200 bg-gray-50 px-4 py-3">
+                        <input
+                            type="checkbox"
+                            checked={form.isActive}
+                            onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.checked }))}
+                            className="mt-1 h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                        />
+                        <span>
+                            <span className="block text-sm font-bold text-gray-900">Catégorie active</span>
+                            <span className="block text-xs text-gray-500">
+                                Active = visible dans Explorer et utilisable sur le site.
+                            </span>
+                        </span>
+                    </label>
+                    <label className={`flex items-start gap-3 rounded-md border px-4 py-3 ${form.parentId ? "cursor-not-allowed border-gray-100 bg-gray-50 opacity-50" : "cursor-pointer border-gray-200 bg-gray-50"}`}>
+                        <input
+                            type="checkbox"
+                            checked={!form.parentId && form.showInMainMenu}
+                            disabled={Boolean(form.parentId) || (!form.showInMainMenu && !canAddCurrentFormToMainMenu)}
+                            onChange={(event) => {
+                                if (event.target.checked && !canAddCurrentFormToMainMenu) {
+                                    setError(`Le menu principal peut contenir au maximum ${MAIN_MENU_LIMIT} categories.`);
+                                    return;
+                                }
+                                setForm((prev) => ({ ...prev, showInMainMenu: event.target.checked }));
+                            }}
+                            className="mt-1 h-4 w-4 rounded border-gray-300 text-black focus:ring-black disabled:cursor-not-allowed"
+                        />
+                        <span>
+                            <span className="block text-sm font-bold text-gray-900">Menu principal + Explorer</span>
+                            <span className="block text-xs text-gray-500">
+                                Réservé aux catégories principales. Maximum {MAIN_MENU_LIMIT} catégories dans le menu principal.
+                            </span>
+                            {!form.parentId && !form.showInMainMenu && mainMenuLimitReached && (
+                                <span className="mt-1 block text-xs font-semibold text-amber-700">
+                                    Limite atteinte : retire d'abord une autre catégorie du menu principal.
+                                </span>
+                            )}
+                        </span>
                     </label>
                 </div>
 
@@ -302,8 +423,8 @@ const AdminCategories = () => {
             </form>
 
             <div className="bg-white border border-gray-200">
-                <div className="p-4 border-b border-gray-200">
-                    <div className="relative">
+                <div className="flex flex-col gap-3 border-b border-gray-200 p-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                             value={search}
@@ -311,6 +432,26 @@ const AdminCategories = () => {
                             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
                             placeholder="Rechercher par nom, slug, parent ou ID..."
                         />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setExpandedRootIds(new Set(rootCategoryIds))}
+                            disabled={Boolean(search.trim()) || rootCategoryIds.length === 0}
+                            className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <ChevronDown className="h-4 w-4" />
+                            Tout ouvrir
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setExpandedRootIds(new Set())}
+                            disabled={Boolean(search.trim()) || expandedRootIds.size === 0}
+                            className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                            Tout fermer
+                        </button>
                     </div>
                 </div>
 
@@ -321,6 +462,8 @@ const AdminCategories = () => {
                                 <th className="text-left px-4 py-3 font-bold">Categorie</th>
                                 <th className="text-left px-4 py-3 font-bold">Parent</th>
                                 <th className="text-left px-4 py-3 font-bold">Slug</th>
+                                <th className="text-center px-4 py-3 font-bold">Actif</th>
+                                <th className="text-center px-4 py-3 font-bold">Menu</th>
                                 <th className="text-center px-4 py-3 font-bold">Produits</th>
                                 <th className="text-center px-4 py-3 font-bold">Sous-cat.</th>
                                 <th className="text-right px-4 py-3 font-bold">Actions</th>
@@ -329,21 +472,23 @@ const AdminCategories = () => {
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={6} className="px-4 py-10 text-center text-gray-500">
+                                    <td colSpan={8} className="px-4 py-10 text-center text-gray-500">
                                         Chargement des categories...
                                     </td>
                                 </tr>
-                            ) : filteredCategories.length === 0 ? (
+                            ) : displayedCategories.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-4 py-10 text-center text-gray-500">
+                                    <td colSpan={8} className="px-4 py-10 text-center text-gray-500">
                                         Aucune categorie trouvee.
                                     </td>
                                 </tr>
                             ) : (
-                                filteredCategories.map((category) => {
+                                displayedCategories.map((category) => {
                                     const canDelete = !(category.productCount || category.childCount);
                                     const depth = getCategoryDepth(category);
                                     const isRoot = depth === 0;
+                                    const hasChildren = Boolean(category.childCount);
+                                    const isExpanded = expandedRootIds.has(category.id);
                                     return (
                                         <tr
                                             key={category.id}
@@ -351,14 +496,25 @@ const AdminCategories = () => {
                                         >
                                             <td className="px-4 py-3">
                                                 <div className="flex items-start gap-3" style={{ paddingLeft: `${Math.min(depth, 3) * 28}px` }}>
-                                                    <div
-                                                        className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${isRoot
-                                                            ? "bg-sky-50 text-sky-700 ring-1 ring-sky-200"
-                                                            : "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                                                            }`}
-                                                    >
-                                                        {isRoot ? <Folder className="h-4 w-4" /> : <CornerDownRight className="h-4 w-4" />}
-                                                    </div>
+                                                    {isRoot && hasChildren && !search.trim() ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleRoot(category.id)}
+                                                            className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-50 text-sky-700 ring-1 ring-sky-200 transition-colors hover:bg-sky-100"
+                                                            aria-label={isExpanded ? "Fermer la categorie" : "Ouvrir la categorie"}
+                                                        >
+                                                            {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                                        </button>
+                                                    ) : (
+                                                        <div
+                                                            className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${isRoot
+                                                                ? "bg-sky-50 text-sky-700 ring-1 ring-sky-200"
+                                                                : "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                                                                }`}
+                                                        >
+                                                            {isRoot ? <Folder className="h-4 w-4" /> : <CornerDownRight className="h-4 w-4" />}
+                                                        </div>
+                                                    )}
                                                     <div>
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <span className={`font-semibold ${isRoot ? "text-gray-950" : "text-gray-700"}`}>
@@ -391,6 +547,37 @@ const AdminCategories = () => {
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-gray-600">{normalizeText(category.slug) || "-"}</td>
+                                            <td className="px-4 py-3 text-center">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => updateCategory(category.id, { isActive: !category.isActive }).then(loadCategories)}
+                                                    className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${category.isActive ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-gray-100 text-gray-500 ring-1 ring-gray-200"}`}
+                                                >
+                                                    {category.isActive ? "Actif" : "Masqué"}
+                                                </button>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                {isRoot ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (!category.showInMainMenu && mainMenuLimitReached) {
+                                                                setError(`Le menu principal peut contenir au maximum ${MAIN_MENU_LIMIT} categories.`);
+                                                                return;
+                                                            }
+                                                            updateCategory(category.id, { showInMainMenu: !category.showInMainMenu }).then(loadCategories);
+                                                        }}
+                                                        disabled={!category.showInMainMenu && mainMenuLimitReached}
+                                                        className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-50 ${category.showInMainMenu ? "bg-sky-50 text-sky-700 ring-1 ring-sky-200" : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"}`}
+                                                    >
+                                                        {category.showInMainMenu ? "Principal + Explorer" : "Explorer seul"}
+                                                    </button>
+                                                ) : (
+                                                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+                                                        Sous-cat.
+                                                    </span>
+                                                )}
+                                            </td>
                                             <td className="px-4 py-3 text-center text-gray-700">{category.productCount || 0}</td>
                                             <td className="px-4 py-3 text-center text-gray-700">{category.childCount || 0}</td>
                                             <td className="px-4 py-3">

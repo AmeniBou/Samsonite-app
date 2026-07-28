@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import {
   ChevronLeft,
@@ -21,6 +21,7 @@ import type { CategoryDisplay, ProductDisplay, ProductVariant } from "@/lib/pres
 
 const Product = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [product, setProduct] = useState<ProductDisplay | null>(null);
   const [allProducts, setAllProducts] = useState<ProductDisplay[]>([]);
   const [categories, setCategories] = useState<CategoryDisplay[]>([]);
@@ -28,9 +29,7 @@ const Product = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [selectedCombinationId, setSelectedCombinationId] = useState<number | null>(null);
-  const [selectedColorChoiceKey, setSelectedColorChoiceKey] = useState("");
-  const [selectedSizeChoice, setSelectedSizeChoice] = useState("");
-  const [selectedDimensionChoice, setSelectedDimensionChoice] = useState("");
+  const [variantMessage, setVariantMessage] = useState("");
   const [selectedInferredColorKey, setSelectedInferredColorKey] = useState("");
   const [inferredColorGroups, setInferredColorGroups] = useState<
     Array<{ key: string; name: string; hex: string; images: string[] }>
@@ -38,7 +37,9 @@ const Product = () => {
   const { addItem } = useCart();
   const { t } = useLanguage();
 
-  const productId = Number(slug);
+  const variantUrlMatch = slug?.match(/^(\d+)-v-(\d+)$/);
+  const productId = variantUrlMatch ? Number(variantUrlMatch[1]) : Number(slug);
+  const variantIdFromUrl = variantUrlMatch ? Number(variantUrlMatch[2]) : null;
   const hasNumericId = Number.isInteger(productId) && productId > 0;
 
   useEffect(() => {
@@ -76,11 +77,21 @@ const Product = () => {
           setAllProducts(products);
           setCategories(fetchedCategories);
           setProduct(currentProduct);
-          const defaultVariant = currentProduct?.variants.find((variant) => variant.isDefault);
+          const urlVariant = variantIdFromUrl
+            ? currentProduct?.variants.find((variant) => variant.combinationId === variantIdFromUrl)
+            : undefined;
+          if (variantIdFromUrl && currentProduct && !urlVariant) {
+            console.warn("[Product] Variante URL inexistante", {
+              productId: currentProduct.id,
+              variantId: variantIdFromUrl,
+            });
+          }
+          const defaultVariant =
+            urlVariant ||
+            currentProduct?.variants.find((variant) => variant.isDefault) ||
+            currentProduct?.variants[0];
           setSelectedCombinationId(defaultVariant?.combinationId ?? null);
-          setSelectedColorChoiceKey("");
-          setSelectedSizeChoice("");
-          setSelectedDimensionChoice("");
+          setVariantMessage("");
           setSelectedInferredColorKey("");
           setInferredColorGroups([]);
           setSelectedImageIdx(0);
@@ -101,7 +112,7 @@ const Product = () => {
     return () => {
       cancelled = true;
     };
-  }, [hasNumericId, productId, slug]);
+  }, [hasNumericId, productId, slug, variantIdFromUrl]);
 
   // Resolve any product image URLs that point to HTML pages by fetching them in the browser
   // and extracting a real image URL (og:image, twitter:image, link[rel=image_src], or first large image).
@@ -170,8 +181,11 @@ const Product = () => {
   }, [product]);
 
   const selectedVariant: ProductVariant | undefined = useMemo(() => {
-    if (!product || !selectedCombinationId) return undefined;
-    return product.variants.find((variant) => variant.combinationId === selectedCombinationId);
+    if (!product) return undefined;
+    const exactVariant = selectedCombinationId
+      ? product.variants.find((variant) => variant.combinationId === selectedCombinationId)
+      : undefined;
+    return exactVariant || product.variants.find((variant) => variant.isDefault) || product.variants[0];
   }, [product, selectedCombinationId]);
   const similarProducts = useMemo(() => {
     if (!product) return [];
@@ -198,7 +212,14 @@ const Product = () => {
     selectedVariant && selectedVariant.price > 0 ? selectedVariant.price : product?.price || 0;
   const selectedStock =
     typeof selectedVariant?.stock === "number" ? selectedVariant.stock : product?.stock || 0;
+  const lowStockThreshold = 3;
   const isOutOfStock = selectedStock <= 0;
+  const isLowStock = selectedStock > 0 && selectedStock <= lowStockThreshold;
+  const availabilityText = isOutOfStock
+    ? "Temporairement indisponible"
+    : isLowStock
+    ? "Plus que quelques pièces disponibles"
+    : t("product.available");
 
   
 
@@ -223,11 +244,14 @@ const Product = () => {
     (variant?.color?.hex || "").trim().toLowerCase() ||
     (variant?.color?.name || "").trim().toLowerCase();
 
-  const selectedColorKey = useMemo(
-    () => selectedColorChoiceKey || getColorKey(selectedVariant),
-    [selectedColorChoiceKey, selectedVariant]
-  );
-  const selectedSize = selectedSizeChoice || (selectedVariant?.size || "").trim();
+  const selectedColorKey = getColorKey(selectedVariant);
+  const selectedSize = (selectedVariant?.size || "").trim();
+  const findVariantBySelection = (size: string, colorKey: string) =>
+    variants.find(
+      (variant) =>
+        (variant.size || "").trim().toLowerCase() === size.trim().toLowerCase() &&
+        getColorKey(variant) === colorKey
+    );
 
   const colorOptions = useMemo(() => {
     const byKey = new Map<
@@ -392,55 +416,35 @@ const Product = () => {
     return Array.from(byLabel.values()).map(({ score: _score, ...size }) => size);
   }, [variants]);
 
-  const handleColorSelect = (colorKey: string, colorCombinationId: number) => {
-    setSelectedColorChoiceKey(colorKey);
-    const compatibleVariants = variants.filter((v) => getColorKey(v) === colorKey);
-
-    let targetVariant: ProductVariant | undefined;
-
-    if (selectedSize) {
-      const sizeMatches = compatibleVariants.filter((v) => (v.size || "").trim() === selectedSize);
-      targetVariant =
-        sizeMatches.find((v) => (v.stock || 0) > 0 && v.images.length > 0) ||
-        sizeMatches.find((v) => v.images.length > 0) ||
-        sizeMatches.find((v) => (v.dimensions || "").trim()) ||
-        sizeMatches[0];
-    }
-
-    if (!targetVariant) {
-      const defaultMatches = compatibleVariants.filter((v) => v.isDefault);
-      targetVariant =
-        defaultMatches.find((v) => (v.stock || 0) > 0 && v.images.length > 0) ||
-        defaultMatches.find((v) => v.images.length > 0) ||
-        defaultMatches.find((v) => (v.dimensions || "").trim()) ||
-        defaultMatches[0] ||
-        compatibleVariants.find((v) => (v.stock || 0) > 0 && v.images.length > 0) ||
-        compatibleVariants.find((v) => v.images.length > 0) ||
-        compatibleVariants.find((v) => (v.dimensions || "").trim()) ||
-        compatibleVariants[0];
-    }
-
-    setSelectedCombinationId(targetVariant?.combinationId ?? colorCombinationId);
-    setSelectedImageIdx(0);
+  const updateVariantUrl = (variant: ProductVariant) => {
+    if (!product) return;
+    navigate(`/produit/${product.id}-v-${variant.combinationId}`, { replace: true });
   };
 
-  const handleSizeSelect = (sizeLabel: string, sizeCombinationId: number) => {
-    setSelectedSizeChoice(sizeLabel);
-    let targetVariant: ProductVariant | undefined;
-
-    if (selectedColorKey) {
-      const compatibles = variants.filter(
-        (v) => (v.size || "").trim() === sizeLabel && getColorKey(v) === selectedColorKey
-      );
-      targetVariant =
-        compatibles.find((v) => (v.stock || 0) > 0 && v.images.length > 0) ||
-        compatibles.find((v) => v.images.length > 0) ||
-        compatibles.find((v) => (v.dimensions || "").trim()) ||
-        compatibles[0];
+  const handleColorSelect = (colorKey: string) => {
+    if (!selectedVariant) return;
+    const targetVariant = findVariantBySelection(selectedSize, colorKey);
+    if (!targetVariant) {
+      setVariantMessage("Cette couleur n'est pas proposée dans la taille sélectionnée.");
+      return;
     }
-
-    setSelectedCombinationId(targetVariant?.combinationId ?? sizeCombinationId);
+    setVariantMessage("");
+    setSelectedCombinationId(targetVariant.combinationId);
     setSelectedImageIdx(0);
+    updateVariantUrl(targetVariant);
+  };
+
+  const handleSizeSelect = (sizeLabel: string) => {
+    if (!selectedVariant) return;
+    const targetVariant = findVariantBySelection(sizeLabel, selectedColorKey);
+    if (!targetVariant) {
+      setVariantMessage("Cette taille n'est pas proposée dans la couleur sélectionnée.");
+      return;
+    }
+    setVariantMessage("");
+    setSelectedCombinationId(targetVariant.combinationId);
+    setSelectedImageIdx(0);
+    updateVariantUrl(targetVariant);
   };
 
   const dimensionScopedVariants = useMemo(() => {
@@ -517,21 +521,18 @@ const Product = () => {
     displayColorOptions[0]?.name ||
     "";
   const selectedDimensionLabel =
-    selectedDimensionChoice ||
     selectedVariant?.dimensions ||
-    dimensionOptions.find((dimension) => dimension.combinationId === selectedCombinationId)?.label ||
-    dimensionOptions[0]?.label ||
     product?.dimensions ||
     "";
-  const availabilityByColorKey = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const variant of variants) {
-      const key = getColorKey(variant);
-      if (!key) continue;
-      map.set(key, (map.get(key) || 0) + (variant.stock || 0));
-    }
-    return map;
-  }, [variants]);
+  const selectedPhysicalDimensions =
+    selectedDimensionLabel ||
+    [selectedVariant?.height, selectedVariant?.width, selectedVariant?.depth]
+      .map((value) => (value || "").trim())
+      .filter(Boolean)
+      .join(" x ");
+  const selectedExpandableDimensions = extensibleDimensionOptions[0] || "";
+  const selectedVolume = volumeOptions[0] || product?.volume || "";
+  const selectedWeight = weightOptions[0] || product?.weight || "";
 
   const technicalCharacteristics = useMemo(() => {
     if (!product) return [];
@@ -606,14 +607,14 @@ const Product = () => {
         </nav>
       </div>
 
-      <div className="samsonite-container py-6 lg:py-10">
-        <div className="grid gap-8 md:grid-cols-[minmax(0,1.02fr)_minmax(380px,0.98fr)] lg:gap-14">
+      <div className="samsonite-container py-5 lg:py-8">
+        <div className="grid gap-7 md:grid-cols-[minmax(0,0.95fr)_minmax(340px,0.85fr)] lg:gap-10">
           <div>
-            <div className="premium-surface relative mx-auto mb-4 flex aspect-square max-w-[560px] items-center justify-center overflow-hidden bg-white">
+            <div className="premium-surface relative mx-auto mb-4 flex aspect-square max-w-[470px] items-center justify-center overflow-hidden bg-white">
               <img
                 src={galleryImages[selectedImageIdx] || "/placeholder.svg"}
                 alt={product.name}
-                className="h-full w-full object-contain p-8 transition-transform duration-500"
+                className="h-full w-full object-contain p-6 transition-transform duration-500"
                 onError={(event) => {
                   event.currentTarget.src = "/placeholder.svg";
                 }}
@@ -626,7 +627,7 @@ const Product = () => {
                         index === 0 ? galleryImages.length - 1 : index - 1
                       )
                     }
-                    className="premium-control absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/90 backdrop-blur"
+                    className="premium-control absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/90 backdrop-blur"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
@@ -636,7 +637,7 @@ const Product = () => {
                         index === galleryImages.length - 1 ? 0 : index + 1
                       )
                     }
-                    className="premium-control absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/90 backdrop-blur"
+                    className="premium-control absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/90 backdrop-blur"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
@@ -650,7 +651,7 @@ const Product = () => {
                   <button
                     key={`${img}-${idx}`}
                     onClick={() => setSelectedImageIdx(idx)}
-                    className={`h-20 w-20 flex-shrink-0 border-2 bg-white transition-all duration-200 hover:-translate-y-0.5 ${
+                    className={`h-16 w-16 flex-shrink-0 border-2 bg-white transition-all duration-200 hover:-translate-y-0.5 ${
                       idx === selectedImageIdx ? "border-foreground shadow-[0_10px_24px_rgba(0,0,0,0.08)]" : "border-transparent"
                     }`}
                   >
@@ -668,103 +669,110 @@ const Product = () => {
             )}
           </div>
 
-          <div className="premium-surface space-y-6 self-start p-6 lg:p-8">
-            <div>
-              <h1 className="text-3xl font-black uppercase leading-tight tracking-tight">{product.name}</h1>
-              <p className="mt-2 text-base leading-6 text-muted-foreground">{product.shortDescription}</p>
+          <div className="self-start space-y-5 lg:pt-1">
+            <div className="space-y-2">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">
+                {product.brandName || "Samsonite"}
+              </p>
+              <h1 className="text-xl font-black uppercase leading-tight tracking-tight md:text-4xl">
+                {product.name}
+              </h1>
+              {product.shortDescription && (
+                <p className="text-base leading-6 text-foreground/85">{product.shortDescription}</p>
+              )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="text-2xl font-black">{formatTnd(selectedPrice)}</div>
-              <p
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${
-                  isOutOfStock ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"
-                }`}
-              >
-                <span className="inline-block w-2 h-2 rounded-full bg-current" />
-                {isOutOfStock ? (
-                  t("product.unavailable")
-                ) : (
-                  <>
-                    {t("product.available")}{" "}
-                    <span className="text-muted-foreground text-[12px]">
-                      ({selectedStock} {t("product.inStock")})
-                    </span>
-                  </>
-                )}
-              </p>
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="text-xl font-black">{formatTnd(selectedPrice)}</div>
+                <p
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${
+                    isOutOfStock ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"
+                  }`}
+                >
+                  <span className="inline-block h-2 w-2 rounded-full bg-current" />
+                  {availabilityText}
+                </p>
+              </div>
+              <p className="text-sm font-semibold text-muted-foreground">TVA incl.</p>
             </div>
 
             {sizeOptions.length > 0 && (
-              <div>
-                <p className="mb-3 text-sm font-black uppercase tracking-wide">
+              <div className="space-y-2">
+                <p className="text-sm font-black uppercase tracking-wide">
                   {t("product.size")}
-                  {selectedDimensionLabel ? (
+                  {selectedSize ? (
                     <span className="ml-3 text-sm font-semibold normal-case text-muted-foreground">
-                      {selectedDimensionLabel}
+                      {selectedSize}
                     </span>
                   ) : null}
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {sizeOptions.map((size) => (
-                    <button
-                      key={`${size.label}-${size.combinationId}`}
-                      type="button"
-                      onClick={() => handleSizeSelect(size.label, size.combinationId)}
-                      className={`premium-control relative min-h-12 min-w-[82px] border px-5 py-3 text-base font-semibold leading-none ${
-                        selectedSize === size.label
-                          ? "border-black bg-black text-white"
-                          : size.stock <= 0
-                            ? "border-neutral-200 bg-neutral-50 text-muted-foreground opacity-60"
+                  {sizeOptions.map((size) => {
+                    const exactVariant = findVariantBySelection(size.label, selectedColorKey);
+                    const doesNotExist = !exactVariant;
+                    const isSelected = selectedSize.toLowerCase() === size.label.toLowerCase();
+                    return (
+                      <button
+                        key={`${size.label}-${size.combinationId}`}
+                        type="button"
+                        aria-pressed={isSelected}
+                        disabled={doesNotExist}
+                        title={doesNotExist ? "Cette taille n'est pas proposée dans la couleur sélectionnée." : size.label}
+                        onClick={() => handleSizeSelect(size.label)}
+                        className={`premium-control relative min-h-10 min-w-[72px] border px-4 py-2 text-sm font-semibold leading-none ${
+                          isSelected
+                            ? "border-black bg-black text-white"
+                            : doesNotExist
+                            ? "cursor-not-allowed border-neutral-200 bg-neutral-50 text-muted-foreground opacity-50"
                             : "border-neutral-300 bg-white text-black hover:border-black"
-                      }`}
-                    >
-                      <span className={size.stock <= 0 ? "line-through" : ""}>{size.label}</span>
-                      {size.stock <= 0 && (
-                        <span className="absolute -right-2 -top-2 rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-black uppercase text-red-600">
-                          Rupture
-                        </span>
-                      )}
-                    </button>
-                  ))}
+                        }`}
+                      >
+                        <span className={doesNotExist ? "line-through" : ""}>{size.label}</span>
+                        {exactVariant && exactVariant.stock <= 0 && (
+                          <span className="absolute -right-2 -top-2 rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-black uppercase text-red-600">
+                            Rupture
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {dimensionOptions.length > 0 && (
-              <div>
-                <p className="mb-3 text-sm font-black uppercase tracking-wide">{t("product.dimension")}</p>
-                <div className="flex flex-wrap gap-2">
-                  {dimensionOptions.map((dimension) => (
-                    <button
-                      key={`${dimension.label}-${dimension.sizeLabel}-${dimension.combinationId}`}
-                      type="button"
-                      onClick={() => {
-                        setSelectedDimensionChoice(dimension.label);
-                        if (dimension.combinationId) {
-                          setSelectedCombinationId(dimension.combinationId);
-                        }
-                      }}
-                      className={`premium-control min-h-12 border px-5 py-3 text-base font-semibold leading-none ${
-                        selectedDimensionLabel === dimension.label
-                          ? "border-black bg-black text-white"
-                          : selectedSize &&
-                              dimension.sizeLabel &&
-                              dimension.sizeLabel !== selectedSize
-                            ? "border-neutral-200 bg-white text-muted-foreground opacity-70"
-                            : "border-neutral-300 bg-white hover:border-black"
-                      }`}
-                    >
-                      {dimension.label}
-                    </button>
-                  ))}
-                </div>
+            {(selectedPhysicalDimensions || selectedExpandableDimensions || selectedVolume || selectedWeight) && (
+              <div className="space-y-2 border-y border-border py-4">
+                {selectedPhysicalDimensions && (
+                  <p className="text-sm">
+                    <span className="font-black uppercase tracking-wide">{t("product.dimension")}</span>
+                    <span className="ml-3 text-muted-foreground">{selectedPhysicalDimensions}</span>
+                  </p>
+                )}
+                {selectedExpandableDimensions && (
+                  <p className="text-sm">
+                    <span className="font-black uppercase tracking-wide">{t("product.expandableDimension")}</span>
+                    <span className="ml-3 text-muted-foreground">{selectedExpandableDimensions}</span>
+                  </p>
+                )}
+                {selectedVolume && (
+                  <p className="text-sm">
+                    <span className="font-black uppercase tracking-wide">{t("product.volume")}</span>
+                    <span className="ml-3 text-muted-foreground">{selectedVolume}</span>
+                  </p>
+                )}
+                {selectedWeight && (
+                  <p className="text-sm">
+                    <span className="font-black uppercase tracking-wide">{t("product.weight")}</span>
+                    <span className="ml-3 text-muted-foreground">{selectedWeight}</span>
+                  </p>
+                )}
               </div>
             )}
 
             {displayColorOptions.length > 0 && (
-              <div>
-                <p className="mb-3 text-sm font-black uppercase tracking-wide">
+              <div className="space-y-2">
+                <p className="text-sm font-black uppercase tracking-wide">
                   {t("product.color")}
                   {selectedColorName ? (
                     <span className="ml-3 text-sm font-semibold normal-case text-muted-foreground">
@@ -774,184 +782,164 @@ const Product = () => {
                 </p>
                 <div className="flex flex-wrap items-center gap-3">
                   {displayColorOptions.map((color) => {
-                    const colorStock = color.inferred ? 1 : availabilityByColorKey.get(color.key) || color.stock || 0;
+                    const exactVariant = color.inferred ? undefined : findVariantBySelection(selectedSize, color.key);
+                    const doesNotExist = !color.inferred && !exactVariant;
+                    const isSelected = activeColorKey === color.key;
                     return (
-                    <button
-                      key={`${color.key}-${color.combinationId}`}
-                      title={color.name}
-                      onClick={() => {
-                        if (color.inferred) {
-                          setSelectedInferredColorKey(color.key);
-                          setSelectedColorChoiceKey("");
-                          setSelectedImageIdx(0);
-                          return;
-                        }
-                        setSelectedInferredColorKey("");
-                        handleColorSelect(color.key, color.combinationId);
-                      }}
-                      className={`premium-control relative flex h-12 w-12 items-center justify-center rounded-full border ${
-                        activeColorKey === color.key ? "border-black shadow-[0_0_0_4px_rgba(0,0,0,0.06)]" : "border-neutral-300"
-                      } ${colorStock <= 0 ? "opacity-45" : ""}`}
-                    >
-                      <span
-                        className="block h-8 w-8 rounded-full border border-black/10"
-                        style={{ backgroundColor: color.hex }}
-                      />
-                      {colorStock <= 0 && <span className="absolute h-px w-10 rotate-45 bg-red-600" />}
-                    </button>
+                      <button
+                        key={`${color.key}-${color.combinationId}`}
+                        type="button"
+                        aria-pressed={isSelected}
+                        disabled={doesNotExist}
+                        title={doesNotExist ? "Cette couleur n'est pas proposée dans la taille sélectionnée." : color.name}
+                        onClick={() => {
+                          if (doesNotExist) return;
+                          if (color.inferred) {
+                            setSelectedInferredColorKey(color.key);
+                            setSelectedImageIdx(0);
+                            return;
+                          }
+                          setSelectedInferredColorKey("");
+                          handleColorSelect(color.key);
+                        }}
+                        className={`premium-control relative flex h-11 w-11 items-center justify-center rounded-full border bg-white ${
+                          isSelected ? "border-black shadow-[0_0_0_4px_rgba(0,0,0,0.06)]" : "border-neutral-300"
+                        } ${doesNotExist ? "cursor-not-allowed opacity-35" : ""}`}
+                      >
+                        <span
+                          className="block h-7 w-7 rounded-full border border-black/10"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        {exactVariant && exactVariant.stock <= 0 && <span className="absolute h-px w-10 rotate-45 bg-red-600" />}
+                        {doesNotExist && <span className="absolute h-px w-10 rotate-45 bg-neutral-500" />}
+                      </button>
                     );
                   })}
                 </div>
               </div>
             )}
 
-            {extensibleDimensionOptions.length > 0 && (
-              <div>
-                <p className="text-xs font-bold tracking-wider mb-3">{t("product.expandableDimension")}</p>
-                <div className="flex flex-wrap gap-2">
-                  {extensibleDimensionOptions.map((value) => (
-                    <button
-                      key={value}
-                      type="button"
-                      className="border border-foreground px-4 py-1.5 text-sm font-semibold leading-none"
-                    >
-                      {value}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {variantMessage && (
+              <p className="rounded-md bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
+                {variantMessage}
+              </p>
             )}
 
-            {weightOptions.length > 0 && (
-              <div>
-                <p className="text-xs font-bold tracking-wider mb-3">{t("product.weight")}</p>
-                <div className="flex flex-wrap gap-2">
-                  {weightOptions.map((weight) => (
-                    <button
-                      key={weight}
-                      type="button"
-                      className="border border-foreground px-4 py-1.5 text-sm font-semibold leading-none"
-                    >
-                      {weight}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {volumeOptions.length > 0 && (
-              <div>
-                <p className="text-xs font-bold tracking-wider mb-3">{t("product.volume")}</p>
-                <div className="flex flex-wrap gap-2">
-                  {volumeOptions.map((volume) => (
-                    <button
-                      key={volume}
-                      type="button"
-                      className="border border-foreground px-4 py-1.5 text-sm font-semibold leading-none"
-                    >
-                      {volume}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {!isOutOfStock && (
-              <div>
-                <p className="text-xs font-bold tracking-wider mb-3">{t("product.quantity")}</p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              {!isOutOfStock && (
                 <div className="flex w-fit items-center border border-border bg-white">
                   <button
+                    type="button"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     className="flex h-10 w-10 items-center justify-center transition-colors hover:bg-accent"
                   >
                     <Minus className="h-4 w-4" />
                   </button>
-                  <span className="w-12 h-10 flex items-center justify-center border-x border-border">
+                  <span className="flex h-10 w-12 items-center justify-center border-x border-border font-semibold">
                     {quantity}
                   </span>
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="flex h-10 w-10 items-center justify-center transition-colors hover:bg-accent"
+                    type="button"
+                    onClick={() => setQuantity(Math.min(selectedStock, quantity + 1))}
+                    disabled={quantity >= selectedStock}
+                    className="flex h-10 w-10 items-center justify-center transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
-              </div>
-            )}
+              )}
+              <button
+                disabled={isOutOfStock || !selectedVariant || quantity > selectedStock}
+                onClick={() => {
+                  if (!selectedVariant || selectedStock <= 0 || quantity > selectedStock) return;
+                  addItem(
+                    {
+                      ...product,
+                      price: selectedPrice,
+                      images: galleryImages.length ? galleryImages : product.images,
+                    },
+                    quantity,
+                    {
+                      variantId: selectedVariant.combinationId,
+                      sku: selectedVariant.sku || String(selectedVariant.combinationId),
+                      size: selectedVariant.size,
+                      color: selectedVariant.color?.name || product.colors[0]?.name,
+                      maxStock: selectedStock,
+                    }
+                  );
+                }}
+                className="premium-control flex min-h-10 flex-1 items-center justify-center gap-2 bg-foreground px-4 py-3 text-xs font-extrabold uppercase tracking-wider text-background hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <ShoppingBag className="h-4 w-4" />
+                {t("product.addToCart")}
+              </button>
+            </div>
 
-            {product.description && (
-              <section className="border-t border-border pt-6 space-y-2">
-                <h2 className="text-sm font-bold tracking-wider uppercase">{t("product.description")}</h2>
-                <p className="text-sm leading-6 text-muted-foreground">{product.description}</p>
-              </section>
-            )}
-
-            {guaranteeCharacteristics.length > 0 && (
-              <section className="border-t border-border pt-6 space-y-2">
-                <h2 className="text-sm font-bold tracking-wider uppercase">{t("product.warranty")}</h2>
-                <div className="space-y-1">
-                  {guaranteeCharacteristics.map((item, index) => (
-                    <p key={`${item.label}-${index}`} className="text-sm text-muted-foreground">
-                      <span className="font-semibold text-foreground">{item.label}:</span>{" "}
-                      {item.value}
-                    </p>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {technicalCharacteristics.length > 0 && (
-              <section className="border-t border-border pt-6 space-y-3">
-                <h2 className="text-sm font-bold tracking-wider uppercase">{t("product.specs")}</h2>
-                <dl className="overflow-hidden rounded-md border border-border bg-white">
-                  {technicalCharacteristics.map((item, index) => (
-                    <div
-                      key={`${item.label}-${index}`}
-                      className="grid gap-1 border-b border-border px-4 py-3 text-sm last:border-b-0 sm:grid-cols-[180px_minmax(0,1fr)] sm:gap-4"
-                    >
-                      <dt className="font-black uppercase tracking-wide text-foreground">{item.label}</dt>
-                      <dd className="leading-6 text-muted-foreground">{item.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </section>
-            )}
-
-            <button
-              disabled={isOutOfStock}
-              onClick={() =>
-                addItem(
-                  {
-                    ...product,
-                    price: selectedPrice,
-                  },
-                  quantity,
-                  selectedVariant?.color?.name || product.colors[0]?.name
-                )
-              }
-              className="premium-control flex w-full items-center justify-center gap-2 bg-foreground px-5 py-4 text-sm font-extrabold tracking-wider text-background hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <ShoppingBag className="h-4 w-4" />
-              {t("product.addToCart")}
-            </button>
-
-            <div className="grid gap-3 border-t border-border pt-6 sm:grid-cols-3">
+            <div className="grid gap-3 border-t border-border pt-4 sm:grid-cols-3">
               <div className="flex items-center gap-3">
-                <Truck className="h-5 w-5 text-muted-foreground" />
+                <Truck className="h-4 w-4 text-muted-foreground" />
                 <p className="text-xs font-semibold leading-4">{t("product.freeShipping")}</p>
               </div>
               <div className="flex items-center gap-3">
-                <RotateCcw className="h-5 w-5 text-muted-foreground" />
+                <RotateCcw className="h-4 w-4 text-muted-foreground" />
                 <p className="text-xs font-semibold leading-4">{t("product.freeReturns")}</p>
               </div>
               <div className="flex items-center gap-3">
-                <Shield className="h-5 w-5 text-muted-foreground" />
+                <Shield className="h-4 w-4 text-muted-foreground" />
                 <p className="text-xs font-semibold leading-4">{t("product.worldWarranty")}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {(product.description || guaranteeCharacteristics.length > 0 || technicalCharacteristics.length > 0) && (
+        <section className="samsonite-container border-t border-border py-8">
+          <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+            <div>
+              <h2 className="text-xl font-black uppercase tracking-tight">Détails du produit</h2>
+              {product.description && (
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">{product.description}</p>
+              )}
+            </div>
+            <div className="space-y-8">
+              {guaranteeCharacteristics.length > 0 && (
+                <section className="space-y-2">
+                  <h3 className="text-sm font-black uppercase tracking-wide">{t("product.warranty")}</h3>
+                  <dl className="divide-y divide-border border-y border-border">
+                    {guaranteeCharacteristics.map((item, index) => (
+                      <div
+                        key={`${item.label}-${index}`}
+                        className="grid gap-1 py-3 text-sm sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-6"
+                      >
+                        <dt className="font-black uppercase tracking-wide text-foreground">{item.label}</dt>
+                        <dd className="leading-6 text-muted-foreground">{item.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              )}
+
+              {technicalCharacteristics.length > 0 && (
+                <section className="space-y-2">
+                  <h3 className="text-sm font-black uppercase tracking-wide">{t("product.specs")}</h3>
+                  <dl className="divide-y divide-border border-y border-border">
+                    {technicalCharacteristics.map((item, index) => (
+                      <div
+                        key={`${item.label}-${index}`}
+                        className="grid gap-1 py-3 text-sm sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-6"
+                      >
+                        <dt className="font-black uppercase tracking-wide text-foreground">{item.label}</dt>
+                        <dd className="leading-6 text-muted-foreground">{item.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {similarProducts.length > 0 && (
         <section className="samsonite-container py-10 border-t border-border">

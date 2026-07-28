@@ -189,34 +189,57 @@ export const mapPSProductToDisplay = (
         isLikelySizeText(entry.name)
     );
 
-    const colorHex = colorOption?.color ? normalizeHex(colorOption.color) : null;
+    const richColorHex = combination.colorHex ? normalizeHex(combination.colorHex) : null;
+    const colorHex = richColorHex || (colorOption?.color ? normalizeHex(colorOption.color) : null);
     const price = Number(combination.price || 0);
-    const stock = stockByAttribute[`${productId}:${combinationId}`] || 0;
+    const stock =
+      combination.stock !== undefined && combination.stock !== ""
+        ? Number(combination.stock)
+        : stockByAttribute[`${productId}:${combinationId}`] || 0;
+    const stockInitial =
+      combination.stockInitial !== undefined && combination.stockInitial !== ""
+        ? Number(combination.stockInitial)
+        : undefined;
     const variantImageIds =
       combination.associations?.images?.map((image) => Number(image.id)).filter(Boolean) || [];
+    const richImages = Array.isArray(combination.images)
+      ? combination.images.filter((image): image is string => Boolean(image))
+      : [];
     const images =
-      variantImageIds.length > 0
+      richImages.length > 0
+        ? richImages
+        : variantImageIds.length > 0
         ? variantImageIds.map((imageId) => getProductImageUrl(productId, imageId))
         : finalImageUrls?.length
         ? finalImageUrls
         : finalImageIds.map((imageId) => getProductImageUrl(productId, imageId));
+    const width = combination.width?.trim();
+    const height = combination.height?.trim();
+    const depth = combination.depth?.trim();
+    const richDimensions =
+      width && height && depth ? `${height} x ${width} x ${depth} cm` : undefined;
 
     return {
       combinationId,
+      sku: combination.reference || String(combinationId),
       price,
       stock,
+      stockInitial,
       isDefault:
         combination.default_on === "1" ||
         (defaultCombinationId > 0 && combinationId === defaultCombinationId),
-      size: sizeOption?.name,
-      dimensions: dimensionOption?.name,
+      size: combination.size || sizeOption?.name,
+      dimensions: richDimensions || dimensionOption?.name,
       extensibleDimensions: extensibleDimensionOption?.name,
-      weight: weightOption?.name,
-      volume: volumeOption?.name,
+      weight: combination.weight || weightOption?.name,
+      width,
+      height,
+      depth,
+      volume: combination.volume || volumeOption?.name,
       color:
-        colorHex && colorOption
+        colorHex && (combination.colorName || colorOption)
           ? {
-              name: getLangValue(colorOption.name) || `Option ${colorOption.id}`,
+              name: combination.colorName || (colorOption ? getLangValue(colorOption.name) : "") || `Option ${colorOption?.id || combinationId}`,
               hex: colorHex,
             }
           : undefined,

@@ -63,13 +63,16 @@ const mapCategoryToRaw = (category: {
   name: string;
   slug?: string | null;
   parentId?: number | null;
+  isActive?: boolean;
+  showInMainMenu?: boolean;
 }) => ({
   id: category.id,
   id_parent: category.parentId ?? 2,
   name: buildLangField(category.name),
   description: buildLangField(""),
   link_rewrite: buildLangField(category.slug || normalizeSlug(category.name)),
-  active: "1",
+  active: category.isActive === false ? "0" : "1",
+  show_in_main_menu: category.showInMainMenu === false ? "0" : "1",
 });
 
 const mapProductToRaw = (product: {
@@ -89,7 +92,7 @@ const mapProductToRaw = (product: {
   quantity?: number | null;
   images: Array<{ id: number; imageUrl: string }>;
   categories: Array<{ category: { id: number; slug?: string | null } }>;
-  variants: Array<{ id: number; groupName: string; value: string; colorName?: string | null; colorHex?: string | null; size?: string | null; price?: { toString(): string; toNumber?: () => number } | null; stock?: number | null; images?: string[] }>;
+  variants: Array<{ id: number; groupName: string; value: string; colorName?: string | null; colorHex?: string | null; size?: string | null; weight?: string | null; width?: string | null; height?: string | null; depth?: string | null; volume?: string | null; price?: { toString(): string; toNumber?: () => number } | null; stockInitial?: number | null; stock?: number | null; images?: string[] }>;
   features: Array<{ id: number; featureName: string; featureValue: string }>;
 }) => {
   const imageIds = product.images.map((image) => image.id).filter(Boolean);
@@ -176,6 +179,17 @@ export const getPublicCatalog = async () => {
       id_product: product.id,
       price: variant.price?.toString() || "0",
       default_on: "0",
+      colorName: variant.colorName || undefined,
+      colorHex: variant.colorHex || undefined,
+      size: variant.size || undefined,
+      weight: variant.weight || undefined,
+      width: variant.width || undefined,
+      height: variant.height || undefined,
+      depth: variant.depth || undefined,
+      volume: variant.volume || undefined,
+      stockInitial: variant.stockInitial ?? undefined,
+      stock: variant.stock ?? undefined,
+      images: variant.images || [],
       associations: {
         product_option_values: [{ id: variant.id }],
         images: (variant.images || []).map((imageUrl, index) => ({ id: variant.id * 1000 + index + 1, imageUrl })),
@@ -247,6 +261,8 @@ export const getAdminCategories = async () => {
     parentName: category.parent?.name || "",
     productCount: category._count.products,
     childCount: category._count.children,
+    isActive: category.isActive,
+    showInMainMenu: category.showInMainMenu,
   }));
 };
 
@@ -267,6 +283,23 @@ const ensureCategoryParent = async (parentId: number | null) => {
   return parent;
 };
 
+const MAIN_MENU_CATEGORY_LIMIT = 7;
+
+const ensureMainMenuCategoryLimit = async (excludeId?: number) => {
+  const count = await prisma.category.count({
+    where: {
+      parentId: null,
+      isActive: true,
+      showInMainMenu: true,
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+  });
+
+  if (count >= MAIN_MENU_CATEGORY_LIMIT) {
+    throw new Error(`Le menu principal peut contenir au maximum ${MAIN_MENU_CATEGORY_LIMIT} categories`);
+  }
+};
+
 const wouldCreateCategoryCycle = async (categoryId: number, parentId: number | null) => {
   let currentParentId = parentId;
   while (currentParentId) {
@@ -284,6 +317,8 @@ export const createCategory = async (fields: {
   name?: string;
   slug?: string;
   parentId?: number | null;
+  isActive?: boolean;
+  showInMainMenu?: boolean;
 }) => {
   try {
     const name = fields.name?.trim();
@@ -291,12 +326,20 @@ export const createCategory = async (fields: {
 
     const parentId = normalizeCategoryParentId(fields.parentId);
     await ensureCategoryParent(parentId);
+    const isActive = fields.isActive ?? true;
+    const showInMainMenu = parentId ? false : fields.showInMainMenu ?? true;
+
+    if (!parentId && isActive && showInMainMenu) {
+      await ensureMainMenuCategoryLimit();
+    }
 
     const category = await prisma.category.create({
       data: {
         name,
         slug: fields.slug?.trim() || normalizeSlug(name),
         parentId,
+        isActive,
+        showInMainMenu,
       },
     });
 
@@ -311,13 +354,13 @@ export const createCategory = async (fields: {
 
 export const updateCategory = async (
   id: number,
-  fields: Partial<{ name: string; slug: string; parentId: number | null }>
+  fields: Partial<{ name: string; slug: string; parentId: number | null; isActive: boolean; showInMainMenu: boolean }>
 ) => {
   try {
     const existing = await prisma.category.findUnique({ where: { id } });
     if (!existing) return { success: false, error: "Categorie introuvable" };
 
-    const data: { name?: string; slug?: string; parentId?: number | null } = {};
+    const data: { name?: string; slug?: string; parentId?: number | null; isActive?: boolean; showInMainMenu?: boolean } = {};
     if (fields.name !== undefined) {
       const name = fields.name.trim();
       if (!name) return { success: false, error: "Le nom de la categorie est requis" };
@@ -333,6 +376,22 @@ export const updateCategory = async (
         return { success: false, error: "Une categorie ne peut pas etre son propre parent" };
       }
       data.parentId = parentId;
+      if (parentId) data.showInMainMenu = false;
+    }
+    if (fields.isActive !== undefined) {
+      data.isActive = Boolean(fields.isActive);
+    }
+    if (fields.showInMainMenu !== undefined && !(data.parentId ?? existing.parentId)) {
+      data.showInMainMenu = Boolean(fields.showInMainMenu);
+    }
+
+    const finalParentId = data.parentId !== undefined ? data.parentId : existing.parentId;
+    const finalIsActive = data.isActive !== undefined ? data.isActive : existing.isActive;
+    const finalShowInMainMenu =
+      data.showInMainMenu !== undefined ? data.showInMainMenu : existing.showInMainMenu;
+
+    if (!finalParentId && finalIsActive && finalShowInMainMenu) {
+      await ensureMainMenuCategoryLimit(id);
     }
 
     await prisma.category.update({ where: { id }, data });
@@ -378,7 +437,7 @@ const mapAdminProduct = (product: {
   category: { id: number; name: string } | null;
   images: Array<{ id: number; imageUrl: string }>;
   features: Array<{ featureName: string; featureValue: string }>;
-  variants: Array<{ groupName: string; value: string; colorName?: string | null; colorHex?: string | null; size?: string | null; price?: { toNumber?: () => number; toString(): string } | null; stock?: number | null; images?: string[] }>;
+  variants: Array<{ groupName: string; value: string; colorName?: string | null; colorHex?: string | null; size?: string | null; weight?: string | null; width?: string | null; height?: string | null; depth?: string | null; volume?: string | null; price?: { toNumber?: () => number; toString(): string } | null; stockInitial?: number | null; stock?: number | null; images?: string[] }>;
   description?: string | null;
   quantity?: number | null;
   weight?: string | null;
@@ -399,7 +458,13 @@ const mapAdminProduct = (product: {
       colorName,
       colorHex: variant.colorHex || (colorName ? getColorHex(colorName) : undefined),
       size,
+      weight: variant.weight || undefined,
+      width: variant.width || undefined,
+      height: variant.height || undefined,
+      depth: variant.depth || undefined,
+      volume: variant.volume || undefined,
       price: variant.price ? Number(variant.price) : Number(product.price) || undefined,
+      stockInitial: variant.stockInitial ?? undefined,
       stock: variant.stock ?? stock,
       images: variant.images || [],
     };
@@ -535,8 +600,20 @@ const createOrUpdateFeatures = async (
 
 const createOrUpdateVariants = async (
   productId: number,
-  variants: Array<{ colorName?: string; colorHex?: string; size?: string; price?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>
+  variants: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>
 ) => {
+  const seenVariantKeys = new Set<string>();
+  for (const [index, variant] of variants.entries()) {
+    const colorName = variant.colorName?.trim().toLowerCase() || "";
+    const size = variant.size?.trim().toLowerCase() || "";
+    if (!colorName || !size) continue;
+    const key = `${colorName}::${size}`;
+    if (seenVariantKeys.has(key)) {
+      throw new Error(`La variante #${index + 1} est dupliquée pour ce produit. Change la couleur ou la taille.`);
+    }
+    seenVariantKeys.add(key);
+  }
+
   await prisma.productVariant.deleteMany({ where: { productId } });
   const data = variants
     .map((variant) => {
@@ -546,18 +623,45 @@ const createOrUpdateVariants = async (
         ?.split("\n")
         .map((line) => line.trim())
         .filter(Boolean) || [];
-      if (!colorName && !size && variant.price === undefined && variant.stock === undefined && images.length === 0) {
+      const weight = variant.weight !== undefined ? String(variant.weight).trim() || undefined : undefined;
+      const width = variant.width !== undefined ? String(variant.width).trim() || undefined : undefined;
+      const height = variant.height !== undefined ? String(variant.height).trim() || undefined : undefined;
+      const depth = variant.depth !== undefined ? String(variant.depth).trim() || undefined : undefined;
+      const volume = variant.volume !== undefined ? String(variant.volume).trim() || undefined : undefined;
+      const stockInitial =
+        variant.stockInitial !== undefined && variant.stockInitial !== ""
+          ? Math.max(0, Math.floor(Number(variant.stockInitial)))
+          : undefined;
+      if (
+        !colorName &&
+        !size &&
+        !weight &&
+        !width &&
+        !height &&
+        !depth &&
+        !volume &&
+        variant.price === undefined &&
+        stockInitial === undefined &&
+        variant.stock === undefined &&
+        images.length === 0
+      ) {
         return null;
       }
       return {
         productId,
-        groupName: colorName ? "Couleur" : size ? "Taille" : "Variante",
-        value: colorName || size || "Variante",
+        groupName: "Variante",
+        value: [colorName, size].filter(Boolean).join(" / ") || "Variante",
         colorName,
         colorHex: variant.colorHex?.trim() || undefined,
         size,
+        weight,
+        width,
+        height,
+        depth,
+        volume,
         price: variant.price !== undefined && variant.price !== "" ? Number(variant.price) : undefined,
-        stock: variant.stock !== undefined && variant.stock !== "" ? Math.max(0, Math.floor(Number(variant.stock))) : undefined,
+        stockInitial,
+        stock: variant.stock !== undefined && variant.stock !== "" ? Math.max(0, Math.floor(Number(variant.stock))) : stockInitial,
         images,
       };
     })
@@ -583,7 +687,7 @@ export const createProduct = async (fields: {
   quantity?: number;
   images?: string[];
   features?: Array<{ label: string; value: string }>;
-  variants?: Array<{ colorName?: string; colorHex?: string; size?: string; price?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
+  variants?: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
 }) => {
   try {
     const category = await ensureCategory(fields.categoryId);
@@ -644,7 +748,7 @@ export const updateProduct = async (
     quantity: number;
     images: string[];
     features: Array<{ label: string; value: string }>;
-    variants: Array<{ colorName?: string; colorHex?: string; size?: string; price?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
+    variants: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
     categoryId: number;
     brandId: number;
   }>

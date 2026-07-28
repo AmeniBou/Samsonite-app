@@ -56,7 +56,13 @@ export interface AdminVariant {
     colorName?: string;
     colorHex?: string;
     size?: string;
+    weight?: string;
+    width?: string;
+    height?: string;
+    depth?: string;
+    volume?: string;
     price?: number;
+    stockInitial?: number;
     stock?: number;
     images?: string[];
 }
@@ -187,6 +193,8 @@ export interface AdminCategory {
     parentName?: string;
     productCount?: number;
     childCount?: number;
+    isActive: boolean;
+    showInMainMenu: boolean;
 }
 
 export interface AdminBrand {
@@ -213,6 +221,8 @@ export const createCategory = async (category: {
     name: string;
     slug?: string;
     parentId?: number | null;
+    isActive?: boolean;
+    showInMainMenu?: boolean;
 }): Promise<{ success: boolean; id?: number; error?: string }> => {
     const res = await fetch(`${API_BASE}/admin/categories`, {
         method: "POST",
@@ -226,7 +236,7 @@ export const createCategory = async (category: {
 
 export const updateCategory = async (
     id: number,
-    fields: Partial<{ name: string; slug: string; parentId: number | null }>
+    fields: Partial<{ name: string; slug: string; parentId: number | null; isActive: boolean; showInMainMenu: boolean }>
 ): Promise<{ success: boolean; error?: string }> => {
     const res = await fetch(`${API_BASE}/admin/categories/${id}`, {
         method: "PUT",

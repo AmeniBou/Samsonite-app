@@ -28,6 +28,8 @@ interface MenuGroup {
   links: NavItem[];
 }
 
+const MAIN_MENU_LIMIT = 7;
+
 const PRIMARY_NAV: NavItem[] = [
   { name: "OFFRES D'ETE", slug: "promos", highlight: true },
   { name: "BAGAGES A MAIN", slug: "bagages-a-main" },
@@ -68,6 +70,20 @@ const FALLBACK_CATEGORIES: CategoryDisplay[] = [
   { id: 4, name: "Accessoires", slug: "accessoires" },
   { id: 5, name: "Promos", slug: "promos" },
 ];
+
+const CATEGORY_ALIASES: Record<string, string[]> = {
+  promos: ["promos", "offres-d-ete", "offres-dete"],
+  sacs: ["sacs", "sac-a-dos"],
+};
+
+const normalizeMenuKey = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, " et ")
+    .replace(/[^a-z0-9]+/gi, " ")
+    .trim()
+    .toLowerCase();
 
 const Header = () => {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
@@ -141,16 +157,77 @@ const Header = () => {
     [categories]
   );
 
+  const categoryBySlug = useMemo(
+    () => new Map(visibleCategories.map((category) => [category.slug, category])),
+    [visibleCategories]
+  );
+  const getCategoryMatches = (slug: string) =>
+    (CATEGORY_ALIASES[slug] || [slug]).map((candidate) => categoryBySlug.get(candidate)).filter(Boolean) as CategoryDisplay[];
+  const isCategoryActive = (slug: string) => {
+    const matches = getCategoryMatches(slug);
+    if (matches.length === 0) return true;
+    return matches.some((category) => category.isActive !== false);
+  };
+  const shouldShowInMainMenu = (slug: string) => {
+    const matches = getCategoryMatches(slug);
+    if (matches.length === 0) return true;
+    return matches.some((category) => category.isActive !== false && category.showInMainMenu !== false);
+  };
+  const filteredPrimaryNav = PRIMARY_NAV.filter((item) => shouldShowInMainMenu(item.slug));
+  const showValisesMenu = shouldShowInMainMenu("valises");
+  const showSacsMenu = shouldShowInMainMenu("sacs");
+  const valisesNavLinks = VALISES_NAV_LINKS.filter((item) => isCategoryActive(item.slug));
+  const sacsNavLinks = SACS_NAV_LINKS.filter((item) => isCategoryActive(item.slug));
+  const disneyNavLinks = DISNEY_NAV_LINKS.filter((item) => isCategoryActive(item.slug));
+  const accessoiresNavLinks = ACCESSOIRES_NAV_LINKS.filter((item) => isCategoryActive(item.slug));
+  const reservedMainSlugs = new Set([
+    ...PRIMARY_NAV.map((item) => item.slug),
+    "valises",
+    "rigides",
+    "souples",
+    "sacs",
+    "sac-a-dos",
+    "sac-ordinateur",
+  ]);
+  const reservedMainLabels = new Set(
+    [
+      ...filteredPrimaryNav.map((item) => getNavLabel(item)),
+      t("nav.suitcases"),
+      t("nav.bags"),
+    ].map(normalizeMenuKey)
+  );
+  const fixedMainCount = filteredPrimaryNav.reduce(
+    (count, item) =>
+      count +
+      (item.slug === "bagages-a-main" ? 1 + Number(showValisesMenu) + Number(showSacsMenu) : 1),
+    0
+  );
+  const extraMainCategories = visibleCategories
+    .filter((category) => {
+      const key = normalizeMenuKey(category.name);
+      return (
+        category.showInMainMenu !== false &&
+        category.isActive !== false &&
+        !reservedMainSlugs.has(category.slug) &&
+        !reservedMainLabels.has(key)
+      );
+    })
+    .slice(0, Math.max(0, MAIN_MENU_LIMIT - fixedMainCount));
+
   const explorerGroups = useMemo<MenuGroup[]>(
     () =>
-      visibleCategories.map((category) => ({
-        title: category.name,
-        slug: category.slug,
-        links: (category.children || []).map((child) => ({
-          name: child.name,
-          slug: child.slug,
+      visibleCategories
+        .filter((category) => category.isActive !== false)
+        .map((category) => ({
+          title: category.name,
+          slug: category.slug,
+          links: (category.children || [])
+            .filter((child) => child.isActive !== false)
+            .map((child) => ({
+              name: child.name,
+              slug: child.slug,
+            })),
         })),
-      })),
     [visibleCategories]
   );
 
@@ -231,7 +308,7 @@ const Header = () => {
         </Link>
 
         <nav className="hidden flex-1 items-center justify-center gap-7 lg:flex">
-          {PRIMARY_NAV.map((item) => (
+          {filteredPrimaryNav.map((item) => (
             item.slug === "bagages-a-main" ? (
               <div key="bagages-valises" className="contents">
                 <Link
@@ -243,6 +320,7 @@ const Header = () => {
                 >
                   {getNavLabel(item)}
                 </Link>
+                {showValisesMenu && (
                 <div className="relative">
                   <button
                     type="button"
@@ -261,7 +339,7 @@ const Header = () => {
                   </button>
                   {valisesOpen && (
                     <div className="absolute left-1/2 top-full z-50 mt-5 w-60 -translate-x-1/2 border border-neutral-200 bg-white py-3 shadow-[0_24px_70px_rgba(0,0,0,0.12)] animate-fade-in">
-                      {VALISES_NAV_LINKS.map((valiseItem) => (
+                      {valisesNavLinks.map((valiseItem) => (
                         <Link
                           key={valiseItem.slug}
                           to={`/categorie/${valiseItem.slug}`}
@@ -274,6 +352,8 @@ const Header = () => {
                     </div>
                   )}
                 </div>
+                )}
+                {showSacsMenu && (
                 <div className="relative">
                   <button
                     type="button"
@@ -292,7 +372,7 @@ const Header = () => {
                   </button>
                   {sacsOpen && (
                     <div className="absolute left-1/2 top-full z-50 mt-5 w-56 -translate-x-1/2 border border-neutral-200 bg-white py-3 shadow-[0_24px_70px_rgba(0,0,0,0.12)] animate-fade-in">
-                      {SACS_NAV_LINKS.map((sacItem) => (
+                      {sacsNavLinks.map((sacItem) => (
                         <Link
                           key={sacItem.slug}
                           to={`/categorie/${sacItem.slug}`}
@@ -305,6 +385,7 @@ const Header = () => {
                     </div>
                   )}
                 </div>
+                )}
               </div>
             ) : item.slug === "disney-amp-enfant" ? (
               <div key={item.slug} className="relative">
@@ -325,7 +406,7 @@ const Header = () => {
                 </button>
                 {disneyOpen && (
                   <div className="absolute left-1/2 top-full z-50 mt-5 w-72 -translate-x-1/2 border border-neutral-200 bg-white py-3 shadow-[0_24px_70px_rgba(0,0,0,0.12)] animate-fade-in">
-                    {DISNEY_NAV_LINKS.map((disneyItem) => (
+                    {disneyNavLinks.map((disneyItem) => (
                       <Link
                         key={disneyItem.slug}
                         to={`/categorie/${disneyItem.slug}`}
@@ -357,7 +438,7 @@ const Header = () => {
                 </button>
                 {accessoiresOpen && (
                   <div className="absolute left-1/2 top-full z-50 mt-5 w-64 -translate-x-1/2 border border-neutral-200 bg-white py-3 shadow-[0_24px_70px_rgba(0,0,0,0.12)] animate-fade-in">
-                    {ACCESSOIRES_NAV_LINKS.map((accessoireItem) => (
+                    {accessoiresNavLinks.map((accessoireItem) => (
                       <Link
                         key={accessoireItem.slug}
                         to={`/categorie/${accessoireItem.slug}`}
@@ -382,6 +463,16 @@ const Header = () => {
                 {getNavLabel(item)}
               </Link>
             )
+          ))}
+          {extraMainCategories.map((category) => (
+            <Link
+              key={category.slug}
+              to={`/categorie/${category.slug}`}
+              className="relative whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-0 after:bg-black after:transition-all hover:text-neutral-500 hover:after:w-full"
+              onClick={closeMenus}
+            >
+              {category.name}
+            </Link>
           ))}
           <button
             type="button"
@@ -526,7 +617,7 @@ const Header = () => {
             </div>
           )}
           <nav className="max-h-[calc(100vh-130px)] overflow-y-auto px-5 py-4">
-            {[...PRIMARY_NAV, ...visibleCategories].map((item) => (
+            {[...filteredPrimaryNav, ...extraMainCategories, ...visibleCategories.filter((category) => category.isActive !== false && category.showInMainMenu === false)].map((item) => (
               <Link
                 key={item.slug}
                 to={`/categorie/${item.slug}`}
