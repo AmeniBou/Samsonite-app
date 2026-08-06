@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import ProductCard from "@/components/ProductCard";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import BrandLoader from "@/components/BrandLoader";
 import { fetchDisplayCategories, fetchDisplayProducts } from "@/lib/prestashop/catalog";
 import { formatTnd } from "@/lib/currency";
@@ -33,6 +34,7 @@ const Product = () => {
   const [selectedCombinationId, setSelectedCombinationId] = useState<number | null>(null);
   const [variantMessage, setVariantMessage] = useState("");
   const [detailsOpen, setDetailsOpen] = useState(true);
+  const [cartConfirmOpen, setCartConfirmOpen] = useState(false);
   const [selectedInferredColorKey, setSelectedInferredColorKey] = useState("");
   const [inferredColorGroups, setInferredColorGroups] = useState<
     Array<{ key: string; name: string; hex: string; images: string[] }>
@@ -1069,6 +1071,7 @@ const Product = () => {
                       maxStock: selectedStock,
                     }
                   );
+                  setCartConfirmOpen(true);
                 }}
                 className="premium-control flex min-h-10 flex-1 items-center justify-center gap-2 bg-foreground px-4 py-3 text-xs font-extrabold uppercase tracking-wider text-background hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -1180,7 +1183,9 @@ const Product = () => {
             </Link>
           </div>
         </DialogContent>
-      </Dialog>`r`n      {similarProducts.length > 0 && (
+      </Dialog>
+
+      {similarProducts.length > 0 && (
         <section className="samsonite-container py-10 border-t border-border">
           <h2 className="text-xl font-bold tracking-wider uppercase mb-6">{t("product.similar")}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
