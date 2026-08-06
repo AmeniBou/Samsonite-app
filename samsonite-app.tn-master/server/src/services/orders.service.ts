@@ -256,6 +256,7 @@ export const mapOrder = (order: any) => ({
   id: order.reference,
   databaseId: order.id,
   createdAt: order.createdAt,
+  updatedAt: order.updatedAt,
   status: order.status,
   shippingMethod: order.shippingMethod,
   paymentMethod: order.paymentMethod,
@@ -284,6 +285,13 @@ export const mapOrder = (order: any) => ({
     shipping: Number(order.shippingFee),
     total: Number(order.total),
   },
+  statusHistory: (order.statusHistory || []).map((entry: any) => ({
+    id: entry.id,
+    previousStatus: entry.previousStatus || "",
+    newStatus: entry.newStatus,
+    note: entry.note || "",
+    createdAt: entry.createdAt,
+  })),
 });
 
 export const createOrder = async (input: CreateOrderInput) => {
@@ -375,8 +383,15 @@ export const createOrder = async (input: CreateOrderInput) => {
           lineTotal: item.lineTotal,
         })),
       },
+      statusHistory: {
+        create: {
+          previousStatus: null,
+          newStatus: "new",
+          note: "Commande créée depuis le checkout",
+        },
+      },
     },
-    include: { items: true },
+    include: { items: true, statusHistory: { orderBy: { createdAt: "desc" } } },
   });
 
   const mappedOrder = mapOrder(order);
@@ -393,7 +408,7 @@ export const createOrder = async (input: CreateOrderInput) => {
 export const getOrderByReference = async (reference: string) => {
   const order = await prisma.order.findUnique({
     where: { reference },
-    include: { items: true },
+    include: { items: true, statusHistory: { orderBy: { createdAt: "desc" } } },
   });
   return order ? mapOrder(order) : null;
 };
@@ -407,7 +422,7 @@ export const listOrders = async (reference?: string) => {
         }
       : undefined,
     orderBy: { createdAt: "desc" },
-    include: { items: true },
+    include: { items: true, statusHistory: { orderBy: { createdAt: "desc" } } },
   });
   return orders.map(mapOrder);
 };
@@ -416,10 +431,32 @@ export const updateOrderStatus = async (reference: string, status: string) => {
   if (!ORDER_STATUSES.has(status)) {
     throw new Error("Statut invalide");
   }
+  const existingOrder = await prisma.order.findUnique({
+    where: { reference },
+    select: { id: true, status: true },
+  });
+
+  if (!existingOrder) {
+    throw new Error("Commande introuvable");
+  }
+
   const order = await prisma.order.update({
     where: { reference },
-    data: { status },
-    include: { items: true },
+    data: {
+      status,
+      ...(existingOrder.status !== status
+        ? {
+            statusHistory: {
+              create: {
+                previousStatus: existingOrder.status,
+                newStatus: status,
+                note: "Statut modifié depuis le backoffice",
+              },
+            },
+          }
+        : {}),
+    },
+    include: { items: true, statusHistory: { orderBy: { createdAt: "desc" } } },
   });
   const mappedOrder = mapOrder(order);
 

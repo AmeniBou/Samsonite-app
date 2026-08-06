@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronDown,
@@ -6,7 +6,6 @@ import {
   Menu,
   Search,
   ShoppingCart,
-  User,
   X,
 } from "lucide-react";
 
@@ -31,7 +30,6 @@ interface MenuGroup {
 const MAIN_MENU_LIMIT = 7;
 
 const PRIMARY_NAV: NavItem[] = [
-  { name: "OFFRES D'ETE", slug: "promos", highlight: true },
   { name: "BAGAGES A MAIN", slug: "bagages-a-main" },
   { name: "DISNEY & ENFANT", slug: "disney-amp-enfant" },
   { name: "ACCESSOIRES", slug: "accessoires" },
@@ -128,29 +126,37 @@ const Header = () => {
     return labelBySlug[item.slug] || item.name;
   };
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
-      try {
-        const [fetchedCategories, fetchedProducts] = await Promise.all([
-          fetchDisplayCategories(),
-          fetchDisplayProducts(),
-        ]);
-        if (!cancelled) {
-          setCategories(fetchedCategories);
-          setProducts(fetchedProducts);
-        }
-      } catch (error) {
-        console.error("Unable to load categories in header", error);
-      }
-    };
-
-    load();
-    return () => {
-      cancelled = true;
-    };
+  const loadCatalogNavigation = useCallback(async () => {
+    try {
+      const [fetchedCategories, fetchedProducts] = await Promise.all([
+        fetchDisplayCategories(),
+        fetchDisplayProducts(),
+      ]);
+      setCategories(fetchedCategories);
+      setProducts(fetchedProducts);
+    } catch (error) {
+      console.error("Unable to load categories in header", error);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadCatalogNavigation();
+
+    const handleCatalogUpdated = () => {
+      void loadCatalogNavigation();
+      setCategoriesOpen(false);
+      setValisesOpen(false);
+      setSacsOpen(false);
+      setDisneyOpen(false);
+      setAccessoiresOpen(false);
+      setMobileMenuOpen(false);
+    };
+
+    window.addEventListener("samsonite:catalog-updated", handleCatalogUpdated);
+    return () => {
+      window.removeEventListener("samsonite:catalog-updated", handleCatalogUpdated);
+    };
+  }, [loadCatalogNavigation]);
 
   const visibleCategories = useMemo(
     () => (categories.length ? categories : FALLBACK_CATEGORIES),
@@ -213,6 +219,19 @@ const Header = () => {
       );
     })
     .slice(0, Math.max(0, MAIN_MENU_LIMIT - fixedMainCount));
+  const explorerOnlyCategories = visibleCategories.filter(
+    (category) => category.isActive !== false && category.showInMainMenu === false
+  );
+  const getMobileMenuKeys = (item: NavItem | CategoryDisplay) => {
+    const label = "id" in item ? item.name : getNavLabel(item);
+    return new Set([item.slug, normalizeMenuKey(label)]);
+  };
+  const mobileNavItems = [...filteredPrimaryNav, ...extraMainCategories, ...explorerOnlyCategories].filter(
+    (item, index, items) => {
+      const keys = getMobileMenuKeys(item);
+      return items.findIndex((candidate) => [...getMobileMenuKeys(candidate)].some((key) => keys.has(key))) === index;
+    }
+  );
 
   const explorerGroups = useMemo<MenuGroup[]>(
     () =>
@@ -274,7 +293,7 @@ const Header = () => {
     <header className="sticky top-0 z-50 bg-white/95 text-black shadow-[0_1px_0_rgba(0,0,0,0.08)] backdrop-blur-xl">
       <div className="h-11 bg-[#e3ae82] text-black">
         <div className="mx-auto flex h-full max-w-[1760px] items-center justify-center px-6 text-[15px] font-medium">
-          <Link to="/categorie/promos" className="underline underline-offset-4 transition-opacity hover:opacity-75">
+          <Link to="/nous-contacter" className="underline underline-offset-4 transition-opacity hover:opacity-75">
             {t("top.offer")}
           </Link>
           <div className="absolute right-6 hidden items-center gap-5 lg:flex">
@@ -534,9 +553,6 @@ const Header = () => {
               <Search className="h-6 w-6 stroke-[1.7]" />
             </button>
           </div>
-          <Link to="/admin/login" className="hidden h-10 w-10 items-center justify-center transition-colors hover:bg-neutral-100 lg:flex" aria-label={t("nav.account")}>
-            <User className="h-6 w-6 stroke-[1.7]" />
-          </Link>
           <Link to="/panier" className="relative flex h-10 w-10 items-center justify-center transition-colors hover:bg-neutral-100" aria-label={t("nav.cart")}>
             <ShoppingCart className="h-6 w-6 stroke-[1.7]" />
             <span className="absolute -right-1 top-0 flex h-5 min-w-5 items-center justify-center rounded-full border border-black bg-white px-1 text-[11px] leading-none">
@@ -617,7 +633,7 @@ const Header = () => {
             </div>
           )}
           <nav className="max-h-[calc(100vh-130px)] overflow-y-auto px-5 py-4">
-            {[...filteredPrimaryNav, ...extraMainCategories, ...visibleCategories.filter((category) => category.isActive !== false && category.showInMainMenu === false)].map((item) => (
+            {mobileNavItems.map((item) => (
               <Link
                 key={item.slug}
                 to={`/categorie/${item.slug}`}

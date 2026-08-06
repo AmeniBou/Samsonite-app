@@ -32,6 +32,10 @@ export interface PSCombination {
   width?: string;
   height?: string;
   depth?: string;
+  isExpandable?: boolean;
+  expandedWidth?: string;
+  expandedHeight?: string;
+  expandedDepth?: string;
   volume?: string;
   stockInitial?: number | string;
   stock?: number | string;
@@ -144,6 +148,10 @@ export interface ProductVariant {
   width?: string;
   height?: string;
   depth?: string;
+  isExpandable?: boolean;
+  expandedWidth?: string;
+  expandedHeight?: string;
+  expandedDepth?: string;
   volume?: string;
   color?: {
     name: string;
@@ -186,6 +194,7 @@ export interface CategoryDisplay {
   slug: string;
   description?: string;
   image?: string;
+  isActive?: boolean;
   showInMainMenu?: boolean;
   children?: Array<{
     name: string;

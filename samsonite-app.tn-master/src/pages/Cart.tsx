@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Minus, Plus, X, ArrowLeft, Lock } from "lucide-react";
+import { Minus, Plus, Trash2, ArrowLeft, Lock } from "lucide-react";
 
 import { useCart } from "@/hooks/useCart";
 import { formatTnd } from "@/lib/currency";
@@ -66,10 +66,13 @@ const Cart = () => {
                     </div>
                   </div>
                   <button
+                    type="button"
                     onClick={() => removeItem(item.product.id, item.selectedColor, item.variantId)}
-                    className="text-muted-foreground hover:text-foreground"
+                    className="inline-flex items-center gap-2 self-start border border-red-100 bg-red-50 px-3 py-2 text-xs font-black uppercase tracking-wide text-red-600 transition-colors hover:border-red-200 hover:bg-red-100"
+                    aria-label="Supprimer cet article du panier"
                   >
-                    <X className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
+                    Supprimer
                   </button>
                 </div>
                 <div className="flex items-center justify-between mt-4">

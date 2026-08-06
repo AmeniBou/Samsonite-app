@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, Loader2, Upload, ImageOff } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Upload, ImageOff, Copy, X, GripVertical } from "lucide-react";
 import {
     fetchAdminProduct,
     createProduct,
@@ -47,6 +47,45 @@ const parseLines = (value: string): string[] =>
         .map((line) => line.trim())
         .filter(Boolean);
 
+const normalizeFeatureLabel = (value?: string | null): string =>
+    decodeAdminText(value)
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+const structuredFeatureLabels = new Set([
+    "modele",
+    "matiere",
+    "poignees",
+    "poignee de traction",
+    "roulettes",
+    "type de roues",
+    "porte-adresse",
+    "ecoresponsable",
+    "interieur",
+    "compartiment inferieur",
+    "compartiment superieur",
+    "plateau separateur",
+    "tailles",
+]);
+
+const isStructuredFeatureLabel = (label?: string | null): boolean =>
+    structuredFeatureLabels.has(normalizeFeatureLabel(label));
+
+const getFeatureValue = (
+    features: Array<{ label?: string; value?: string }>,
+    label: string
+): string =>
+    decodeAdminText(
+        features.find((feature) => normalizeFeatureLabel(feature.label) === normalizeFeatureLabel(label))?.value
+    );
+
+const getFeatureBoolean = (
+    features: Array<{ label?: string; value?: string }>,
+    label: string
+): boolean => /^(oui|yes|true|1)$/i.test(getFeatureValue(features, label).trim());
+
 const isValidNonNegativeNumber = (value: string): boolean => {
     if (!value.trim()) return true;
     const number = Number(value);
@@ -67,6 +106,10 @@ type ProductVariantForm = {
     width: string;
     height: string;
     depth: string;
+    isExpandable: boolean;
+    expandedWidth: string;
+    expandedHeight: string;
+    expandedDepth: string;
     volume: string;
     price: string;
     stockInitial: string;
@@ -84,6 +127,10 @@ const createEmptyVariant = (overrides: Partial<ProductVariantForm> = {}): Produc
     width: "",
     height: "",
     depth: "",
+    isExpandable: false,
+    expandedWidth: "",
+    expandedHeight: "",
+    expandedDepth: "",
     volume: "",
     price: "",
     stockInitial: "",
@@ -106,6 +153,10 @@ const AdminProductForm = () => {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [currentStep, setCurrentStep] = useState<ProductFormStep>(1);
+    const [draggedVariantImage, setDraggedVariantImage] = useState<{
+        variantIndex: number;
+        imageIndex: number;
+    } | null>(null);
 
     const colorOptions = [
         { name: "Noir", hex: "#000000" },
@@ -148,8 +199,12 @@ const AdminProductForm = () => {
         poigneeTraction: "",
         roulettes: "",
         typeRoues: "",
+        porteAdresse: "",
+        ecoresponsable: false,
+        interieur: "",
         compartimentInf: false,
         compartimentSup: false,
+        plateauSeparateur: "",
         variants: [createEmptyVariant()] as ProductVariantForm[],
     });
 
@@ -172,6 +227,10 @@ const AdminProductForm = () => {
             try {
                 setLoading(true);
                 const p = await fetchAdminProduct(parseInt(id!, 10));
+                const productFeatures = (p.features || []).map((feature) => ({
+                    label: decodeAdminText(feature.label),
+                    value: decodeAdminText(feature.value),
+                }));
                 setForm({
                     name: decodeAdminText(p.name),
                     description: decodeAdminText(p.description),
@@ -191,7 +250,8 @@ const AdminProductForm = () => {
                     quantity: p.quantity?.toString() || "",
                     volume: p.volume || "",
                     imagesText: (p.images || []).join("\n"),
-                    featuresText: (p.features || [])
+                    featuresText: productFeatures
+                        .filter((f) => !isStructuredFeatureLabel(f.label))
                         .map((f) => `${decodeAdminText(f.label)}|${decodeAdminText(f.value)}`)
                         .join("\n"),
                     colorsSelected:
@@ -200,7 +260,19 @@ const AdminProductForm = () => {
                         (p.features || [])
                             .filter((f) => f.label?.toLowerCase().includes("taille"))
                             .map((f) => f.value)
-                            .filter(Boolean) || [],
+                        .filter(Boolean) || [],
+                    model: getFeatureValue(productFeatures, "Modèle"),
+                    matiere: getFeatureValue(productFeatures, "Matière"),
+                    poignees: getFeatureValue(productFeatures, "Poignées"),
+                    poigneeTraction: getFeatureValue(productFeatures, "Poignée de traction"),
+                    roulettes: getFeatureValue(productFeatures, "Roulettes"),
+                    typeRoues: getFeatureValue(productFeatures, "Type de roues"),
+                    porteAdresse: getFeatureValue(productFeatures, "Porte-Adresse"),
+                    ecoresponsable: getFeatureBoolean(productFeatures, "Ecoresponsable"),
+                    interieur: getFeatureValue(productFeatures, "Intérieur"),
+                    compartimentInf: getFeatureBoolean(productFeatures, "Compartiment inférieur"),
+                    compartimentSup: getFeatureBoolean(productFeatures, "Compartiment supérieur"),
+                    plateauSeparateur: getFeatureValue(productFeatures, "Plateau Séparateur"),
                     variants:
                         p.variants && p.variants.length > 0
                             ? p.variants.map((v) =>
@@ -212,6 +284,10 @@ const AdminProductForm = () => {
                                       width: v.width || "",
                                       height: v.height || "",
                                       depth: v.depth || "",
+                                      isExpandable: Boolean(v.isExpandable || v.expandedWidth || v.expandedHeight || v.expandedDepth),
+                                      expandedWidth: v.expandedWidth || "",
+                                      expandedHeight: v.expandedHeight || "",
+                                      expandedDepth: v.expandedDepth || "",
                                       volume: v.volume || "",
                                       price: v.price?.toString() || "",
                                       stockInitial: v.stockInitial?.toString() || "",
@@ -260,10 +336,11 @@ const AdminProductForm = () => {
         index: number,
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
-        const { name, value } = e.target;
+        const { name, value, type } = e.target;
+        const nextValue = type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
         setForm((prev) => {
             const variants = [...prev.variants];
-            variants[index] = { ...variants[index], [name]: value };
+            variants[index] = { ...variants[index], [name]: nextValue };
             return { ...prev, variants };
         });
     };
@@ -426,6 +503,50 @@ const AdminProductForm = () => {
         });
     };
 
+    const reorderVariantImage = (variantIndex: number, fromIndex: number, toIndex: number) => {
+        if (fromIndex === toIndex) return;
+
+        setForm((prev) => {
+            const variants = [...prev.variants];
+            const images = parseLines(variants[variantIndex].imagesText);
+            if (fromIndex < 0 || toIndex < 0 || fromIndex >= images.length || toIndex >= images.length) {
+                return prev;
+            }
+
+            const [movedImage] = images.splice(fromIndex, 1);
+            images.splice(toIndex, 0, movedImage);
+            variants[variantIndex] = {
+                ...variants[variantIndex],
+                imagesText: images.join("\n"),
+            };
+
+            return { ...prev, variants };
+        });
+    };
+
+    const useProductImagesForVariant = (variantIndex: number) => {
+        const productImages = parseLines(form.imagesText);
+        if (productImages.length === 0) {
+            setError("Ajoute d'abord des images générales au produit, ou importe directement les images dans la variante.");
+            return;
+        }
+
+        setForm((prev) => {
+            const variants = [...prev.variants];
+            const currentVariantImages = parseLines(variants[variantIndex].imagesText);
+            const mergedImages = Array.from(new Set([...currentVariantImages, ...productImages]));
+
+            variants[variantIndex] = {
+                ...variants[variantIndex],
+                imagesText: mergedImages.join("\n"),
+            };
+
+            return { ...prev, variants };
+        });
+        setError("");
+        setSuccess(`Images générales associées à la variante #${variantIndex + 1}.`);
+    };
+
     const removeProductImage = (imageToRemove: string) => {
         setForm((prev) => ({
             ...prev,
@@ -445,10 +566,21 @@ const AdminProductForm = () => {
         });
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSaveProduct = async () => {
         setError("");
         setSuccess("");
+
+        if (currentStep !== 3) {
+            setError("Passe d'abord par l'étape Aperçu avant de valider la création.");
+            return;
+        }
+
+        const finalValidationErrors = [...getGeneralValidationErrors(), ...getVariantsValidationErrors()];
+        if (finalValidationErrors.length > 0) {
+            setError(finalValidationErrors[0]);
+            setCurrentStep(getGeneralValidationErrors().length > 0 ? 1 : 2);
+            return;
+        }
 
         if (!form.name.trim()) {
             setError("Le nom est requis");
@@ -490,6 +622,13 @@ const AdminProductForm = () => {
             }
             if (parseLines(variant.imagesText).length === 0) {
                 setError(`Ajoute au moins une image pour la variante #${index + 1}.`);
+                return;
+            }
+            if (
+                variant.isExpandable &&
+                (!variant.expandedHeight.trim() || !variant.expandedWidth.trim() || !variant.expandedDepth.trim())
+            ) {
+                setError(`Ajoute la hauteur, largeur et profondeur avec extension pour la variante #${index + 1}.`);
                 return;
             }
             const duplicateIndex = form.variants.findIndex(
@@ -538,6 +677,9 @@ const AdminProductForm = () => {
                 featuresAuto.push({ label: "Poignée de traction", value: form.poigneeTraction });
             if (form.roulettes) featuresAuto.push({ label: "Roulettes", value: form.roulettes });
             if (form.typeRoues) featuresAuto.push({ label: "Type de roues", value: form.typeRoues });
+            if (form.porteAdresse) featuresAuto.push({ label: "Porte-Adresse", value: form.porteAdresse });
+            featuresAuto.push({ label: "Ecoresponsable", value: form.ecoresponsable ? "Oui" : "Non" });
+            if (form.interieur) featuresAuto.push({ label: "Intérieur", value: form.interieur });
             if (form.compartimentInf !== undefined)
                 featuresAuto.push({
                     label: "Compartiment inférieur",
@@ -548,6 +690,8 @@ const AdminProductForm = () => {
                     label: "Compartiment supérieur",
                     value: form.compartimentSup ? "Oui" : "Non",
                 });
+            if (form.plateauSeparateur)
+                featuresAuto.push({ label: "Plateau Séparateur", value: form.plateauSeparateur });
             if (form.sizesSelected.length)
                 featuresAuto.push({ label: "Tailles", value: form.sizesSelected.join(", ") });
             const features = [...featuresAuto, ...featuresFree];
@@ -562,6 +706,10 @@ const AdminProductForm = () => {
                         width: variant.width.trim() || undefined,
                         height: variant.height.trim() || undefined,
                         depth: variant.depth.trim() || undefined,
+                        isExpandable: variant.isExpandable,
+                        expandedWidth: variant.isExpandable ? variant.expandedWidth.trim() || undefined : undefined,
+                        expandedHeight: variant.isExpandable ? variant.expandedHeight.trim() || undefined : undefined,
+                        expandedDepth: variant.isExpandable ? variant.expandedDepth.trim() || undefined : undefined,
                         volume: variant.volume.trim() || undefined,
                         price: variant.price ? parseFloat(variant.price) : undefined,
                         stockInitial: variant.stockInitial ? parseFloat(variant.stockInitial) : undefined,
@@ -578,6 +726,10 @@ const AdminProductForm = () => {
                         v.width ||
                         v.height ||
                         v.depth ||
+                        v.isExpandable ||
+                        v.expandedWidth ||
+                        v.expandedHeight ||
+                        v.expandedDepth ||
                         v.volume ||
                         typeof v.price === "number" ||
                         typeof v.stockInitial === "number" ||
@@ -660,21 +812,71 @@ const AdminProductForm = () => {
         { id: 3, label: "Aperçu", helper: "Validation finale" },
     ];
 
+    const getGeneralValidationErrors = () => {
+        const errors: string[] = [];
+        if (!form.name.trim()) errors.push("Le nom du produit est obligatoire.");
+        if (!form.brandId) errors.push("La marque est obligatoire.");
+        if (!form.parentCategoryId) errors.push("La catégorie parent est obligatoire.");
+        if (!form.categoryId) errors.push("La sous-catégorie est obligatoire.");
+        return errors;
+    };
+
+    const getVariantsValidationErrors = () => {
+        const errors: string[] = [];
+        if (form.variants.length === 0) {
+            errors.push("Un produit doit avoir au moins une variante.");
+            return errors;
+        }
+
+        const seen = new Map<string, number>();
+        for (const [index, variant] of form.variants.entries()) {
+            const label = `Variante #${index + 1}`;
+            const colorName = variant.colorName.trim();
+            const size = variant.size.trim();
+            const images = parseLines(variant.imagesText);
+
+            if (!colorName) errors.push(`${label}: couleur obligatoire.`);
+            if (!size) errors.push(`${label}: taille obligatoire.`);
+            if (!isValidPositiveNumber(variant.price)) {
+                errors.push(`${label}: prix obligatoire, numérique et supérieur à 0.`);
+            }
+            if (!variant.stock.trim()) {
+                errors.push(`${label}: stock actuel obligatoire.`);
+            } else if (!isValidNonNegativeNumber(variant.stock)) {
+                errors.push(`${label}: stock actuel numérique et positif ou nul.`);
+            }
+            if (!isValidNonNegativeNumber(variant.stockInitial)) {
+                errors.push(`${label}: stock initial numérique et positif ou nul.`);
+            }
+            if (images.length === 0) {
+                errors.push(`${label}: au moins une image est obligatoire.`);
+            }
+            if (variant.isExpandable && (!variant.expandedHeight.trim() || !variant.expandedWidth.trim() || !variant.expandedDepth.trim())) {
+                errors.push(`${label}: dimensions avec extension obligatoires.`);
+            }
+            const invalidImage = images.find((image) => !isValidImageReference(image));
+            if (invalidImage) {
+                errors.push(`${label}: image invalide (${invalidImage}).`);
+            }
+
+            const key = getVariantUniqueKey(variant);
+            if (colorName && size) {
+                const firstIndex = seen.get(key);
+                if (firstIndex !== undefined) {
+                    errors.push(`${label}: doublon avec la variante #${firstIndex + 1}.`);
+                } else {
+                    seen.set(key, index);
+                }
+            }
+        }
+
+        return errors;
+    };
+
     const validateGeneralStep = () => {
-        if (!form.name.trim()) {
-            setError("Le nom est requis.");
-            return false;
-        }
-        if (!form.brandId) {
-            setError("La marque est requise.");
-            return false;
-        }
-        if (!form.parentCategoryId) {
-            setError("La catégorie parent est requise.");
-            return false;
-        }
-        if (!form.categoryId) {
-            setError("La sous-catégorie est requise.");
+        const errors = getGeneralValidationErrors();
+        if (errors.length > 0) {
+            setError(errors[0]);
             return false;
         }
         setError("");
@@ -682,56 +884,10 @@ const AdminProductForm = () => {
     };
 
     const validateVariantsStep = () => {
-        if (form.variants.length === 0) {
-            setError("Ajoute au moins une variante avec couleur, taille, prix, stock et images.");
+        const errors = getVariantsValidationErrors();
+        if (errors.length > 0) {
+            setError(errors[0]);
             return false;
-        }
-
-        for (const [index, variant] of form.variants.entries()) {
-            if (!variant.colorName.trim()) {
-                setError(`La couleur de la variante #${index + 1} est requise.`);
-                return false;
-            }
-            if (!variant.size.trim()) {
-                setError(`La taille de la variante #${index + 1} est requise.`);
-                return false;
-            }
-            if (!isValidPositiveNumber(variant.price)) {
-                setError(`Le prix de la variante #${index + 1} est requis et doit être supérieur à 0.`);
-                return false;
-            }
-            if (!variant.stock.trim()) {
-                setError(`Le stock de la variante #${index + 1} est requis.`);
-                return false;
-            }
-            if (parseLines(variant.imagesText).length === 0) {
-                setError(`Ajoute au moins une image pour la variante #${index + 1}.`);
-                return false;
-            }
-            const duplicateIndex = form.variants.findIndex(
-                (candidate, candidateIndex) =>
-                    candidateIndex !== index &&
-                    getVariantUniqueKey(candidate) === getVariantUniqueKey(variant)
-            );
-            if (duplicateIndex !== -1) {
-                setError(
-                    `La variante #${index + 1} existe déjà en variante #${duplicateIndex + 1}. Change la couleur ou la taille.`
-                );
-                return false;
-            }
-            if (!isValidNonNegativeNumber(variant.stockInitial)) {
-                setError(`Le stock initial de la variante #${index + 1} doit être numérique.`);
-                return false;
-            }
-            if (!isValidNonNegativeNumber(variant.stock)) {
-                setError(`Le stock de la variante #${index + 1} doit être numérique.`);
-                return false;
-            }
-            const invalidVariantImage = parseLines(variant.imagesText).find((image) => !isValidImageReference(image));
-            if (invalidVariantImage) {
-                setError(`Image invalide dans la variante #${index + 1}: ${invalidVariantImage}`);
-                return false;
-            }
         }
 
         setError("");
@@ -780,7 +936,7 @@ const AdminProductForm = () => {
 
             {/* Form */}
             <div className="max-w-5xl">
-            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
+            <form onSubmit={(event) => event.preventDefault()} className="bg-white rounded-lg shadow p-6 space-y-6">
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                     <div className="grid gap-3 md:grid-cols-3">
                         {steps.map((step) => {
@@ -1018,6 +1174,60 @@ const AdminProductForm = () => {
                     </div>
                 </div>
 
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <div className="mb-4">
+                        <h3 className="text-sm font-bold text-gray-900">Détails intérieurs et éco</h3>
+                        <p className="mt-1 text-xs text-gray-500">
+                            Ces informations seront enregistrées comme caractéristiques produit.
+                        </p>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Porte-Adresse</label>
+                            <input
+                                name="porteAdresse"
+                                value={form.porteAdresse}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                                placeholder="Étiquette d'identification rétractable"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Plateau Séparateur</label>
+                            <input
+                                name="plateauSeparateur"
+                                value={form.plateauSeparateur}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                                placeholder="Dans les compartiments supérieurs & inférieurs"
+                            />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Intérieur</label>
+                            <input
+                                name="interieur"
+                                value={form.interieur}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                                placeholder="Organisation intérieure, doublure, sangles, séparateur..."
+                            />
+                        </div>
+                        <div className="flex items-center gap-3 rounded-md border border-gray-200 bg-white px-3 py-2">
+                            <input
+                                id="ecoresponsable"
+                                name="ecoresponsable"
+                                type="checkbox"
+                                checked={form.ecoresponsable}
+                                onChange={handleChange}
+                                className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                            />
+                            <label htmlFor="ecoresponsable" className="text-sm text-gray-700">
+                                Écoresponsable
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Description full */}
                 <div>
                     <label htmlFor="product-desc" className="block text-sm font-medium text-gray-700 mb-1">
@@ -1160,6 +1370,41 @@ const AdminProductForm = () => {
                                     className="px-3 py-2 border border-gray-300 rounded-md text-sm"
                                     placeholder="Profondeur"
                                 />
+                                <label className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800">
+                                    <input
+                                        name="isExpandable"
+                                        type="checkbox"
+                                        checked={variant.isExpandable}
+                                        onChange={(e) => handleVariantChange(index, e)}
+                                        className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+                                    />
+                                    Extensible
+                                </label>
+                                {variant.isExpandable && (
+                                    <>
+                                        <input
+                                            name="expandedHeight"
+                                            value={variant.expandedHeight}
+                                            onChange={(e) => handleVariantChange(index, e)}
+                                            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                            placeholder="Hauteur avec extension"
+                                        />
+                                        <input
+                                            name="expandedWidth"
+                                            value={variant.expandedWidth}
+                                            onChange={(e) => handleVariantChange(index, e)}
+                                            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                            placeholder="Largeur avec extension"
+                                        />
+                                        <input
+                                            name="expandedDepth"
+                                            value={variant.expandedDepth}
+                                            onChange={(e) => handleVariantChange(index, e)}
+                                            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                            placeholder="Profondeur avec extension"
+                                        />
+                                    </>
+                                )}
                                 <input
                                     name="weight"
                                     value={variant.weight}
@@ -1204,24 +1449,66 @@ const AdminProductForm = () => {
                                         <p className="text-xs font-bold uppercase tracking-wide text-gray-700">Images de cette variante</p>
                                         <p className="text-xs text-gray-500">Ces images s'afficheront quand la couleur/taille est sélectionnée.</p>
                                     </div>
-                                    <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-black px-3 py-2 text-xs font-bold text-white hover:bg-gray-800">
-                                        {uploadingImages ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                                        Importer
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            multiple
-                                            className="hidden"
-                                            onChange={(event) => handleVariantImageUpload(index, event)}
-                                            disabled={uploadingImages}
-                                        />
-                                    </label>
+                                    <div className="flex flex-wrap gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => useProductImagesForVariant(index)}
+                                            disabled={parseLines(form.imagesText).length === 0}
+                                            className="inline-flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-bold text-gray-900 hover:border-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
+                                            title="Copier les images générales du produit dans cette variante"
+                                        >
+                                            <Copy className="h-4 w-4" />
+                                            Utiliser images produit
+                                        </button>
+                                        <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-black px-3 py-2 text-xs font-bold text-white hover:bg-gray-800">
+                                            {uploadingImages ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                                            Importer
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                multiple
+                                                className="hidden"
+                                                onChange={(event) => handleVariantImageUpload(index, event)}
+                                                disabled={uploadingImages}
+                                            />
+                                        </label>
+                                    </div>
                                 </div>
                                 {parseLines(variant.imagesText).length > 0 && (
                                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                                        {parseLines(variant.imagesText).slice(0, 10).map((image, imageIndex) => (
-                                            <div key={`${image}-${imageIndex}`} className="overflow-hidden rounded border border-gray-200 bg-white">
-                                                <div className="aspect-square">
+                                        {parseLines(variant.imagesText).map((image, imageIndex) => (
+                                            <div
+                                                key={`${image}-${imageIndex}`}
+                                                draggable
+                                                onDragStart={() => setDraggedVariantImage({ variantIndex: index, imageIndex })}
+                                                onDragOver={(event) => event.preventDefault()}
+                                                onDrop={(event) => {
+                                                    event.preventDefault();
+                                                    if (!draggedVariantImage || draggedVariantImage.variantIndex !== index) return;
+                                                    reorderVariantImage(index, draggedVariantImage.imageIndex, imageIndex);
+                                                    setDraggedVariantImage(null);
+                                                }}
+                                                onDragEnd={() => setDraggedVariantImage(null)}
+                                                className={`group relative overflow-hidden rounded-md border bg-white transition ${
+                                                    draggedVariantImage?.variantIndex === index &&
+                                                    draggedVariantImage.imageIndex === imageIndex
+                                                        ? "border-black opacity-60"
+                                                        : "border-gray-200 hover:border-gray-400"
+                                                }`}
+                                                title="Glisser pour changer l'ordre"
+                                            >
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeVariantImage(index, image)}
+                                                    className="absolute right-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-gray-900 shadow-sm ring-1 ring-gray-200 transition hover:bg-red-600 hover:text-white"
+                                                    aria-label="Supprimer cette image"
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </button>
+                                                <div className="absolute left-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-gray-500 shadow-sm ring-1 ring-gray-200">
+                                                    <GripVertical className="h-4 w-4" />
+                                                </div>
+                                                <div className="aspect-square p-1">
                                                     <img
                                                         src={image}
                                                         alt={`Variante ${index + 1} image ${imageIndex + 1}`}
@@ -1231,25 +1518,21 @@ const AdminProductForm = () => {
                                                         }}
                                                     />
                                                 </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeVariantImage(index, image)}
-                                                    className="w-full border-t border-gray-100 py-1 text-[11px] font-bold text-red-600 hover:bg-red-50"
-                                                >
-                                                    Retirer
-                                                </button>
+                                                <div className="border-t border-gray-100 px-2 py-1 text-center text-[11px] font-bold text-gray-500">
+                                                    #{imageIndex + 1}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
                                 )}
-                                <textarea
-                                    name="imagesText"
-                                    rows={2}
-                                    value={variant.imagesText}
-                                    onChange={(e) => handleVariantChange(index, e)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none font-mono"
-                                    placeholder="Images de la variante, une par ligne"
-                                />
+                                {parseLines(variant.imagesText).length === 0 && (
+                                    <div className="flex items-center gap-3 rounded-md border border-dashed border-amber-300 bg-amber-50 px-3 py-3 text-xs text-amber-800">
+                                        <ImageOff className="h-4 w-4 shrink-0" />
+                                        <span className="font-semibold">
+                                            Aucune image ajoutée. Une image est obligatoire pour publier cette variante.
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -1351,7 +1634,8 @@ const AdminProductForm = () => {
                         </button>
                     ) : (
                         <button
-                            type="submit"
+                            type="button"
+                            onClick={handleSaveProduct}
                             disabled={loading}
                             className="inline-flex items-center justify-center gap-2 rounded-md bg-black px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
                         >
@@ -1362,7 +1646,7 @@ const AdminProductForm = () => {
                             )}
                             {loading
                                 ? (isEdit ? "Mise à jour..." : "Création...")
-                                : (isEdit ? "Enregistrer les modifications" : "Créer le produit")}
+                                : (isEdit ? "Valider et enregistrer" : "Valider et créer le produit")}
                         </button>
                     )}
                 </div>

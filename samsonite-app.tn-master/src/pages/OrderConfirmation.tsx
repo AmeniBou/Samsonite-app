@@ -1,16 +1,58 @@
 import { Link, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { CheckCircle2, PackageCheck, Phone } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  CheckCircle2,
+  Clock3,
+  Mail,
+  Phone,
+  Printer,
+  ShieldCheck,
+  Truck,
+} from "lucide-react";
 
 import { formatTnd } from "@/lib/currency";
-import { getOrder, type StoredOrder } from "@/lib/orders";
+import { getOrder, type PaymentMethod, type ShippingMethod, type StoredOrder } from "@/lib/orders";
 import { useLanguage } from "@/lib/i18n";
+
+const shippingLabels: Record<ShippingMethod, string> = {
+  standard: "Livraison standard",
+  express: "Livraison express",
+  pickup: "Retrait en boutique",
+};
+
+const shippingDelays: Record<ShippingMethod, string> = {
+  standard: "Livraison estimée sous 2 à 4 jours ouvrables après confirmation.",
+  express: "Livraison prioritaire sous 24 à 48h ouvrables après confirmation.",
+  pickup: "Retrait possible après confirmation de la disponibilité par notre équipe.",
+};
+
+const paymentLabels: Record<PaymentMethod, string> = {
+  cash_on_delivery: "Paiement à la livraison",
+  bank_transfer: "Virement bancaire",
+};
+
+const statusLabels: Record<StoredOrder["status"], string> = {
+  new: "Commande reçue",
+  confirmed: "Confirmée",
+  fulfilled: "Livrée",
+  cancelled: "Annulée",
+};
+
+const formatOrderDate = (date: string) =>
+  new Intl.DateTimeFormat("fr-TN", {
+    dateStyle: "long",
+    timeStyle: "short",
+  }).format(new Date(date));
 
 const OrderConfirmation = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useLanguage();
   const [order, setOrder] = useState<StoredOrder | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    document.title = "Commande reçue | Samsonite Tunisie";
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -31,6 +73,11 @@ const OrderConfirmation = () => {
     };
   }, [id]);
 
+  const customerName = useMemo(() => {
+    if (!order) return "";
+    return [order.customer.firstName, order.customer.lastName].filter(Boolean).join(" ");
+  }, [order]);
+
   if (loading) {
     return (
       <div className="samsonite-container py-20 text-center">
@@ -43,9 +90,7 @@ const OrderConfirmation = () => {
     return (
       <div className="samsonite-container py-20 text-center">
         <h1 className="mb-3 text-2xl font-black">{t("order.notFound")}</h1>
-        <p className="mb-8 text-muted-foreground">
-          {t("order.notFoundText")}
-        </p>
+        <p className="mb-8 text-muted-foreground">{t("order.notFoundText")}</p>
         <Link to="/" className="premium-control inline-block bg-foreground px-8 py-3 text-sm font-bold text-background">
           {t("product.backHome")}
         </Link>
@@ -54,87 +99,182 @@ const OrderConfirmation = () => {
   }
 
   return (
-    <div className="samsonite-container py-12">
-      <section className="mx-auto max-w-3xl text-center">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
-          <CheckCircle2 className="h-9 w-9" />
-        </div>
-        <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted-foreground">
-          {t("order.received")}
-        </p>
-        <h1 className="mt-2 text-3xl font-black uppercase tracking-tight">
-          {t("order.thanks")}
-        </h1>
-        <p className="mt-3 text-muted-foreground">
-          {t("order.reference")}: <span className="font-bold text-foreground">{order.id}</span>
-        </p>
-      </section>
-
-      <div className="mx-auto mt-10 grid max-w-5xl gap-6 lg:grid-cols-[1fr_360px]">
-        <section className="premium-surface p-6">
-          <h2 className="mb-5 text-sm font-black uppercase tracking-wide">{t("order.items")}</h2>
-          <div className="space-y-4">
-            {order.items.map((item) => (
-              <div key={`${item.productId}-${item.selectedColor}`} className="flex gap-4 border-b border-border pb-4 last:border-0 last:pb-0">
-                <img src={item.image} alt={item.name} className="h-20 w-20 bg-white object-contain" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-bold uppercase">{item.name}</p>
-                  {item.selectedColor && (
-                    <p className="text-sm text-muted-foreground">{t("cart.color")}: {item.selectedColor}</p>
-                  )}
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {item.quantity} x {formatTnd(item.unitPrice)}
-                  </p>
-                </div>
-                <p className="font-bold">{formatTnd(item.total)}</p>
+    <div className="bg-[#f7f7f5]">
+      <div className="samsonite-container py-8 lg:py-12">
+        <section className="border border-border bg-white p-6 shadow-[0_18px_55px_rgba(0,0,0,0.05)] lg:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+                <CheckCircle2 className="h-8 w-8" />
               </div>
-            ))}
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-700">
+                  Commande enregistrée
+                </p>
+                <h1 className="mt-2 text-2xl font-black uppercase tracking-tight md:text-3xl">
+                  Merci, {order.customer.firstName || "votre commande est reçue"}
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                  Nous avons bien reçu votre commande. Notre équipe va vérifier les informations et vous contacter si
+                  nécessaire avant l'expédition.
+                </p>
+              </div>
+            </div>
+
+            <div className="print:hidden flex flex-col gap-2 sm:flex-row lg:flex-col">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="premium-control inline-flex items-center justify-center gap-2 border border-foreground bg-white px-5 py-3 text-xs font-black uppercase tracking-wide hover:bg-foreground hover:text-background"
+              >
+                <Printer className="h-4 w-4" />
+                Imprimer
+              </button>
+              <Link
+                to="/"
+                className="premium-control inline-flex justify-center bg-foreground px-5 py-3 text-xs font-black uppercase tracking-wide text-background"
+              >
+                Continuer mes achats
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-3 border-y border-border py-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">Numéro commande</p>
+              <p className="mt-1 text-lg font-black">{order.id}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">Date</p>
+              <p className="mt-1 text-sm font-semibold">{formatOrderDate(order.createdAt)}</p>
+            </div>
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">Statut</p>
+              <p className="mt-1 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black uppercase text-emerald-700">
+                {statusLabels[order.status] || order.status}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">Total</p>
+              <p className="mt-1 text-lg font-black">{formatTnd(order.totals.total)}</p>
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <section>
+              <h2 className="mb-4 text-sm font-black uppercase tracking-wide">Résumé de la commande</h2>
+              <div className="divide-y divide-border border-y border-border">
+                {order.items.map((item) => (
+                  <div key={`${item.productId}-${item.variantId || item.selectedColor || item.name}`} className="flex gap-4 py-4">
+                    <img
+                      src={item.image || "/placeholder.svg"}
+                      alt={item.name}
+                      className="h-20 w-20 shrink-0 bg-white object-contain"
+                      onError={(event) => {
+                        event.currentTarget.src = "/placeholder.svg";
+                      }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-black uppercase leading-5">{item.name}</p>
+                      <div className="mt-1 space-y-0.5 text-sm text-muted-foreground">
+                        {item.selectedColor && <p>{item.selectedColor}</p>}
+                        {item.selectedSize && <p>Taille: {item.selectedSize}</p>}
+                        {item.sku && <p>Référence: {item.sku}</p>}
+                      </div>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Quantité {item.quantity} x {formatTnd(item.unitPrice)}
+                      </p>
+                    </div>
+                    <p className="text-right font-black">{formatTnd(item.total)}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <aside className="space-y-4">
+              <div className="border border-border bg-[#fafafa] p-5">
+                <h2 className="mb-4 text-sm font-black uppercase tracking-wide">Total commande</h2>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Sous-total</span>
+                    <span>{formatTnd(order.totals.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Livraison</span>
+                    <span>{order.totals.shipping === 0 ? "Gratuite" : formatTnd(order.totals.shipping)}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-border pt-3 text-base font-black">
+                    <span>Total</span>
+                    <span>{formatTnd(order.totals.total)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border border-border bg-white p-5">
+                <h2 className="mb-4 text-sm font-black uppercase tracking-wide">Informations client</h2>
+                <div className="space-y-2 text-sm leading-6">
+                  <p className="font-bold">{customerName}</p>
+                  <p className="text-muted-foreground">{order.customer.address}</p>
+                  <p className="text-muted-foreground">
+                    {[order.customer.postalCode, order.customer.city].filter(Boolean).join(" ")}
+                  </p>
+                  <p className="text-muted-foreground">{order.customer.phone}</p>
+                  <p className="break-all text-muted-foreground">{order.customer.email}</p>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          <div className="mt-8 grid gap-4 lg:grid-cols-3">
+            <div className="border border-border bg-white p-5">
+              <div className="mb-3 flex items-center gap-3">
+                <Truck className="h-5 w-5 text-muted-foreground" />
+                <h3 className="text-sm font-black uppercase tracking-wide">Livraison</h3>
+              </div>
+              <p className="font-bold">{shippingLabels[order.shippingMethod]}</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{shippingDelays[order.shippingMethod]}</p>
+            </div>
+
+            <div className="border border-border bg-white p-5">
+              <div className="mb-3 flex items-center gap-3">
+                <ShieldCheck className="h-5 w-5 text-muted-foreground" />
+                <h3 className="text-sm font-black uppercase tracking-wide">Paiement</h3>
+              </div>
+              <p className="font-bold">{paymentLabels[order.paymentMethod]}</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Votre commande sera traitée selon le mode de paiement sélectionné.
+              </p>
+            </div>
+
+            <div className="border border-border bg-white p-5">
+              <div className="mb-3 flex items-center gap-3">
+                <Clock3 className="h-5 w-5 text-muted-foreground" />
+                <h3 className="text-sm font-black uppercase tracking-wide">Prochaine étape</h3>
+              </div>
+              <p className="text-sm leading-6 text-muted-foreground">
+                Conservez votre numéro de commande. Il permet à notre service client de retrouver rapidement votre dossier.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-8 border border-border bg-[#f7f7f5] p-5">
+            <h2 className="mb-4 text-sm font-black uppercase tracking-wide">Besoin d'aide ?</h2>
+            <div className="grid gap-4 text-sm md:grid-cols-3">
+              <a href="tel:+21626528103" className="flex items-center gap-3 font-semibold hover:underline">
+                <Phone className="h-4 w-4" />
+                26 528 103
+              </a>
+              <a href="tel:+21671809209" className="flex items-center gap-3 font-semibold hover:underline">
+                <Phone className="h-4 w-4" />
+                71 809 209
+              </a>
+              <a href="mailto:commercial@samsonite.com.tn" className="flex items-center gap-3 font-semibold hover:underline">
+                <Mail className="h-4 w-4" />
+                commercial@samsonite.com.tn
+              </a>
+            </div>
           </div>
         </section>
-
-        <aside className="space-y-6">
-          <div className="premium-surface p-6">
-          <h2 className="mb-4 text-sm font-black uppercase tracking-wide">Total</h2>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{t("cart.subtotal")}</span>
-                <span>{formatTnd(order.totals.subtotal)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{t("cart.shipping")}</span>
-                <span>{order.totals.shipping === 0 ? t("cart.free") : formatTnd(order.totals.shipping)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{t("checkout.payment")}</span>
-                <span>
-                  {order.paymentMethod === "bank_transfer" ? t("checkout.payment.transfer") : t("checkout.payment.cash")}
-                </span>
-              </div>
-              <div className="flex justify-between border-t border-border pt-3 text-base font-black">
-                <span>{t("cart.total")}</span>
-                <span>{formatTnd(order.totals.total)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="premium-surface space-y-4 p-6">
-            <div className="flex gap-3">
-              <Phone className="mt-0.5 h-5 w-5 text-muted-foreground" />
-              <p className="text-sm font-semibold">{t("order.nextCall")}</p>
-            </div>
-            <div className="flex gap-3">
-              <PackageCheck className="mt-0.5 h-5 w-5 text-muted-foreground" />
-              <p className="text-sm font-semibold">{t("order.nextDelivery")}</p>
-            </div>
-          </div>
-
-          <Link
-            to="/"
-            className="premium-control flex justify-center bg-foreground px-8 py-3 text-sm font-bold uppercase tracking-wide text-background"
-          >
-            {t("cart.continue")}
-          </Link>
-        </aside>
       </div>
     </div>
   );

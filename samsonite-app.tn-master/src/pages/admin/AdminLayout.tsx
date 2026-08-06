@@ -1,6 +1,6 @@
 import { Navigate, Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, PlusCircle, LogOut, ArrowLeft, PackageCheck, Mail, FolderTree } from "lucide-react";
+import { LayoutDashboard, PlusCircle, LogOut, ArrowLeft, PackageCheck, Mail, FolderTree, ShieldAlert } from "lucide-react";
 
 const AdminLayout = () => {
     const { isAuthenticated, username, loading, logout } = useAuth();
@@ -23,6 +23,7 @@ const AdminLayout = () => {
         { to: "/admin/commandes", icon: PackageCheck, label: "Commandes" },
         { to: "/admin/messages", icon: Mail, label: "Messages" },
         { to: "/admin/categories", icon: FolderTree, label: "Categories" },
+        { to: "/admin/qualite-donnees", icon: ShieldAlert, label: "Qualite donnees" },
         { to: "/admin/produits/nouveau", icon: PlusCircle, label: "Ajouter produit" },
     ];
 

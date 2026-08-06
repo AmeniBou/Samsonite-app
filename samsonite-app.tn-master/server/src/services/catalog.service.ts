@@ -23,6 +23,104 @@ const getCatalogQuantity = (availability?: string | null, quantity?: number | nu
   return 0;
 };
 
+type CatalogVariantRow = {
+  id: number;
+  groupName: string;
+  value: string;
+  colorName?: string | null;
+  colorHex?: string | null;
+  size?: string | null;
+  weight?: string | null;
+  width?: string | null;
+  height?: string | null;
+  depth?: string | null;
+  isExpandable?: boolean | null;
+  expandedWidth?: string | null;
+  expandedHeight?: string | null;
+  expandedDepth?: string | null;
+  volume?: string | null;
+  price?: { toString(): string; toNumber?: () => number } | null;
+  stockInitial?: number | null;
+  stock?: number | null;
+  images?: string[];
+};
+
+type CatalogImageRow = { imageUrl: string };
+
+const firstByGroup = (variants: CatalogVariantRow[], pattern: RegExp) =>
+  variants.find((variant) => pattern.test(normalizeLabel(variant.groupName)));
+
+const splitDimensions = (value?: string | null) => {
+  const matches = (value || "").match(/\d+(?:[.,]\d+)?/g);
+  if (!matches || matches.length < 3) return {};
+  const [height, width, depth] = matches.map((entry) => entry.replace(",", "."));
+  return { height, width, depth };
+};
+
+const isLegacyAttributeVariant = (variant: CatalogVariantRow) => {
+  const group = normalizeLabel(variant.groupName);
+  return /taille|size|dimension|poids|weight|volume/.test(group) && !variant.colorName && !(variant.images || []).length;
+};
+
+const hasRichVariantData = (variant: CatalogVariantRow) =>
+  Boolean(
+    variant.colorName?.trim() ||
+      variant.colorHex?.trim() ||
+      variant.width?.trim() ||
+      variant.height?.trim() ||
+      variant.depth?.trim() ||
+      variant.expandedWidth?.trim() ||
+      variant.expandedHeight?.trim() ||
+      variant.expandedDepth?.trim() ||
+      variant.volume?.trim() ||
+      variant.weight?.trim() ||
+      variant.price ||
+      (variant.images || []).length > 0
+  );
+
+const getCatalogProductVariants = (
+  variants: CatalogVariantRow[],
+  productImages: CatalogImageRow[] = []
+): CatalogVariantRow[] => {
+  const colorRows = variants.filter(
+    (variant) => /couleur|color/i.test(variant.groupName) || Boolean(variant.colorName || variant.colorHex)
+  );
+  const legacyRows = variants.filter(isLegacyAttributeVariant);
+
+  if (colorRows.length > 0 && legacyRows.length > 0) {
+    const sizeRow = firstByGroup(legacyRows, /taille|size/);
+    const dimensionRow = firstByGroup(legacyRows, /dimension/);
+    const weightRow = firstByGroup(legacyRows, /poids|weight/);
+    const volumeRow = firstByGroup(legacyRows, /volume/);
+    const dimensions = splitDimensions(dimensionRow?.value);
+    const fallbackImages = productImages.map((image) => image.imageUrl).filter(Boolean);
+
+    return colorRows.map((colorRow) => ({
+      ...colorRow,
+      groupName: "Variante",
+      value: [colorRow.colorName || colorRow.value, sizeRow?.value].filter(Boolean).join(" / ") || "Variante",
+      colorName: colorRow.colorName || colorRow.value,
+      colorHex: colorRow.colorHex || getColorHex(colorRow.colorName || colorRow.value),
+      size: colorRow.size || sizeRow?.value || null,
+      height: colorRow.height || dimensions.height || null,
+      width: colorRow.width || dimensions.width || null,
+      depth: colorRow.depth || dimensions.depth || null,
+      isExpandable: colorRow.isExpandable || Boolean(colorRow.expandedWidth || colorRow.expandedHeight || colorRow.expandedDepth),
+      expandedWidth: colorRow.expandedWidth || null,
+      expandedHeight: colorRow.expandedHeight || null,
+      expandedDepth: colorRow.expandedDepth || null,
+      weight: colorRow.weight || weightRow?.value || null,
+      volume: colorRow.volume || volumeRow?.value || null,
+      stock: colorRow.stock ?? sizeRow?.stock ?? 0,
+      stockInitial: colorRow.stockInitial ?? sizeRow?.stockInitial ?? null,
+      images: (colorRow.images || []).length > 0 ? colorRow.images : fallbackImages,
+    }));
+  }
+
+  const meaningful = variants.filter(hasRichVariantData);
+  return meaningful.length > 0 ? meaningful : variants;
+};
+
 const isRemoteUrl = (value: string) => /^https?:\/\//i.test(value);
 
 const COLOR_HEX_BY_NAME: Record<string, string> = {
@@ -92,10 +190,11 @@ const mapProductToRaw = (product: {
   quantity?: number | null;
   images: Array<{ id: number; imageUrl: string }>;
   categories: Array<{ category: { id: number; slug?: string | null } }>;
-  variants: Array<{ id: number; groupName: string; value: string; colorName?: string | null; colorHex?: string | null; size?: string | null; weight?: string | null; width?: string | null; height?: string | null; depth?: string | null; volume?: string | null; price?: { toString(): string; toNumber?: () => number } | null; stockInitial?: number | null; stock?: number | null; images?: string[] }>;
+  variants: CatalogVariantRow[];
   features: Array<{ id: number; featureName: string; featureValue: string }>;
 }) => {
   const imageIds = product.images.map((image) => image.id).filter(Boolean);
+  const catalogVariants = getCatalogProductVariants(product.variants, product.images);
   const quantity = getCatalogQuantity(product.availability, product.quantity);
   const categoryAssociations = product.categories
     .map((relation) => ({ id: relation.category.id }))
@@ -123,7 +222,7 @@ const mapProductToRaw = (product: {
     associations: {
       categories: categoryAssociations,
       images: imageIds.map((id) => ({ id, imageUrl: product.images.find((img) => img.id === id)?.imageUrl })),
-      product_option_values: product.variants.map((variant) => ({ id: variant.id })),
+      product_option_values: catalogVariants.map((variant) => ({ id: variant.id })),
       product_features: product.features.map((feature) => ({
         id: feature.id,
         id_feature_value: feature.id,
@@ -158,13 +257,13 @@ export const getPublicCatalog = async () => {
   };
 
   for (const product of products) {
-    for (const variant of product.variants) {
+    for (const variant of getCatalogProductVariants(product.variants, product.images)) {
       getGroupId(variant.groupName);
     }
   }
 
   const variants = products.flatMap((product) =>
-    product.variants.map((variant) => ({
+    getCatalogProductVariants(product.variants, product.images).map((variant) => ({
       product,
       variant,
       groupId: getGroupId(variant.groupName),
@@ -186,6 +285,10 @@ export const getPublicCatalog = async () => {
       width: variant.width || undefined,
       height: variant.height || undefined,
       depth: variant.depth || undefined,
+      isExpandable: variant.isExpandable || undefined,
+      expandedWidth: variant.expandedWidth || undefined,
+      expandedHeight: variant.expandedHeight || undefined,
+      expandedDepth: variant.expandedDepth || undefined,
       volume: variant.volume || undefined,
       stockInitial: variant.stockInitial ?? undefined,
       stock: variant.stock ?? undefined,
@@ -240,7 +343,8 @@ export const getCategories = async () => {
     name: buildLangField(category.name),
     description: buildLangField(""),
     link_rewrite: buildLangField(category.slug || normalizeSlug(category.name)),
-    active: "1",
+    active: category.isActive === false ? "0" : "1",
+    show_in_main_menu: category.showInMainMenu === false ? "0" : "1",
   }));
 };
 
@@ -437,7 +541,7 @@ const mapAdminProduct = (product: {
   category: { id: number; name: string } | null;
   images: Array<{ id: number; imageUrl: string }>;
   features: Array<{ featureName: string; featureValue: string }>;
-  variants: Array<{ groupName: string; value: string; colorName?: string | null; colorHex?: string | null; size?: string | null; weight?: string | null; width?: string | null; height?: string | null; depth?: string | null; volume?: string | null; price?: { toNumber?: () => number; toString(): string } | null; stockInitial?: number | null; stock?: number | null; images?: string[] }>;
+  variants: CatalogVariantRow[];
   description?: string | null;
   quantity?: number | null;
   weight?: string | null;
@@ -448,7 +552,8 @@ const mapAdminProduct = (product: {
   const mainImage = product.images[0] ?? null;
   const imageId = mainImage?.id ?? null;
   const stock = getCatalogQuantity(product.availability, product.quantity);
-  const variants = product.variants.map((variant) => {
+  const meaningfulVariants = getCatalogProductVariants(product.variants, product.images);
+  const variants = meaningfulVariants.map((variant) => {
     const group = normalizeLabel(variant.groupName);
     const isColor = /couleur|color/.test(group);
     const isSize = /taille|size/.test(group);
@@ -462,6 +567,10 @@ const mapAdminProduct = (product: {
       width: variant.width || undefined,
       height: variant.height || undefined,
       depth: variant.depth || undefined,
+      isExpandable: variant.isExpandable || undefined,
+      expandedWidth: variant.expandedWidth || undefined,
+      expandedHeight: variant.expandedHeight || undefined,
+      expandedDepth: variant.expandedDepth || undefined,
       volume: variant.volume || undefined,
       price: variant.price ? Number(variant.price) : Number(product.price) || undefined,
       stockInitial: variant.stockInitial ?? undefined,
@@ -598,15 +707,71 @@ const createOrUpdateFeatures = async (
   });
 };
 
+const isValidImageReference = (value: string): boolean => {
+  const trimmed = value.trim();
+  return /^(https?:\/\/|\/)([^\s]+)\.(jpe?g|png|webp|gif|avif)(\?.*)?$/i.test(trimmed);
+};
+
+const ensureUniqueProductReference = async (reference?: string, excludeId?: number) => {
+  const sku = reference?.trim();
+  if (!sku) return;
+
+  const existing = await prisma.product.findFirst({
+    where: {
+      sku,
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+    select: { id: true, name: true },
+  });
+
+  if (existing) {
+    throw new Error(`La référence "${sku}" est déjà utilisée par le produit "${existing.name}".`);
+  }
+};
+
 const createOrUpdateVariants = async (
   productId: number,
-  variants: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>
+  variants: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; isExpandable?: boolean; expandedWidth?: string | number; expandedHeight?: string | number; expandedDepth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>
 ) => {
+  if (!variants.length) {
+    throw new Error("Un produit doit contenir au moins une variante.");
+  }
+
   const seenVariantKeys = new Set<string>();
   for (const [index, variant] of variants.entries()) {
     const colorName = variant.colorName?.trim().toLowerCase() || "";
     const size = variant.size?.trim().toLowerCase() || "";
-    if (!colorName || !size) continue;
+    const price = variant.price !== undefined && variant.price !== "" ? Number(variant.price) : NaN;
+    const stock = variant.stock !== undefined && variant.stock !== "" ? Number(variant.stock) : NaN;
+    const stockInitial = variant.stockInitial !== undefined && variant.stockInitial !== "" ? Number(variant.stockInitial) : undefined;
+    const images = variant.images || variant.imagesText
+      ?.split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean) || [];
+
+    if (!colorName) {
+      throw new Error(`La couleur de la variante #${index + 1} est requise.`);
+    }
+    if (!size) {
+      throw new Error(`La taille de la variante #${index + 1} est requise.`);
+    }
+    if (!Number.isFinite(price) || price <= 0) {
+      throw new Error(`Le prix de la variante #${index + 1} est requis et doit être supérieur à 0.`);
+    }
+    if (!Number.isFinite(stock) || stock < 0) {
+      throw new Error(`Le stock de la variante #${index + 1} doit être un nombre positif ou nul.`);
+    }
+    if (stockInitial !== undefined && (!Number.isFinite(stockInitial) || stockInitial < 0)) {
+      throw new Error(`Le stock initial de la variante #${index + 1} doit être un nombre positif ou nul.`);
+    }
+    if (!images.length) {
+      throw new Error(`Ajoute au moins une image pour la variante #${index + 1}.`);
+    }
+    const invalidImage = images.find((image) => !isValidImageReference(image));
+    if (invalidImage) {
+      throw new Error(`Image invalide dans la variante #${index + 1}: ${invalidImage}`);
+    }
+
     const key = `${colorName}::${size}`;
     if (seenVariantKeys.has(key)) {
       throw new Error(`La variante #${index + 1} est dupliquée pour ce produit. Change la couleur ou la taille.`);
@@ -627,6 +792,10 @@ const createOrUpdateVariants = async (
       const width = variant.width !== undefined ? String(variant.width).trim() || undefined : undefined;
       const height = variant.height !== undefined ? String(variant.height).trim() || undefined : undefined;
       const depth = variant.depth !== undefined ? String(variant.depth).trim() || undefined : undefined;
+      const isExpandable = Boolean(variant.isExpandable);
+      const expandedWidth = isExpandable && variant.expandedWidth !== undefined ? String(variant.expandedWidth).trim() || undefined : undefined;
+      const expandedHeight = isExpandable && variant.expandedHeight !== undefined ? String(variant.expandedHeight).trim() || undefined : undefined;
+      const expandedDepth = isExpandable && variant.expandedDepth !== undefined ? String(variant.expandedDepth).trim() || undefined : undefined;
       const volume = variant.volume !== undefined ? String(variant.volume).trim() || undefined : undefined;
       const stockInitial =
         variant.stockInitial !== undefined && variant.stockInitial !== ""
@@ -639,6 +808,10 @@ const createOrUpdateVariants = async (
         !width &&
         !height &&
         !depth &&
+        !isExpandable &&
+        !expandedWidth &&
+        !expandedHeight &&
+        !expandedDepth &&
         !volume &&
         variant.price === undefined &&
         stockInitial === undefined &&
@@ -658,6 +831,10 @@ const createOrUpdateVariants = async (
         width,
         height,
         depth,
+        isExpandable,
+        expandedWidth,
+        expandedHeight,
+        expandedDepth,
         volume,
         price: variant.price !== undefined && variant.price !== "" ? Number(variant.price) : undefined,
         stockInitial,
@@ -687,9 +864,13 @@ export const createProduct = async (fields: {
   quantity?: number;
   images?: string[];
   features?: Array<{ label: string; value: string }>;
-  variants?: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
+  variants?: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; isExpandable?: boolean; expandedWidth?: string | number; expandedHeight?: string | number; expandedDepth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
 }) => {
   try {
+    if (!Number.isFinite(fields.price) || fields.price <= 0) {
+      throw new Error("Le prix du produit est obligatoire et doit être supérieur à 0.");
+    }
+    await ensureUniqueProductReference(fields.reference);
     const category = await ensureCategory(fields.categoryId);
     const brand = await ensureBrand(fields.brandId);
     const maxScraped = await prisma.product.aggregate({ _max: { scrapedId: true } });
@@ -748,7 +929,7 @@ export const updateProduct = async (
     quantity: number;
     images: string[];
     features: Array<{ label: string; value: string }>;
-    variants: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
+    variants: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; isExpandable?: boolean; expandedWidth?: string | number; expandedHeight?: string | number; expandedDepth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
     categoryId: number;
     brandId: number;
   }>
@@ -757,6 +938,13 @@ export const updateProduct = async (
     const existing = await prisma.product.findUnique({ where: { id } });
     if (!existing) {
       return { success: false, error: "Produit introuvable" };
+    }
+
+    if (fields.price !== undefined && (!Number.isFinite(fields.price) || fields.price <= 0)) {
+      throw new Error("Le prix du produit est obligatoire et doit être supérieur à 0.");
+    }
+    if (fields.reference !== undefined) {
+      await ensureUniqueProductReference(fields.reference, id);
     }
 
     const data: any = {};

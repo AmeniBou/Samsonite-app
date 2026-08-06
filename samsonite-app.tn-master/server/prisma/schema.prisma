@@ -141,6 +141,14 @@ model ProductVariant {
 
   depth String?
 
+  isExpandable Boolean @default(false)
+
+  expandedWidth String?
+
+  expandedHeight String?
+
+  expandedDepth String?
+
   volume String?
 
   price Decimal? @db.Decimal(10, 2)
@@ -191,6 +199,8 @@ model Order {
 
   items OrderItem[]
 
+  statusHistory OrderStatusHistory[]
+
   createdAt DateTime @default(now())
 
   updatedAt DateTime @updatedAt
@@ -220,6 +230,24 @@ model OrderItem {
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   product Product? @relation(fields: [productId], references: [id])
+}
+
+model OrderStatusHistory {
+  id Int @id @default(autoincrement())
+
+  orderId Int
+
+  previousStatus String?
+
+  newStatus String
+
+  note String?
+
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
 }
 
 model ContactMessage {

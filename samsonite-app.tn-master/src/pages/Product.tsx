@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Minus,
   Plus,
   RotateCcw,
@@ -30,6 +32,7 @@ const Product = () => {
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [selectedCombinationId, setSelectedCombinationId] = useState<number | null>(null);
   const [variantMessage, setVariantMessage] = useState("");
+  const [detailsOpen, setDetailsOpen] = useState(true);
   const [selectedInferredColorKey, setSelectedInferredColorKey] = useState("");
   const [inferredColorGroups, setInferredColorGroups] = useState<
     Array<{ key: string; name: string; hex: string; images: string[] }>
@@ -197,16 +200,24 @@ const Product = () => {
       .slice(0, 4);
   }, [allProducts, product]);
 
+  const normalizeGalleryImages = (images: string[]) => {
+    const unique = Array.from(new Set(images.map((image) => image.trim()).filter(Boolean)));
+    const localImages = unique.filter((image) => image.startsWith("/images/products/") || image.startsWith("/images/admin/"));
+    return localImages.length > 0 ? localImages : unique;
+  };
+
   const galleryImages = (() => {
-    if (selectedVariant?.images && selectedVariant.images.length > 0) return selectedVariant.images;
+    if (selectedVariant?.images && selectedVariant.images.length > 0) {
+      return normalizeGalleryImages(selectedVariant.images);
+    }
     if (selectedInferredColorKey) {
       const inferredGroup = inferredColorGroups.find((group) => group.key === selectedInferredColorKey);
-      if (inferredGroup?.images.length) return inferredGroup.images;
+      if (inferredGroup?.images.length) return normalizeGalleryImages(inferredGroup.images);
     }
-    if (product?.images && product.images.length > 0) return product.images;
+    if (product?.images && product.images.length > 0) return normalizeGalleryImages(product.images);
     // Fallback: use first similar product's first image so the UI isn't empty
     const fallback = similarProducts?.[0]?.images || [];
-    return fallback;
+    return normalizeGalleryImages(fallback);
   })();
   const selectedPrice =
     selectedVariant && selectedVariant.price > 0 ? selectedVariant.price : product?.price || 0;
@@ -218,7 +229,7 @@ const Product = () => {
   const availabilityText = isOutOfStock
     ? "Temporairement indisponible"
     : isLowStock
-    ? "Plus que quelques pièces disponibles"
+    ? "Plus que quelques piÃ¨ces disponibles"
     : t("product.available");
 
   
@@ -239,26 +250,80 @@ const Product = () => {
   };
 
   const variants = product?.variants || [];
+  const isSelectableVariant = (variant: ProductVariant) =>
+    Boolean(
+      variant.color ||
+        variant.images.length > 0 ||
+        variant.price > 0 ||
+        variant.stock > 0 ||
+        variant.width ||
+        variant.height ||
+        variant.depth ||
+        variant.volume ||
+        variant.weight
+    );
+  const selectableVariants = variants.filter(isSelectableVariant);
+  const effectiveVariants = selectableVariants.length > 0 ? selectableVariants : variants;
 
   const getColorKey = (variant?: ProductVariant) =>
     (variant?.color?.hex || "").trim().toLowerCase() ||
     (variant?.color?.name || "").trim().toLowerCase();
 
+  const normalizeVariantKey = (value?: string) => (value || "").trim().toLowerCase();
+  const getVariantDimensionLabel = (variant?: ProductVariant) => {
+    if (!variant) return "";
+    const dimensions = (variant.dimensions || "").trim();
+    if (dimensions && hasNonZeroNumeric(dimensions)) return dimensions;
+    const physicalDimensions = [variant.height, variant.width, variant.depth]
+      .map((value) => (value || "").trim())
+      .filter(Boolean)
+      .join(" x ");
+    return physicalDimensions && hasNonZeroNumeric(physicalDimensions)
+      ? `${physicalDimensions} cm`
+      : "";
+  };
+  const pickBestVariant = (items: ProductVariant[]) =>
+    [...items].sort((a, b) => {
+      const stockScore = Number((b.stock || 0) > 0) - Number((a.stock || 0) > 0);
+      if (stockScore !== 0) return stockScore;
+      const defaultScore = Number(b.isDefault) - Number(a.isDefault);
+      if (defaultScore !== 0) return defaultScore;
+      const imageScore = (b.images?.length || 0) - (a.images?.length || 0);
+      if (imageScore !== 0) return imageScore;
+      return (b.price || 0) - (a.price || 0);
+    })[0];
+
   const selectedColorKey = getColorKey(selectedVariant);
   const selectedSize = (selectedVariant?.size || "").trim();
-  const findVariantBySelection = (size: string, colorKey: string) =>
-    variants.find(
-      (variant) =>
-        (variant.size || "").trim().toLowerCase() === size.trim().toLowerCase() &&
-        getColorKey(variant) === colorKey
-    );
+  const selectedDimensionKey = normalizeVariantKey(getVariantDimensionLabel(selectedVariant));
+  const findVariantBySelection = (size: string, colorKey: string, dimensionKey = "") => {
+    const normalizedSize = normalizeVariantKey(size);
+    const normalizedColor = normalizeVariantKey(colorKey);
+    const normalizedDimension = normalizeVariantKey(dimensionKey);
+    const matches = effectiveVariants.filter((variant) => {
+      const variantSize = normalizeVariantKey(variant.size);
+      const variantDimension = normalizeVariantKey(getVariantDimensionLabel(variant));
+      return (
+        (!normalizedSize || variantSize === normalizedSize) &&
+        (!normalizedColor || getColorKey(variant) === normalizedColor) &&
+        (!normalizedDimension || variantDimension === normalizedDimension)
+      );
+    });
+    return pickBestVariant(matches);
+  };
+  const findBestVariantForColor = (colorKey: string) =>
+    findVariantBySelection("", colorKey, selectedDimensionKey) ||
+    findVariantBySelection("", colorKey, "");
+  const findBestVariantForDimension = (dimensionKey: string) =>
+    findVariantBySelection("", selectedColorKey, dimensionKey) ||
+    findVariantBySelection("", "", dimensionKey);
 
   const colorOptions = useMemo(() => {
     const byKey = new Map<
       string,
       { key: string; name: string; hex: string; combinationId: number; stock: number; images: string[]; score: number }
     >();
-    for (const variant of variants) {
+    for (const variant of effectiveVariants) {
       if (!variant.color) continue;
       const key = getColorKey(variant);
       if (!key) continue;
@@ -277,7 +342,7 @@ const Product = () => {
       }
     }
     return Array.from(byKey.values()).map(({ score: _score, ...color }) => color);
-  }, [variants]);
+  }, [effectiveVariants]);
 
   useEffect(() => {
     if (!product?.images?.length || colorOptions.length > 0) {
@@ -394,13 +459,10 @@ const Product = () => {
     };
   }, [colorOptions.length, product?.images]);
 
-  const displayColorOptions =
-    colorOptions.length > 0
-      ? colorOptions.map((color) => ({ ...color, inferred: false }))
-      : inferredColorGroups.map((color) => ({ ...color, combinationId: 0, inferred: true }));
+  const displayColorOptions = colorOptions.map((color) => ({ ...color, inferred: false }));
 
   const sizeOptions = useMemo(() => {
-    const scopedVariants = variants;
+    const scopedVariants = effectiveVariants;
 
     const byLabel = new Map<string, { label: string; combinationId: number; stock: number; score: number }>();
     for (const variant of scopedVariants) {
@@ -414,7 +476,7 @@ const Product = () => {
       }
     }
     return Array.from(byLabel.values()).map(({ score: _score, ...size }) => size);
-  }, [variants]);
+  }, [effectiveVariants]);
 
   const updateVariantUrl = (variant: ProductVariant) => {
     if (!product) return;
@@ -423,9 +485,9 @@ const Product = () => {
 
   const handleColorSelect = (colorKey: string) => {
     if (!selectedVariant) return;
-    const targetVariant = findVariantBySelection(selectedSize, colorKey);
+    const targetVariant = findBestVariantForColor(colorKey);
     if (!targetVariant) {
-      setVariantMessage("Cette couleur n'est pas proposée dans la taille sélectionnée.");
+      setVariantMessage("Cette couleur n'est pas proposÃ©e dans la taille sÃ©lectionnÃ©e.");
       return;
     }
     setVariantMessage("");
@@ -438,7 +500,7 @@ const Product = () => {
     if (!selectedVariant) return;
     const targetVariant = findVariantBySelection(sizeLabel, selectedColorKey);
     if (!targetVariant) {
-      setVariantMessage("Cette taille n'est pas proposée dans la couleur sélectionnée.");
+      setVariantMessage("Cette taille n'est pas proposÃ©e dans la couleur sÃ©lectionnÃ©e.");
       return;
     }
     setVariantMessage("");
@@ -447,27 +509,31 @@ const Product = () => {
     updateVariantUrl(targetVariant);
   };
 
-  const dimensionScopedVariants = useMemo(() => {
-    let scoped = variants;
-    return scoped;
-  }, [variants]);
+  const handleDimensionSelect = (dimensionLabel: string) => {
+    if (!selectedVariant) return;
+    const targetVariant = findBestVariantForDimension(dimensionLabel);
+    if (!targetVariant) {
+      setVariantMessage("Cette dimension n'est pas proposÃ©e dans la couleur sÃ©lectionnÃ©e.");
+      return;
+    }
+    setVariantMessage("");
+    setSelectedCombinationId(targetVariant.combinationId);
+    setSelectedImageIdx(0);
+    updateVariantUrl(targetVariant);
+  };
 
   const dimensionOptions = useMemo(() => {
-    const sizeLabels = new Set(sizeOptions.map((s) => s.label.trim().toLowerCase()));
-
     const byLabel = new Map<
       string,
-      { label: string; combinationId: number; sizeLabel: string; score: number }
+      { label: string; combinationId: number; stock: number; price: number; score: number }
     >();
 
-    for (const variant of dimensionScopedVariants) {
-      const label = (variant.dimensions || "").trim();
-      const sizeLabel = (variant.size || "").trim();
+    for (const variant of effectiveVariants) {
+      if (selectedColorKey && getColorKey(variant) !== selectedColorKey) continue;
+      const label = getVariantDimensionLabel(variant);
       if (!label || !hasNonZeroNumeric(label)) continue;
-      if (sizeLabels.has(label.toLowerCase())) continue;
-      if (label.toLowerCase() === sizeLabel.toLowerCase()) continue;
 
-      const key = `${label.toLowerCase()}::${sizeLabel.toLowerCase()}`;
+      const key = normalizeVariantKey(label);
       const score = (variant.isDefault ? 100 : 0) + ((variant.stock || 0) > 0 ? 10 : 0);
       const existing = byLabel.get(key);
 
@@ -475,24 +541,41 @@ const Product = () => {
         byLabel.set(key, {
           label,
           combinationId: variant.combinationId,
-          sizeLabel,
+          stock: variant.stock || 0,
+          price: variant.price || product?.price || 0,
           score,
         });
       }
     }
 
-    if (byLabel.size > 0) {
-      return Array.from(byLabel.values()).map(({ score: _score, ...dimension }) => dimension);
+    return Array.from(byLabel.values()).map(({ score: _score, ...dimension }) => dimension);
+  }, [effectiveVariants, selectedColorKey]);
+
+  const sizeSelectorOptions = useMemo(() => {
+    if (sizeOptions.length > 0) {
+      return sizeOptions.map((size) => ({
+        kind: "size" as const,
+        label: size.label,
+        combinationId: size.combinationId,
+        stock: size.stock,
+      }));
     }
 
-    if (!product) return [];
-    return product.characteristics
-      .filter((item) => /dimension|taille|size/i.test(item.label))
-      .map((item) => item.value.trim())
-      .filter((value) => Boolean(value) && hasNonZeroNumeric(value))
-      .filter((value) => !sizeLabels.has(value.toLowerCase()))
-      .map((value) => ({ label: value, combinationId: selectedCombinationId || 0, sizeLabel: "" }));
-  }, [dimensionScopedVariants, product, selectedCombinationId, sizeOptions]);
+    return dimensionOptions.map((dimension) => ({
+      kind: "dimension" as const,
+      label: dimension.label,
+      combinationId: dimension.combinationId,
+      stock: dimension.stock,
+    }));
+  }, [dimensionOptions, sizeOptions]);
+
+  const handleSizeSelectorSelect = (option: (typeof sizeSelectorOptions)[number]) => {
+    if (option.kind === "size") {
+      handleSizeSelect(option.label);
+      return;
+    }
+    handleDimensionSelect(option.label);
+  };
 
   const weightOptions = useMemo(() => {
     const value = (selectedVariant?.weight || "").trim();
@@ -514,14 +597,14 @@ const Product = () => {
     return value && hasNonZeroNumeric(value) ? [value] : [];
   }, [selectedVariant]);
 
-  const activeColorKey = selectedColorKey || selectedInferredColorKey;
+  const activeColorKey = selectedColorKey;
   const selectedColorName =
     displayColorOptions.find((color) => color.key === activeColorKey)?.name ||
     selectedVariant?.color?.name ||
     displayColorOptions[0]?.name ||
     "";
   const selectedDimensionLabel =
-    selectedVariant?.dimensions ||
+    getVariantDimensionLabel(selectedVariant) ||
     product?.dimensions ||
     "";
   const selectedPhysicalDimensions =
@@ -544,7 +627,7 @@ const Product = () => {
       if (!label || !value) return false;
       if (excludedLabelPattern.test(label)) return false;
       const lower = value.toLowerCase();
-      if (["null", "undefined", "n/a", "na", "-", "--", ":", "...", "…"].includes(lower)) {
+      if (["null", "undefined", "n/a", "na", "-", "--", ":", "...", "â€¦"].includes(lower)) {
         return false;
       }
       if (/^[:.\-\s]+$/.test(value)) return false;
@@ -556,6 +639,72 @@ const Product = () => {
       technicalCharacteristics.filter((item) => /garantie|warranty/i.test(item.label)) || [],
     [technicalCharacteristics]
   );
+  const displayTechnicalCharacteristics = useMemo(() => {
+    const grouped = new Map<string, { label: string; values: string[] }>();
+
+    technicalCharacteristics
+      .filter((item) => !/garantie|warranty/i.test(item.label))
+      .forEach((item) => {
+        const key = item.label
+          .normalize("NFD")
+          .replace(/\p{Diacritic}/gu, "")
+          .trim()
+          .toLowerCase();
+        const existing = grouped.get(key);
+        if (existing) {
+          const valueKey = item.value.trim().toLowerCase();
+          if (!existing.values.some((value) => value.toLowerCase() === valueKey)) {
+            existing.values.push(item.value.trim());
+          }
+        } else {
+          grouped.set(key, { label: item.label.trim(), values: [item.value.trim()] });
+        }
+      });
+
+    return Array.from(grouped.values()).map((item) => ({
+      label: item.label,
+      value: item.values.join(" / "),
+    }));
+  }, [technicalCharacteristics]);
+
+  const specificationRows = useMemo(() => {
+    const rows = [
+      ...guaranteeCharacteristics,
+      { label: "Couleur", value: selectedColorName },
+      { label: "Dimensions", value: selectedPhysicalDimensions },
+      { label: "Dimensions extensibles", value: selectedExpandableDimensions },
+      { label: "Taille", value: selectedSize },
+      { label: "Volume", value: selectedVolume },
+      { label: "Poids", value: selectedWeight },
+      { label: "SKU", value: selectedVariant?.sku || "" },
+      ...displayTechnicalCharacteristics,
+    ];
+    const seen = new Set<string>();
+
+    return rows.filter((row) => {
+      const label = row.label.trim();
+      const value = (row.value || "").trim();
+      if (!label || !value) return false;
+      const key = label
+        .normalize("NFD")
+        .replace(/\p{Diacritic}/gu, "")
+        .trim()
+        .toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [
+    displayTechnicalCharacteristics,
+    guaranteeCharacteristics,
+    selectedColorName,
+    selectedExpandableDimensions,
+    selectedPhysicalDimensions,
+    selectedSize,
+    selectedVariant?.sku,
+    selectedVolume,
+    selectedWeight,
+  ]);
 
   useEffect(() => {
     setSelectedImageIdx(0);
@@ -607,8 +756,8 @@ const Product = () => {
         </nav>
       </div>
 
-      <div className="samsonite-container py-5 lg:py-8">
-        <div className="grid gap-7 md:grid-cols-[minmax(0,0.95fr)_minmax(340px,0.85fr)] lg:gap-10">
+      <div className="samsonite-container py-4 lg:py-6">
+        <div className="grid gap-6 md:grid-cols-[minmax(0,0.92fr)_minmax(340px,0.78fr)] lg:gap-9">
           <div>
             <div className="premium-surface relative mx-auto mb-4 flex aspect-square max-w-[470px] items-center justify-center overflow-hidden bg-white">
               <img
@@ -627,7 +776,7 @@ const Product = () => {
                         index === 0 ? galleryImages.length - 1 : index - 1
                       )
                     }
-                    className="premium-control absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/90 backdrop-blur"
+                    className="absolute left-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/90 shadow-sm backdrop-blur transition-shadow hover:shadow-[0_10px_30px_rgba(0,0,0,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
@@ -637,7 +786,7 @@ const Product = () => {
                         index === galleryImages.length - 1 ? 0 : index + 1
                       )
                     }
-                    className="premium-control absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/90 backdrop-blur"
+                    className="absolute right-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/90 shadow-sm backdrop-blur transition-shadow hover:shadow-[0_10px_30px_rgba(0,0,0,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
@@ -669,22 +818,21 @@ const Product = () => {
             )}
           </div>
 
-          <div className="self-start space-y-5 lg:pt-1">
-            <div className="space-y-2">
+          <div className="self-start space-y-4 lg:pt-0">
+            <div className="space-y-1.5">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">
                 {product.brandName || "Samsonite"}
               </p>
-              <h1 className="text-xl font-black uppercase leading-tight tracking-tight md:text-4xl">
+              <h1 className="text-xl font-black uppercase leading-tight tracking-tight md:text-3xl">
                 {product.name}
               </h1>
               {product.shortDescription && (
-                <p className="text-base leading-6 text-foreground/85">{product.shortDescription}</p>
+                <p className="text-sm leading-6 text-foreground/85">{product.shortDescription}</p>
               )}
             </div>
 
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="text-xl font-black">{formatTnd(selectedPrice)}</div>
+            <div className="flex flex-wrap items-center gap-3 border-y border-border py-3">
+                <div className="min-w-[135px] text-xl font-black">{formatTnd(selectedPrice)}</div>
                 <p
                   className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${
                     isOutOfStock ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"
@@ -693,17 +841,17 @@ const Product = () => {
                   <span className="inline-block h-2 w-2 rounded-full bg-current" />
                   {availabilityText}
                 </p>
-              </div>
-              <p className="text-sm font-semibold text-muted-foreground">TVA incl.</p>
+              <p className="text-xs font-semibold text-muted-foreground">TVA incl.</p>
             </div>
 
-            {sizeOptions.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm font-black uppercase tracking-wide">
+            {sizeOptions.length > 1 && (
+              <div className="grid gap-2 sm:grid-cols-[118px_minmax(0,1fr)] sm:items-start">
+                <p className="pt-2 text-xs font-black uppercase tracking-wide">
                   {t("product.size")}
-                  {selectedSize ? (
-                    <span className="ml-3 text-sm font-semibold normal-case text-muted-foreground">
-                      {selectedSize}
+                  {selectedPhysicalDimensions ? (
+                    <span className="mt-1 block text-xs font-semibold normal-case text-muted-foreground">
+                      {selectedPhysicalDimensions} <span className="text-muted-foreground/70">-</span>{" "}
+                      <span className="border-b border-muted-foreground/40">Guide des tailles</span>
                     </span>
                   ) : null}
                 </p>
@@ -711,6 +859,7 @@ const Product = () => {
                   {sizeOptions.map((size) => {
                     const exactVariant = findVariantBySelection(size.label, selectedColorKey);
                     const doesNotExist = !exactVariant;
+                    const isUnavailable = Boolean(exactVariant && exactVariant.stock <= 0);
                     const isSelected = selectedSize.toLowerCase() === size.label.toLowerCase();
                     return (
                       <button
@@ -718,19 +867,21 @@ const Product = () => {
                         type="button"
                         aria-pressed={isSelected}
                         disabled={doesNotExist}
-                        title={doesNotExist ? "Cette taille n'est pas proposée dans la couleur sélectionnée." : size.label}
+                        title={doesNotExist ? "Cette taille n'est pas proposÃ©e dans la couleur sÃ©lectionnÃ©e." : size.label}
                         onClick={() => handleSizeSelect(size.label)}
-                        className={`premium-control relative min-h-10 min-w-[72px] border px-4 py-2 text-sm font-semibold leading-none ${
+                        className={`premium-control relative min-h-12 min-w-[82px] border px-4 py-3 text-sm font-semibold leading-none ${
                           isSelected
                             ? "border-black bg-black text-white"
                             : doesNotExist
                             ? "cursor-not-allowed border-neutral-200 bg-neutral-50 text-muted-foreground opacity-50"
+                            : isUnavailable
+                            ? "border-red-200 bg-red-50 text-red-700 hover:border-red-400"
                             : "border-neutral-300 bg-white text-black hover:border-black"
                         }`}
                       >
                         <span className={doesNotExist ? "line-through" : ""}>{size.label}</span>
-                        {exactVariant && exactVariant.stock <= 0 && (
-                          <span className="absolute -right-2 -top-2 rounded-full bg-red-50 px-2 py-0.5 text-[9px] font-black uppercase text-red-600">
+                        {isUnavailable && (
+                          <span className="absolute -right-2 -top-2 rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-black uppercase text-white">
                             Rupture
                           </span>
                         )}
@@ -741,49 +892,97 @@ const Product = () => {
               </div>
             )}
 
-            {(selectedPhysicalDimensions || selectedExpandableDimensions || selectedVolume || selectedWeight) && (
-              <div className="space-y-2 border-y border-border py-4">
+            {false && dimensionOptions.length > 1 && (
+              <div className="grid gap-2 sm:grid-cols-[118px_minmax(0,1fr)] sm:items-start">
+                <p className="pt-2 text-xs font-black uppercase tracking-wide">
+                  {t("product.dimension")}
+                  {getVariantDimensionLabel(selectedVariant) ? (
+                    <span className="mt-1 block text-xs font-semibold normal-case text-muted-foreground">
+                      {getVariantDimensionLabel(selectedVariant)}
+                    </span>
+                  ) : null}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {dimensionOptions.map((dimension) => {
+                    const exactVariant = findVariantBySelection("", selectedColorKey, dimension.label);
+                    const doesNotExist = !exactVariant;
+                    const isUnavailable = Boolean(exactVariant && exactVariant.stock <= 0);
+                    const isSelected = selectedDimensionKey === normalizeVariantKey(dimension.label);
+                    return (
+                      <button
+                        key={`${dimension.label}-${dimension.combinationId}`}
+                        type="button"
+                        aria-pressed={isSelected}
+                        disabled={doesNotExist}
+                        title={doesNotExist ? "Cette dimension n'est pas proposÃ©e dans la couleur sÃ©lectionnÃ©e." : dimension.label}
+                        onClick={() => handleDimensionSelect(dimension.label)}
+                        className={`premium-control relative min-h-9 min-w-[118px] border px-3 py-2 text-sm font-semibold leading-none ${
+                          isSelected
+                            ? "border-black bg-black text-white"
+                            : doesNotExist
+                            ? "cursor-not-allowed border-neutral-200 bg-neutral-50 text-muted-foreground opacity-50"
+                            : isUnavailable
+                            ? "border-red-200 bg-red-50 text-red-700 hover:border-red-400"
+                            : "border-neutral-300 bg-white text-black hover:border-black"
+                        }`}
+                      >
+                        <span className={doesNotExist ? "line-through" : ""}>{dimension.label}</span>
+                        {isUnavailable && (
+                          <span className="absolute -right-2 -top-2 rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-black uppercase text-white">
+                            Rupture
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {false && (selectedPhysicalDimensions || selectedExpandableDimensions || selectedVolume || selectedWeight) && (
+              <div className="space-y-2 border-y border-border py-3">
                 {selectedPhysicalDimensions && (
-                  <p className="text-sm">
-                    <span className="font-black uppercase tracking-wide">{t("product.dimension")}</span>
-                    <span className="ml-3 text-muted-foreground">{selectedPhysicalDimensions}</span>
+                  <p className="grid gap-1 text-sm sm:grid-cols-[118px_minmax(0,1fr)]">
+                    <span className="text-xs font-black uppercase tracking-wide">{t("product.dimension")}</span>
+                    <span className="text-muted-foreground">{selectedPhysicalDimensions}</span>
                   </p>
                 )}
                 {selectedExpandableDimensions && (
-                  <p className="text-sm">
-                    <span className="font-black uppercase tracking-wide">{t("product.expandableDimension")}</span>
-                    <span className="ml-3 text-muted-foreground">{selectedExpandableDimensions}</span>
+                  <p className="grid gap-1 text-sm sm:grid-cols-[118px_minmax(0,1fr)]">
+                    <span className="text-xs font-black uppercase tracking-wide">{t("product.expandableDimension")}</span>
+                    <span className="text-muted-foreground">{selectedExpandableDimensions}</span>
                   </p>
                 )}
                 {selectedVolume && (
-                  <p className="text-sm">
-                    <span className="font-black uppercase tracking-wide">{t("product.volume")}</span>
-                    <span className="ml-3 text-muted-foreground">{selectedVolume}</span>
+                  <p className="grid gap-1 text-sm sm:grid-cols-[118px_minmax(0,1fr)]">
+                    <span className="text-xs font-black uppercase tracking-wide">{t("product.volume")}</span>
+                    <span className="text-muted-foreground">{selectedVolume}</span>
                   </p>
                 )}
                 {selectedWeight && (
-                  <p className="text-sm">
-                    <span className="font-black uppercase tracking-wide">{t("product.weight")}</span>
-                    <span className="ml-3 text-muted-foreground">{selectedWeight}</span>
+                  <p className="grid gap-1 text-sm sm:grid-cols-[118px_minmax(0,1fr)]">
+                    <span className="text-xs font-black uppercase tracking-wide">{t("product.weight")}</span>
+                    <span className="text-muted-foreground">{selectedWeight}</span>
                   </p>
                 )}
               </div>
             )}
 
             {displayColorOptions.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm font-black uppercase tracking-wide">
+              <div className="grid gap-2 sm:grid-cols-[118px_minmax(0,1fr)] sm:items-start">
+                <p className="pt-2 text-xs font-black uppercase tracking-wide">
                   {t("product.color")}
                   {selectedColorName ? (
-                    <span className="ml-3 text-sm font-semibold normal-case text-muted-foreground">
+                    <span className="mt-1 block text-xs font-semibold normal-case text-muted-foreground">
                       {selectedColorName}
                     </span>
                   ) : null}
                 </p>
                 <div className="flex flex-wrap items-center gap-3">
                   {displayColorOptions.map((color) => {
-                    const exactVariant = color.inferred ? undefined : findVariantBySelection(selectedSize, color.key);
+                    const exactVariant = color.inferred ? undefined : findBestVariantForColor(color.key);
                     const doesNotExist = !color.inferred && !exactVariant;
+                    const isUnavailable = Boolean(exactVariant && exactVariant.stock <= 0);
                     const isSelected = activeColorKey === color.key;
                     return (
                       <button
@@ -791,7 +990,7 @@ const Product = () => {
                         type="button"
                         aria-pressed={isSelected}
                         disabled={doesNotExist}
-                        title={doesNotExist ? "Cette couleur n'est pas proposée dans la taille sélectionnée." : color.name}
+                        title={doesNotExist ? "Cette couleur n'est pas proposÃ©e dans la taille sÃ©lectionnÃ©e." : color.name}
                         onClick={() => {
                           if (doesNotExist) return;
                           if (color.inferred) {
@@ -802,15 +1001,18 @@ const Product = () => {
                           setSelectedInferredColorKey("");
                           handleColorSelect(color.key);
                         }}
-                        className={`premium-control relative flex h-11 w-11 items-center justify-center rounded-full border bg-white ${
-                          isSelected ? "border-black shadow-[0_0_0_4px_rgba(0,0,0,0.06)]" : "border-neutral-300"
+                        className={`premium-control relative flex h-10 w-10 items-center justify-center rounded-full border bg-white ${
+                          isSelected ? "border-black shadow-[0_0_0_4px_rgba(0,0,0,0.06)]" : isUnavailable ? "border-red-300" : "border-neutral-300"
                         } ${doesNotExist ? "cursor-not-allowed opacity-35" : ""}`}
                       >
                         <span
-                          className="block h-7 w-7 rounded-full border border-black/10"
+                          className="block h-6 w-6 rounded-full border border-black/10"
                           style={{ backgroundColor: color.hex }}
                         />
-                        {exactVariant && exactVariant.stock <= 0 && <span className="absolute h-px w-10 rotate-45 bg-red-600" />}
+                        {isUnavailable && <span className="absolute h-px w-10 rotate-45 bg-red-600" />}
+                        {isUnavailable && (
+                          <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border border-white bg-red-600" />
+                        )}
                         {doesNotExist && <span className="absolute h-px w-10 rotate-45 bg-neutral-500" />}
                       </button>
                     );
@@ -875,7 +1077,7 @@ const Product = () => {
               </button>
             </div>
 
-            <div className="grid gap-3 border-t border-border pt-4 sm:grid-cols-3">
+            <div className="grid gap-2 border-t border-border pt-3 sm:grid-cols-3">
               <div className="flex items-center gap-3">
                 <Truck className="h-4 w-4 text-muted-foreground" />
                 <p className="text-xs font-semibold leading-4">{t("product.freeShipping")}</p>
@@ -889,59 +1091,96 @@ const Product = () => {
                 <p className="text-xs font-semibold leading-4">{t("product.worldWarranty")}</p>
               </div>
             </div>
+
+            {(product.description || specificationRows.length > 0) && (
+              <section className="border-t border-border pt-4">
+                <button
+                  type="button"
+                  onClick={() => setDetailsOpen((open) => !open)}
+                  className="flex w-full items-center justify-between py-2 text-left"
+                  aria-expanded={detailsOpen}
+                >
+                  <span className="text-base font-black uppercase tracking-tight">D&eacute;tails du produit</span>
+                  {detailsOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                </button>
+
+                {detailsOpen && (
+                  <div className="mt-3 bg-neutral-50">
+                    {product.description && (
+                      <div className="border-b border-neutral-200 px-5 py-5">
+                        <p className="max-w-[36rem] text-sm leading-7 text-muted-foreground">
+                          {product.description}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="bg-neutral-100 px-5 py-4 text-sm font-black uppercase tracking-wide text-muted-foreground">
+                      Specifications
+                    </div>
+                    <dl className="divide-y divide-neutral-200 px-5">
+                      {specificationRows.map((item, index) => (
+                        <div
+                          key={`${item.label}-${item.value}-${index}`}
+                          className="grid gap-3 py-3.5 text-sm sm:grid-cols-[175px_minmax(0,1fr)]"
+                        >
+                          <dt className="font-semibold text-muted-foreground">{item.label}</dt>
+                          <dd className="leading-6 text-muted-foreground">{item.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                )}
+              </section>
+            )}
           </div>
         </div>
       </div>
 
-      {(product.description || guaranteeCharacteristics.length > 0 || technicalCharacteristics.length > 0) && (
-        <section className="samsonite-container border-t border-border py-8">
-          <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
-            <div>
-              <h2 className="text-xl font-black uppercase tracking-tight">Détails du produit</h2>
-              {product.description && (
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">{product.description}</p>
-              )}
-            </div>
-            <div className="space-y-8">
-              {guaranteeCharacteristics.length > 0 && (
-                <section className="space-y-2">
-                  <h3 className="text-sm font-black uppercase tracking-wide">{t("product.warranty")}</h3>
-                  <dl className="divide-y divide-border border-y border-border">
-                    {guaranteeCharacteristics.map((item, index) => (
-                      <div
-                        key={`${item.label}-${index}`}
-                        className="grid gap-1 py-3 text-sm sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-6"
-                      >
-                        <dt className="font-black uppercase tracking-wide text-foreground">{item.label}</dt>
-                        <dd className="leading-6 text-muted-foreground">{item.value}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </section>
-              )}
 
-              {technicalCharacteristics.length > 0 && (
-                <section className="space-y-2">
-                  <h3 className="text-sm font-black uppercase tracking-wide">{t("product.specs")}</h3>
-                  <dl className="divide-y divide-border border-y border-border">
-                    {technicalCharacteristics.map((item, index) => (
-                      <div
-                        key={`${item.label}-${index}`}
-                        className="grid gap-1 py-3 text-sm sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-6"
-                      >
-                        <dt className="font-black uppercase tracking-wide text-foreground">{item.label}</dt>
-                        <dd className="leading-6 text-muted-foreground">{item.value}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </section>
-              )}
+      <Dialog open={cartConfirmOpen} onOpenChange={setCartConfirmOpen}>
+        <DialogContent className="max-w-md rounded-none border-0 p-0 sm:rounded-none">
+          <div className="border-b border-border px-6 py-5">
+            <DialogTitle className="text-xl font-black uppercase tracking-tight">Article ajouté au panier</DialogTitle>
+            <DialogDescription className="mt-1 text-sm text-muted-foreground">
+              Votre sélection a bien été ajoutée.
+            </DialogDescription>
+          </div>
+          <div className="flex gap-4 px-6 py-5">
+            <div className="h-24 w-24 flex-shrink-0 bg-white">
+              <img
+                src={galleryImages[selectedImageIdx] || product.images[0] || "/placeholder.svg"}
+                alt={product.name}
+                className="h-full w-full object-contain"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-black uppercase leading-5">{product.name}</p>
+              <p className="mt-1 text-lg font-black text-samsonite-teal">{formatTnd(selectedPrice)}</p>
+              <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                {selectedVariant?.size && <p>Taille: {selectedVariant.size}</p>}
+                {selectedVariant?.color?.name && <p>Couleur: {selectedVariant.color.name}</p>}
+                <p>Quantité: {quantity}</p>
+              </div>
             </div>
           </div>
-        </section>
-      )}
-
-      {similarProducts.length > 0 && (
+          <div className="grid gap-3 border-t border-border px-6 py-5 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setCartConfirmOpen(false)}
+              className="border border-border px-4 py-3 text-sm font-black uppercase tracking-wide transition-colors hover:bg-neutral-50"
+            >
+              Continuer mes achats
+            </button>
+            <Link
+              to="/panier"
+              onClick={() => setCartConfirmOpen(false)}
+              className="flex items-center justify-center bg-black px-4 py-3 text-sm font-black uppercase tracking-wide text-white transition-colors hover:bg-black/85"
+            >
+              Voir mon panier
+            </Link>
+          </div>
+        </DialogContent>
+      </Dialog>`r`n      {similarProducts.length > 0 && (
         <section className="samsonite-container py-10 border-t border-border">
           <h2 className="text-xl font-bold tracking-wider uppercase mb-6">{t("product.similar")}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -956,3 +1195,4 @@ const Product = () => {
 };
 
 export default Product;
+

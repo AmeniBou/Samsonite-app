@@ -5,6 +5,7 @@ import {
   ChevronUp,
   Download,
   Eye,
+  FileText,
   Filter,
   Mail,
   MapPin,
@@ -29,9 +30,9 @@ import {
 
 const statusLabels: Record<OrderStatus, string> = {
   new: "Nouvelle",
-  confirmed: "Confirmee",
-  fulfilled: "Livree",
-  cancelled: "Annulee",
+  confirmed: "Confirmée",
+  fulfilled: "Livrée",
+  cancelled: "Annulée",
 };
 
 const statusClasses: Record<OrderStatus, string> = {
@@ -48,7 +49,7 @@ const shippingLabels: Record<ShippingMethod, string> = {
 };
 
 const paymentLabels: Record<PaymentMethod, string> = {
-  cash_on_delivery: "Paiement a la livraison",
+  cash_on_delivery: "Paiement à la livraison",
   bank_transfer: "Virement bancaire",
 };
 
@@ -78,6 +79,8 @@ const AdminOrders = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [shippingFilter, setShippingFilter] = useState<ShippingFilter>("all");
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("dateDesc");
   const [selectedOrder, setSelectedOrder] = useState<StoredOrder | null>(null);
@@ -118,6 +121,9 @@ const AdminOrders = () => {
     const filtered = orders.filter((order) => {
       const customer = `${order.customer.firstName} ${order.customer.lastName}`.toLowerCase();
       const itemNames = order.items.map((item) => item.name).join(" ").toLowerCase();
+      const orderDate = new Date(order.createdAt);
+      const fromDate = dateFrom ? new Date(`${dateFrom}T00:00:00`) : null;
+      const toDate = dateTo ? new Date(`${dateTo}T23:59:59`) : null;
       const matchesSearch =
         !query ||
         order.id.toLowerCase().includes(query) ||
@@ -131,7 +137,9 @@ const AdminOrders = () => {
         matchesSearch &&
         (statusFilter === "all" || order.status === statusFilter) &&
         (shippingFilter === "all" || order.shippingMethod === shippingFilter) &&
-        (paymentFilter === "all" || order.paymentMethod === paymentFilter)
+        (paymentFilter === "all" || order.paymentMethod === paymentFilter) &&
+        (!fromDate || orderDate >= fromDate) &&
+        (!toDate || orderDate <= toDate)
       );
     });
 
@@ -141,7 +149,7 @@ const AdminOrders = () => {
       if (sortKey === "totalAsc") return a.totals.total - b.totals.total;
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [orders, paymentFilter, search, shippingFilter, sortKey, statusFilter]);
+  }, [dateFrom, dateTo, orders, paymentFilter, search, shippingFilter, sortKey, statusFilter]);
 
   const handleStatusChange = async (id: string, status: OrderStatus) => {
     try {
@@ -162,6 +170,8 @@ const AdminOrders = () => {
     statusFilter !== "all",
     shippingFilter !== "all",
     paymentFilter !== "all",
+    dateFrom,
+    dateTo,
     sortKey !== "dateDesc",
   ].filter(Boolean).length;
   const hasActiveFilters = activeFilterCount > 0;
@@ -175,6 +185,8 @@ const AdminOrders = () => {
     setStatusFilter("all");
     setShippingFilter("all");
     setPaymentFilter("all");
+    setDateFrom("");
+    setDateTo("");
     setSortKey("dateDesc");
     loadOrders("");
   };
@@ -259,6 +271,75 @@ const AdminOrders = () => {
     printWindow.document.write(buildOrderPrintHtml(order));
     printWindow.document.close();
   };
+
+  const buildOrdersListPrintHtml = () => {
+    const rows = filteredOrders
+      .map(
+        (order) => `
+          <tr>
+            <td>${htmlEscape(order.id)}<br><small>${htmlEscape(statusLabels[order.status])}</small></td>
+            <td>${htmlEscape(formatOrderDate(order.createdAt))}</td>
+            <td>${htmlEscape(order.customer.firstName)} ${htmlEscape(order.customer.lastName)}<br><small>${htmlEscape(order.customer.phone)}</small></td>
+            <td>${htmlEscape(shippingLabels[order.shippingMethod])}</td>
+            <td>${htmlEscape(paymentLabels[order.paymentMethod])}</td>
+            <td>${order.items.reduce((sum, item) => sum + item.quantity, 0)}</td>
+            <td>${formatTnd(order.totals.total)}</td>
+          </tr>`
+      )
+      .join("");
+    const total = filteredOrders.reduce((sum, order) => sum + order.totals.total, 0);
+
+    return `<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Export commandes Samsonite</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #111; margin: 32px; }
+    header { border-bottom: 2px solid #111; padding-bottom: 16px; margin-bottom: 22px; }
+    h1 { margin: 0; font-size: 24px; letter-spacing: .04em; text-transform: uppercase; }
+    .muted { color: #666; font-size: 12px; }
+    .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .summary div { border: 1px solid #ddd; padding: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { border-bottom: 1px solid #ddd; padding: 9px; text-align: left; vertical-align: top; }
+    th:last-child, td:last-child { text-align: right; }
+    small { color: #666; }
+    @media print { body { margin: 14mm; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Export commandes</h1>
+    <p class="muted">Samsonite Tunisie - généré le ${htmlEscape(formatOrderDate(new Date().toISOString()))}</p>
+  </header>
+  <section class="summary">
+    <div><strong>${filteredOrders.length}</strong><br><span class="muted">Commandes affichées</span></div>
+    <div><strong>${formatTnd(total)}</strong><br><span class="muted">Total filtré</span></div>
+    <div><strong>${htmlEscape(dateFrom || "Début")} - ${htmlEscape(dateTo || "Aujourd'hui")}</strong><br><span class="muted">Période</span></div>
+  </section>
+  <table>
+    <thead>
+      <tr><th>Référence</th><th>Date</th><th>Client</th><th>Livraison</th><th>Paiement</th><th>Articles</th><th>Total</th></tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <script>window.onload = () => { window.print(); };</script>
+</body>
+</html>`;
+  };
+
+  const printOrdersList = () => {
+    const printWindow = window.open("", "_blank", "width=1100,height=900");
+    if (!printWindow) {
+      setError("Impossible d'ouvrir la fenêtre d'impression. Vérifie le bloqueur de pop-up.");
+      return;
+    }
+    printWindow.document.open();
+    printWindow.document.write(buildOrdersListPrintHtml());
+    printWindow.document.close();
+  };
+
   const exportOrders = () => {
     const rows = filteredOrders.map((order) => [
       order.id,
@@ -316,6 +397,15 @@ const AdminOrders = () => {
           >
             <Download className="h-4 w-4" />
             Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={printOrdersList}
+            disabled={filteredOrders.length === 0}
+            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <FileText className="h-4 w-4" />
+            Export PDF
           </button>
           <button
             type="button"
@@ -443,6 +533,26 @@ const AdminOrders = () => {
             </label>
 
             <label className={filterLabelClass}>
+              Date début
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(event) => setDateFrom(event.target.value)}
+                className={filterControlClass}
+              />
+            </label>
+
+            <label className={filterLabelClass}>
+              Date fin
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(event) => setDateTo(event.target.value)}
+                className={filterControlClass}
+              />
+            </label>
+
+            <label className={filterLabelClass}>
               Tri
               <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)} className={filterControlClass}>
                 <option value="dateDesc">Plus recentes</option>
@@ -470,6 +580,12 @@ const AdminOrders = () => {
             )}
             {paymentFilter !== "all" && (
               <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Paiement: {paymentLabels[paymentFilter]}</span>
+            )}
+            {dateFrom && (
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Depuis: {dateFrom}</span>
+            )}
+            {dateTo && (
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Jusqu'au: {dateTo}</span>
             )}
             {sortKey !== "dateDesc" && (
               <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Tri personnalise</span>
@@ -632,8 +748,8 @@ const OrderDetailPanel = ({
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => onPrint(order)} className="inline-flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-xs font-semibold transition-colors hover:bg-gray-50">
-            <Download className="h-4 w-4" />
-            PDF / imprimer
+            <FileText className="h-4 w-4" />
+            Export PDF
           </button>
           <button type="button" onClick={onClose} className="rounded-full border border-gray-200 p-2 transition-colors hover:bg-gray-50">
             <X className="h-4 w-4" />
@@ -660,6 +776,27 @@ const OrderDetailPanel = ({
             <InfoLine icon={Truck} label="Livraison" value={shippingLabels[order.shippingMethod]} />
             <InfoLine icon={PackageCheck} label="Paiement" value={paymentLabels[order.paymentMethod]} />
           </div>
+        </section>
+
+        <section className="rounded-lg border border-gray-200 p-4">
+          <h3 className="mb-4 font-bold text-gray-900">Historique du statut</h3>
+          {order.statusHistory && order.statusHistory.length > 0 ? (
+            <div className="space-y-3">
+              {order.statusHistory.map((entry) => (
+                <div key={entry.id} className="relative border-l-2 border-gray-200 pl-4">
+                  <span className="absolute -left-[7px] top-1 h-3 w-3 rounded-full border-2 border-white bg-gray-900" />
+                  <p className="text-sm font-bold text-gray-900">
+                    {entry.previousStatus ? `${statusLabels[entry.previousStatus as OrderStatus] || entry.previousStatus} -> ` : ""}
+                    {statusLabels[entry.newStatus] || entry.newStatus}
+                  </p>
+                  <p className="text-xs text-gray-500">{formatOrderDate(entry.createdAt)}</p>
+                  {entry.note && <p className="mt-1 text-sm text-gray-600">{entry.note}</p>}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">Aucun historique enregistré pour cette commande.</p>
+          )}
         </section>
 
         <section className="rounded-lg border border-gray-200 p-4">

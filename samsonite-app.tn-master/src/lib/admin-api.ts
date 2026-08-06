@@ -60,6 +60,10 @@ export interface AdminVariant {
     width?: string;
     height?: string;
     depth?: string;
+    isExpandable?: boolean;
+    expandedWidth?: string;
+    expandedHeight?: string;
+    expandedDepth?: string;
     volume?: string;
     price?: number;
     stockInitial?: number;
@@ -256,4 +260,45 @@ export const deleteCategory = async (id: number): Promise<{ success: boolean; er
     const result = await res.json();
     if (result.success) notifyCatalogUpdated();
     return result;
+};
+
+// ---------------------------------------------------------------------------
+// Data quality
+// ---------------------------------------------------------------------------
+
+export type DataQualitySeverity = "critical" | "warning" | "info";
+export type DataQualityEntityType = "product" | "variant" | "category" | "brand" | "order" | "contact";
+
+export interface DataQualityIssue {
+    id: string;
+    severity: DataQualitySeverity;
+    entityType: DataQualityEntityType;
+    entityId?: number;
+    entityName?: string;
+    title: string;
+    description: string;
+    fixUrl?: string;
+}
+
+export interface DataQualityReport {
+    generatedAt: string;
+    summary: {
+        products: number;
+        variants: number;
+        categories: number;
+        brands: number;
+        orders: number;
+        contactMessages: number;
+        mainMenuCategories: number;
+        criticalIssues: number;
+        warningIssues: number;
+        infoIssues: number;
+    };
+    issues: DataQualityIssue[];
+}
+
+export const fetchDataQualityReport = async (): Promise<DataQualityReport> => {
+    const res = await fetch(`${API_BASE}/admin/data-quality`, { headers: authHeaders() });
+    if (!res.ok) throw new Error("Erreur chargement qualite des donnees");
+    return res.json();
 };

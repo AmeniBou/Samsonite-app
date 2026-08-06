@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import { requireAuth } from "../middleware/auth.js";
+import { prisma } from "../db/prisma.js";
 import {
     getMappedAdminProducts,
     getMappedAdminProduct,
@@ -25,8 +26,379 @@ const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "ima
 const allowedImageExtensions = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"]);
 const maxImageBytes = 5 * 1024 * 1024;
 
+type QualitySeverity = "critical" | "warning" | "info";
+type QualityEntityType = "product" | "variant" | "category" | "brand" | "order" | "contact";
+
+const hasBrokenText = (value?: string | null) => Boolean(value && /Ã|Â|â€|&amp;|&#/.test(value));
+const isBlank = (value?: string | number | null) => value === null || value === undefined || String(value).trim() === "";
+
+const qualityIssue = (
+    issues: Array<{
+        id: string;
+        severity: QualitySeverity;
+        entityType: QualityEntityType;
+        entityId?: number;
+        entityName?: string;
+        title: string;
+        description: string;
+        fixUrl?: string;
+    }>,
+    issue: {
+        severity: QualitySeverity;
+        entityType: QualityEntityType;
+        entityId?: number;
+        entityName?: string;
+        title: string;
+        description: string;
+        fixUrl?: string;
+    }
+) => {
+    issues.push({
+        id: `${issue.entityType}-${issue.entityId || "global"}-${issues.length + 1}`,
+        ...issue,
+    });
+};
+
 // All routes here require authentication
 router.use(requireAuth);
+
+// ---------------------------------------------------------------------------
+// GET /api/admin/data-quality - database consistency report
+// ---------------------------------------------------------------------------
+
+router.get("/data-quality", async (_req: Request, res: Response): Promise<void> => {
+    try {
+        const now = new Date();
+        const [products, categories, brands, orders, contactMessages] = await Promise.all([
+            prisma.product.findMany({
+                include: {
+                    brand: true,
+                    images: true,
+                    features: true,
+                    variants: true,
+                    categories: { include: { category: true } },
+                },
+                orderBy: { id: "asc" },
+            }),
+            prisma.category.findMany({
+                include: {
+                    parent: true,
+                    children: true,
+                    products: true,
+                },
+                orderBy: { name: "asc" },
+            }),
+            prisma.brand.findMany({ include: { _count: { select: { products: true } } }, orderBy: { name: "asc" } }),
+            prisma.order.findMany({
+                include: { items: true, statusHistory: true },
+                orderBy: { createdAt: "desc" },
+            }),
+            prisma.contactMessage.findMany({ orderBy: { createdAt: "desc" } }),
+        ]);
+
+        const issues: Array<{
+            id: string;
+            severity: QualitySeverity;
+            entityType: QualityEntityType;
+            entityId?: number;
+            entityName?: string;
+            title: string;
+            description: string;
+            fixUrl?: string;
+        }> = [];
+
+        const mainMenuCategories = categories.filter(
+            (category) => !category.parentId && category.isActive && category.showInMainMenu
+        );
+
+        if (mainMenuCategories.length > 7) {
+            qualityIssue(issues, {
+                severity: "critical",
+                entityType: "category",
+                title: "Trop de categories dans le menu principal",
+                description: `${mainMenuCategories.length} categories principales sont marquees pour le menu, maximum autorise: 7.`,
+                fixUrl: "/admin/categories",
+            });
+        }
+
+        categories.forEach((category) => {
+            if (hasBrokenText(category.name) || hasBrokenText(category.slug)) {
+                qualityIssue(issues, {
+                    severity: "warning",
+                    entityType: "category",
+                    entityId: category.id,
+                    entityName: category.name,
+                    title: "Texte categorie a nettoyer",
+                    description: "Le nom ou le slug contient des caracteres encodes ou casses.",
+                    fixUrl: "/admin/categories",
+                });
+            }
+            if (category.parentId && category.showInMainMenu) {
+                qualityIssue(issues, {
+                    severity: "warning",
+                    entityType: "category",
+                    entityId: category.id,
+                    entityName: category.name,
+                    title: "Sous-categorie marquee menu principal",
+                    description: "Une sous-categorie doit rester sous Explorer ou sous sa categorie parent.",
+                    fixUrl: "/admin/categories",
+                });
+            }
+            if (category.isActive && category.products.length === 0 && category.children.length === 0) {
+                qualityIssue(issues, {
+                    severity: "info",
+                    entityType: "category",
+                    entityId: category.id,
+                    entityName: category.name,
+                    title: "Categorie active vide",
+                    description: "Cette categorie est visible mais ne contient aucun produit ni sous-categorie.",
+                    fixUrl: "/admin/categories",
+                });
+            }
+        });
+
+        brands.forEach((brand) => {
+            if (brand._count.products === 0) {
+                qualityIssue(issues, {
+                    severity: "info",
+                    entityType: "brand",
+                    entityId: brand.id,
+                    entityName: brand.name,
+                    title: "Marque sans produits",
+                    description: "Cette marque existe en base mais aucun produit ne lui est associe.",
+                });
+            }
+        });
+
+        products.forEach((product) => {
+            const fixUrl = `/admin/produits/modifier/${product.id}`;
+            const productName = product.name || `Produit #${product.id}`;
+
+            if (isBlank(product.name)) {
+                qualityIssue(issues, {
+                    severity: "critical",
+                    entityType: "product",
+                    entityId: product.id,
+                    entityName: productName,
+                    title: "Produit sans nom",
+                    description: "Le nom est obligatoire pour afficher correctement le catalogue.",
+                    fixUrl,
+                });
+            }
+            if (hasBrokenText(product.name) || hasBrokenText(product.description) || hasBrokenText(product.sku)) {
+                qualityIssue(issues, {
+                    severity: "warning",
+                    entityType: "product",
+                    entityId: product.id,
+                    entityName: productName,
+                    title: "Texte produit a nettoyer",
+                    description: "Le produit contient probablement des accents ou entites HTML mal encodes.",
+                    fixUrl,
+                });
+            }
+            if (!product.brandId || !product.brand) {
+                qualityIssue(issues, {
+                    severity: "critical",
+                    entityType: "product",
+                    entityId: product.id,
+                    entityName: productName,
+                    title: "Produit sans marque",
+                    description: "La marque est obligatoire pour les filtres, les badges et la coherence catalogue.",
+                    fixUrl,
+                });
+            }
+            if (product.categories.length === 0) {
+                qualityIssue(issues, {
+                    severity: "critical",
+                    entityType: "product",
+                    entityId: product.id,
+                    entityName: productName,
+                    title: "Produit sans categorie",
+                    description: "Le produit ne peut pas etre retrouve correctement dans les pages categories.",
+                    fixUrl,
+                });
+            }
+            if (Number(product.price) <= 0) {
+                qualityIssue(issues, {
+                    severity: "critical",
+                    entityType: "product",
+                    entityId: product.id,
+                    entityName: productName,
+                    title: "Prix produit invalide",
+                    description: "Le prix principal doit etre superieur a 0.",
+                    fixUrl,
+                });
+            }
+            if (product.images.length === 0) {
+                qualityIssue(issues, {
+                    severity: "warning",
+                    entityType: "product",
+                    entityId: product.id,
+                    entityName: productName,
+                    title: "Produit sans image",
+                    description: "Aucune image globale n'est associee au produit.",
+                    fixUrl,
+                });
+            }
+            if (product.variants.length === 0) {
+                qualityIssue(issues, {
+                    severity: "critical",
+                    entityType: "product",
+                    entityId: product.id,
+                    entityName: productName,
+                    title: "Produit sans variante",
+                    description: "Chaque produit doit avoir au moins une variante avec prix, stock et dimensions.",
+                    fixUrl,
+                });
+            }
+
+            const seenVariantKeys = new Set<string>();
+            product.variants.forEach((variant) => {
+                const key = [
+                    variant.colorName || "",
+                    variant.colorHex || "",
+                    variant.size || "",
+                    variant.width || "",
+                    variant.height || "",
+                    variant.depth || "",
+                    variant.volume || "",
+                    variant.weight || "",
+                ].join("|").toLowerCase();
+
+                if (seenVariantKeys.has(key)) {
+                    qualityIssue(issues, {
+                        severity: "warning",
+                        entityType: "variant",
+                        entityId: variant.id,
+                        entityName: productName,
+                        title: "Variante dupliquee",
+                        description: "Une variante avec la meme couleur, taille et dimensions existe deja sur ce produit.",
+                        fixUrl,
+                    });
+                }
+                seenVariantKeys.add(key);
+
+                const missingFields = [
+                    isBlank(variant.colorName) ? "couleur" : "",
+                    isBlank(variant.colorHex) ? "code couleur" : "",
+                    isBlank(variant.width) ? "largeur" : "",
+                    isBlank(variant.height) ? "hauteur" : "",
+                    isBlank(variant.depth) ? "profondeur" : "",
+                    isBlank(variant.volume) ? "volume" : "",
+                    isBlank(variant.weight) ? "poids" : "",
+                    variant.price === null || variant.price === undefined || Number(variant.price) <= 0 ? "prix" : "",
+                    variant.stock === null || variant.stock === undefined || variant.stock < 0 ? "stock" : "",
+                    variant.images.length === 0 ? "images" : "",
+                ].filter(Boolean);
+
+                if (missingFields.length > 0) {
+                    qualityIssue(issues, {
+                        severity: missingFields.includes("prix") || missingFields.includes("stock") ? "critical" : "warning",
+                        entityType: "variant",
+                        entityId: variant.id,
+                        entityName: productName,
+                        title: "Variante incomplete",
+                        description: `Champs manquants: ${missingFields.join(", ")}.`,
+                        fixUrl,
+                    });
+                }
+            });
+        });
+
+        orders.forEach((order) => {
+            if (order.createdAt > now || order.updatedAt > now) {
+                qualityIssue(issues, {
+                    severity: "critical",
+                    entityType: "order",
+                    entityId: order.id,
+                    entityName: order.reference,
+                    title: "Commande avec date future",
+                    description: "La date de creation ou de modification est posterieure a la date actuelle.",
+                    fixUrl: "/admin/commandes",
+                });
+            }
+            if (order.updatedAt < order.createdAt) {
+                qualityIssue(issues, {
+                    severity: "critical",
+                    entityType: "order",
+                    entityId: order.id,
+                    entityName: order.reference,
+                    title: "Commande avec dates incoherentes",
+                    description: "La date de modification est anterieure a la date de creation.",
+                    fixUrl: "/admin/commandes",
+                });
+            }
+            if (order.items.length === 0) {
+                qualityIssue(issues, {
+                    severity: "warning",
+                    entityType: "order",
+                    entityId: order.id,
+                    entityName: order.reference,
+                    title: "Commande sans articles",
+                    description: "Cette commande existe mais ne contient aucune ligne produit.",
+                    fixUrl: "/admin/commandes",
+                });
+            }
+        });
+
+        contactMessages.forEach((message) => {
+            if (message.createdAt > now || message.updatedAt > now) {
+                qualityIssue(issues, {
+                    severity: "critical",
+                    entityType: "contact",
+                    entityId: message.id,
+                    entityName: message.subject,
+                    title: "Message avec date future",
+                    description: "La date de creation ou de modification est posterieure a la date actuelle.",
+                    fixUrl: "/admin/messages",
+                });
+            }
+            if (message.updatedAt < message.createdAt) {
+                qualityIssue(issues, {
+                    severity: "critical",
+                    entityType: "contact",
+                    entityId: message.id,
+                    entityName: message.subject,
+                    title: "Message avec dates incoherentes",
+                    description: "La date de modification est anterieure a la date de creation.",
+                    fixUrl: "/admin/messages",
+                });
+            }
+            if (message.attachmentName && !message.attachmentUrl) {
+                qualityIssue(issues, {
+                    severity: "warning",
+                    entityType: "contact",
+                    entityId: message.id,
+                    entityName: message.subject,
+                    title: "Piece jointe sans URL",
+                    description: "Le nom de fichier existe mais le lien vers le document est absent.",
+                    fixUrl: "/admin/messages",
+                });
+            }
+        });
+
+        res.json({
+            generatedAt: now.toISOString(),
+            summary: {
+                products: products.length,
+                variants: products.reduce((total, product) => total + product.variants.length, 0),
+                categories: categories.length,
+                brands: brands.length,
+                orders: orders.length,
+                contactMessages: contactMessages.length,
+                mainMenuCategories: mainMenuCategories.length,
+                criticalIssues: issues.filter((issue) => issue.severity === "critical").length,
+                warningIssues: issues.filter((issue) => issue.severity === "warning").length,
+                infoIssues: issues.filter((issue) => issue.severity === "info").length,
+            },
+            issues,
+        });
+    } catch (err) {
+        console.error("Erreur rapport qualite donnees:", err);
+        const detail = err instanceof Error ? err.message : "Erreur inconnue";
+        res.status(500).json({ error: "Impossible de generer le rapport qualite", detail });
+    }
+});
 
 // ---------------------------------------------------------------------------
 // GET /api/admin/products - list all products (for admin table)
@@ -260,7 +632,7 @@ router.post("/products", async (req: Request, res: Response): Promise<void> => {
         quantity?: number | string;
         images?: string[];
         features?: Array<{ label: string; value: string }>;
-        variants?: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
+        variants?: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; isExpandable?: boolean; expandedWidth?: string | number; expandedHeight?: string | number; expandedDepth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
     };
 
     const numericPrice = typeof price === "string" ? parseFloat(price) : price;
@@ -350,7 +722,7 @@ router.put("/products/:id", async (req: Request, res: Response): Promise<void> =
         quantity: number | string;
         images: string[];
         features: Array<{ label: string; value: string }>;
-        variants: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
+        variants: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; isExpandable?: boolean; expandedWidth?: string | number; expandedHeight?: string | number; expandedDepth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
     }>;
 
     const normalizedFields = { ...fields } as {

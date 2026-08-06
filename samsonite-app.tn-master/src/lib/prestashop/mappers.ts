@@ -216,8 +216,18 @@ export const mapPSProductToDisplay = (
     const width = combination.width?.trim();
     const height = combination.height?.trim();
     const depth = combination.depth?.trim();
+    const expandedWidth = combination.expandedWidth?.trim();
+    const expandedHeight = combination.expandedHeight?.trim();
+    const expandedDepth = combination.expandedDepth?.trim();
     const richDimensions =
       width && height && depth ? `${height} x ${width} x ${depth} cm` : undefined;
+    const richExtensibleDimensions =
+      (combination.isExpandable || expandedWidth || expandedHeight || expandedDepth) &&
+      expandedWidth &&
+      expandedHeight &&
+      expandedDepth
+        ? `${expandedHeight} x ${expandedWidth} x ${expandedDepth} cm`
+        : undefined;
 
     return {
       combinationId,
@@ -230,11 +240,15 @@ export const mapPSProductToDisplay = (
         (defaultCombinationId > 0 && combinationId === defaultCombinationId),
       size: combination.size || sizeOption?.name,
       dimensions: richDimensions || dimensionOption?.name,
-      extensibleDimensions: extensibleDimensionOption?.name,
+      extensibleDimensions: richExtensibleDimensions || extensibleDimensionOption?.name,
       weight: combination.weight || weightOption?.name,
       width,
       height,
       depth,
+      isExpandable: Boolean(combination.isExpandable || richExtensibleDimensions),
+      expandedWidth,
+      expandedHeight,
+      expandedDepth,
       volume: combination.volume || volumeOption?.name,
       color:
         colorHex && (combination.colorName || colorOption)

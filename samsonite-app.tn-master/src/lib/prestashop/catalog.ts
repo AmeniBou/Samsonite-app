@@ -138,6 +138,7 @@ export const fetchDisplayCategories = async (): Promise<CategoryDisplay[]> => {
       slug: group.slug,
       description: node?.description,
       image: node ? getCategoryImageUrl(node.id) : undefined,
+      isActive: node?.active ?? true,
       showInMainMenu: node?.showInMainMenu ?? true,
       children,
     };
@@ -160,6 +161,7 @@ export const fetchDisplayCategories = async (): Promise<CategoryDisplay[]> => {
         slug: node.slug,
         description: node.description,
         image: getCategoryImageUrl(node.id),
+        isActive: node.active,
         showInMainMenu: node.showInMainMenu,
         children,
       };
@@ -173,6 +175,7 @@ export const fetchDisplayCategories = async (): Promise<CategoryDisplay[]> => {
       slug: node.slug,
       description: node.description,
       image: getCategoryImageUrl(node.id),
+      isActive: node.active,
       showInMainMenu: node.showInMainMenu,
       children: [],
     }));

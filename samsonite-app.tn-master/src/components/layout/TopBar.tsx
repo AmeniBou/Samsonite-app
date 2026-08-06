@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Truck, RotateCcw, Mail } from "lucide-react";
+import { Truck, PackageCheck, Mail } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 
 const TopBar = () => {
@@ -13,13 +13,13 @@ const TopBar = () => {
           <span>{t("top.freeShipping")}</span>
         </Link>
         <Link to="/retours" className="flex items-center gap-1.5 hover:underline">
-          <RotateCcw className="h-3.5 w-3.5" />
+          <PackageCheck className="h-3.5 w-3.5" />
           <span>{t("top.freeReturns")}</span>
         </Link>
-        <Link to="/newsletter" className="flex items-center gap-1.5 hover:underline">
+        <Link to="/nous-contacter" className="flex items-center gap-1.5 hover:underline">
           <Mail className="h-3.5 w-3.5" />
           <span>
-            {t("top.community")} <em className="not-italic font-semibold">{t("top.gift")}</em>
+            {t("top.community")}
           </span>
         </Link>
       </div>

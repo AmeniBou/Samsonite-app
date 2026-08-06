@@ -34,6 +34,7 @@ export interface StoredOrder {
   id: string;
   databaseId?: number;
   createdAt: string;
+  updatedAt?: string;
   status: OrderStatus;
   shippingMethod: ShippingMethod;
   paymentMethod: PaymentMethod;
@@ -53,6 +54,13 @@ export interface StoredOrder {
     shipping: number;
     total: number;
   };
+  statusHistory?: Array<{
+    id: number;
+    previousStatus?: string;
+    newStatus: OrderStatus;
+    note?: string;
+    createdAt: string;
+  }>;
 }
 
 export interface CreateOrderInput {
