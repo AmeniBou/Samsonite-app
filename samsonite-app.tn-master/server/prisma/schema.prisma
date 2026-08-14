@@ -67,7 +67,7 @@ model Category {
 
   name String @unique
 
-  slug String?
+  slug String? @unique
 
   isActive Boolean @default(true)
 

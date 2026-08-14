@@ -379,15 +379,43 @@ const ensureCategoryParent = async (parentId: number | null) => {
   if (!parentId) return null;
   const parent = await prisma.category.findUnique({ where: { id: parentId } });
   if (!parent) {
-    throw new Error(`Categorie parente introuvable: ${parentId}`);
+    throw new Error(`Catégorie parente introuvable: ${parentId}`);
   }
   if (parent.parentId) {
-    throw new Error("Une sous-categorie ne peut pas devenir categorie parente");
+    throw new Error("Une sous-catégorie ne peut pas devenir catégorie parente");
   }
   return parent;
 };
 
 const MAIN_MENU_CATEGORY_LIMIT = 7;
+
+const ensureUniqueCategoryName = async (name: string, excludeId?: number) => {
+  const existing = await prisma.category.findFirst({
+    where: {
+      name: { equals: name, mode: "insensitive" },
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+    select: { id: true, name: true },
+  });
+
+  if (existing) {
+    throw new Error(`La catégorie "${name}" existe déjà. Choisis un autre nom.`);
+  }
+};
+
+const ensureUniqueCategorySlug = async (slug: string, excludeId?: number) => {
+  const existing = await prisma.category.findFirst({
+    where: {
+      slug: { equals: slug, mode: "insensitive" },
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+    select: { id: true, name: true, slug: true },
+  });
+
+  if (existing) {
+    throw new Error(`Le slug "${slug}" est déjà utilisé par la catégorie "${existing.name}". Un slug doit être unique.`);
+  }
+};
 
 const ensureMainMenuCategoryLimit = async (excludeId?: number) => {
   const count = await prisma.category.count({
@@ -400,7 +428,7 @@ const ensureMainMenuCategoryLimit = async (excludeId?: number) => {
   });
 
   if (count >= MAIN_MENU_CATEGORY_LIMIT) {
-    throw new Error(`Le menu principal peut contenir au maximum ${MAIN_MENU_CATEGORY_LIMIT} categories`);
+    throw new Error(`Limite atteinte : le menu principal contient déjà ${MAIN_MENU_CATEGORY_LIMIT} catégories. Retire une autre catégorie du menu principal ou choisis "Explorer seul".`);
   }
 };
 
@@ -426,10 +454,13 @@ export const createCategory = async (fields: {
 }) => {
   try {
     const name = fields.name?.trim();
-    if (!name) return { success: false, error: "Le nom de la categorie est requis" };
+    if (!name) return { success: false, error: "Le nom de la catégorie est requis" };
 
     const parentId = normalizeCategoryParentId(fields.parentId);
     await ensureCategoryParent(parentId);
+    const slug = fields.slug?.trim() || normalizeSlug(name);
+    await ensureUniqueCategoryName(name);
+    await ensureUniqueCategorySlug(slug);
     const isActive = fields.isActive ?? true;
     const showInMainMenu = parentId ? false : fields.showInMainMenu ?? true;
 
@@ -440,7 +471,7 @@ export const createCategory = async (fields: {
     const category = await prisma.category.create({
       data: {
         name,
-        slug: fields.slug?.trim() || normalizeSlug(name),
+        slug,
         parentId,
         isActive,
         showInMainMenu,
@@ -462,22 +493,25 @@ export const updateCategory = async (
 ) => {
   try {
     const existing = await prisma.category.findUnique({ where: { id } });
-    if (!existing) return { success: false, error: "Categorie introuvable" };
+    if (!existing) return { success: false, error: "Catégorie introuvable" };
 
     const data: { name?: string; slug?: string; parentId?: number | null; isActive?: boolean; showInMainMenu?: boolean } = {};
     if (fields.name !== undefined) {
       const name = fields.name.trim();
-      if (!name) return { success: false, error: "Le nom de la categorie est requis" };
+      if (!name) return { success: false, error: "Le nom de la catégorie est requis" };
+      await ensureUniqueCategoryName(name, id);
       data.name = name;
     }
-    if (fields.slug !== undefined) {
-      data.slug = fields.slug.trim() || normalizeSlug(data.name || existing.name);
+    if (fields.slug !== undefined || fields.name !== undefined) {
+      const slug = fields.slug?.trim() || normalizeSlug(data.name || existing.name);
+      await ensureUniqueCategorySlug(slug, id);
+      data.slug = slug;
     }
     if (fields.parentId !== undefined) {
       const parentId = normalizeCategoryParentId(fields.parentId);
       await ensureCategoryParent(parentId);
       if (await wouldCreateCategoryCycle(id, parentId)) {
-        return { success: false, error: "Une categorie ne peut pas etre son propre parent" };
+        return { success: false, error: "Une catégorie ne peut pas être son propre parent" };
       }
       data.parentId = parentId;
       if (parentId) data.showInMainMenu = false;
@@ -514,11 +548,11 @@ export const deleteCategory = async (id: number) => {
       where: { id },
       include: { _count: { select: { products: true, children: true } } },
     });
-    if (!category) return { success: false, error: "Categorie introuvable" };
+    if (!category) return { success: false, error: "Catégorie introuvable" };
     if (category._count.products > 0 || category._count.children > 0) {
       return {
         success: false,
-        error: "Impossible de supprimer une categorie utilisee par des produits ou des sous-categories",
+        error: "Impossible de supprimer une catégorie utilisée par des produits ou des sous-catégories",
       };
     }
 

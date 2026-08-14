@@ -221,6 +221,7 @@ export const fetchAdminCategories = async (): Promise<AdminCategory[]> => {
     return data.categories;
 };
 
+export const fetchAdminCatégories = fetchAdminCategories;
 
 export const createCategory = async (category: {
     name: string;

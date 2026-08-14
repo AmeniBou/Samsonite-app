@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import {
   ChevronLeft,
@@ -231,7 +231,7 @@ const Product = () => {
   const availabilityText = isOutOfStock
     ? "Temporairement indisponible"
     : isLowStock
-    ? "Plus que quelques piÃ¨ces disponibles"
+    ? "Plus que quelques pièces disponibles"
     : t("product.available");
 
   
@@ -489,7 +489,7 @@ const Product = () => {
     if (!selectedVariant) return;
     const targetVariant = findBestVariantForColor(colorKey);
     if (!targetVariant) {
-      setVariantMessage("Cette couleur n'est pas proposÃ©e dans la taille sÃ©lectionnÃ©e.");
+      setVariantMessage("Cette couleur n'est pas proposée dans la taille sélectionnée.");
       return;
     }
     setVariantMessage("");
@@ -502,7 +502,7 @@ const Product = () => {
     if (!selectedVariant) return;
     const targetVariant = findVariantBySelection(sizeLabel, selectedColorKey);
     if (!targetVariant) {
-      setVariantMessage("Cette taille n'est pas proposÃ©e dans la couleur sÃ©lectionnÃ©e.");
+      setVariantMessage("Cette taille n'est pas proposée dans la couleur sélectionnée.");
       return;
     }
     setVariantMessage("");
@@ -515,7 +515,7 @@ const Product = () => {
     if (!selectedVariant) return;
     const targetVariant = findBestVariantForDimension(dimensionLabel);
     if (!targetVariant) {
-      setVariantMessage("Cette dimension n'est pas proposÃ©e dans la couleur sÃ©lectionnÃ©e.");
+      setVariantMessage("Cette dimension n'est pas proposée dans la couleur sélectionnée.");
       return;
     }
     setVariantMessage("");
@@ -629,7 +629,7 @@ const Product = () => {
       if (!label || !value) return false;
       if (excludedLabelPattern.test(label)) return false;
       const lower = value.toLowerCase();
-      if (["null", "undefined", "n/a", "na", "-", "--", ":", "...", "â€¦"].includes(lower)) {
+      if (["null", "undefined", "n/a", "na", "-", "--", ":", "...", "…"].includes(lower)) {
         return false;
       }
       if (/^[:.\-\s]+$/.test(value)) return false;
@@ -728,9 +728,9 @@ const Product = () => {
     return (
       <div className="samsonite-container py-20 text-center">
         <h1 className="text-2xl font-bold mb-4">{t("product.notFound")}</h1>
-        <Link to="/" className="underline">
+        <button onClick={() => navigate(-1)} className="underline">
           {t("product.backHome")}
-        </Link>
+        </button>
       </div>
     );
   }
@@ -869,7 +869,7 @@ const Product = () => {
                         type="button"
                         aria-pressed={isSelected}
                         disabled={doesNotExist}
-                        title={doesNotExist ? "Cette taille n'est pas proposÃ©e dans la couleur sÃ©lectionnÃ©e." : size.label}
+                        title={doesNotExist ? "Cette taille n'est pas proposée dans la couleur sélectionnée." : size.label}
                         onClick={() => handleSizeSelect(size.label)}
                         className={`premium-control relative min-h-12 min-w-[82px] border px-4 py-3 text-sm font-semibold leading-none ${
                           isSelected
@@ -916,7 +916,7 @@ const Product = () => {
                         type="button"
                         aria-pressed={isSelected}
                         disabled={doesNotExist}
-                        title={doesNotExist ? "Cette dimension n'est pas proposÃ©e dans la couleur sÃ©lectionnÃ©e." : dimension.label}
+                        title={doesNotExist ? "Cette dimension n'est pas proposée dans la couleur sélectionnée." : dimension.label}
                         onClick={() => handleDimensionSelect(dimension.label)}
                         className={`premium-control relative min-h-9 min-w-[118px] border px-3 py-2 text-sm font-semibold leading-none ${
                           isSelected
@@ -992,7 +992,7 @@ const Product = () => {
                         type="button"
                         aria-pressed={isSelected}
                         disabled={doesNotExist}
-                        title={doesNotExist ? "Cette couleur n'est pas proposÃ©e dans la taille sÃ©lectionnÃ©e." : color.name}
+                        title={doesNotExist ? "Cette couleur n'est pas proposée dans la taille sélectionnée." : color.name}
                         onClick={() => {
                           if (doesNotExist) return;
                           if (color.inferred) {

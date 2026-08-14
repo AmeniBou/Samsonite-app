@@ -3,7 +3,7 @@ import { ChevronDown, ChevronRight, CornerDownRight, Folder, FolderTree, Pencil,
 import {
     createCategory,
     deleteCategory,
-    fetchAdminCategories,
+    fetchAdminCatégories,
     updateCategory,
     type AdminCategory,
 } from "@/lib/admin-api";
@@ -25,13 +25,23 @@ const emptyForm: CategoryForm = {
     slug: "",
     parentId: 0,
     isActive: true,
-    showInMainMenu: true,
+    showInMainMenu: false,
 };
 
 const normalizeText = (value?: string | null) => (value || "").trim();
 
-const AdminCategories = () => {
-    const [categories, setCategories] = useState<AdminCategory[]>([]);
+const normalizeSlug = (value: string) =>
+    value
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+
+const MAIN_MENU_LIMIT_MESSAGE =
+    `Limite atteinte : le menu principal affiche déjà ${MAIN_MENU_LIMIT} catégories. Décoche "Menu principal + Explorer" ou retire une autre catégorie du menu principal.`;
+
+const AdminCatégories = () => {
+    const [categories, setCatégories] = useState<AdminCategory[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -44,22 +54,22 @@ const AdminCategories = () => {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
-    const loadCategories = useCallback(async () => {
+    const loadCatégories = useCallback(async () => {
         try {
             setLoading(true);
             setError("");
-            const data = await fetchAdminCategories();
-            setCategories(data);
+            const data = await fetchAdminCatégories();
+            setCatégories(data);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Erreur chargement categories");
+            setError(err instanceof Error ? err.message : "Erreur chargement catégories");
         } finally {
             setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        loadCategories();
-    }, [loadCategories]);
+        loadCatégories();
+    }, [loadCatégories]);
 
     const categoryById = useMemo(() => new Map(categories.map((category) => [category.id, category])), [categories]);
 
@@ -116,7 +126,7 @@ const AdminCategories = () => {
         [categoryById]
     );
 
-    const filteredCategories = useMemo(() => {
+    const filteredCatégories = useMemo(() => {
         const query = search.trim().toLowerCase();
         const sorted = [...categories].sort((a, b) =>
             getCategoryPath(a).localeCompare(getCategoryPath(b), "fr", { sensitivity: "base" })
@@ -133,24 +143,24 @@ const AdminCategories = () => {
         });
     }, [categories, getCategoryPath, search]);
 
-    const displayedCategories = useMemo(() => {
+    const displayedCatégories = useMemo(() => {
         const query = search.trim();
-        if (query) return filteredCategories;
+        if (query) return filteredCatégories;
 
-        return filteredCategories.filter((category) => {
+        return filteredCatégories.filter((category) => {
             if (!category.parentId) return true;
             return expandedRootIds.has(getRootCategoryId(category));
         });
-    }, [expandedRootIds, filteredCategories, getRootCategoryId, search]);
+    }, [expandedRootIds, filteredCatégories, getRootCategoryId, search]);
 
-    const totalPages = Math.max(1, Math.ceil(displayedCategories.length / pageSize));
+    const totalPages = Math.max(1, Math.ceil(displayedCatégories.length / pageSize));
     const safePage = Math.min(page, totalPages);
-    const paginatedCategories = useMemo(() => {
+    const paginatedCatégories = useMemo(() => {
         const start = (safePage - 1) * pageSize;
-        return displayedCategories.slice(start, start + pageSize);
-    }, [displayedCategories, pageSize, safePage]);
-    const paginationStart = displayedCategories.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
-    const paginationEnd = Math.min(displayedCategories.length, safePage * pageSize);
+        return displayedCatégories.slice(start, start + pageSize);
+    }, [displayedCatégories, pageSize, safePage]);
+    const paginationStart = displayedCatégories.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
+    const paginationEnd = Math.min(displayedCatégories.length, safePage * pageSize);
 
     useEffect(() => {
         setPage(1);
@@ -182,11 +192,40 @@ const AdminCategories = () => {
         setError("");
     };
 
+    const applyCategoryUpdate = async (
+        categoryId: number,
+        fields: Partial<{ name: string; slug: string; parentId: number | null; isActive: boolean; showInMainMenu: boolean }>
+    ) => {
+        setError("");
+        setSuccess("");
+        const result = await updateCategory(categoryId, fields);
+        if (!result.success) {
+            setError(result.error || "Impossible de mettre à jour la catégorie.");
+            return false;
+        }
+        await loadCatégories();
+        return true;
+    };
+
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const name = form.name.trim();
+        const submittedSlug = form.slug.trim() || normalizeSlug(name);
         if (!name) {
-            setError("Le nom de la categorie est obligatoire.");
+            setError("Le nom de la catégorie est obligatoire.");
+            return;
+        }
+        if (!submittedSlug) {
+            setError("Le slug est obligatoire. Il peut être généré automatiquement à partir du nom si tu laisses le champ vide.");
+            return;
+        }
+        const slugConflict = categories.some(
+            (category) =>
+                category.id !== editingId &&
+                normalizeText(category.slug).toLowerCase() === submittedSlug.toLowerCase()
+        );
+        if (slugConflict) {
+            setError(`Le slug "${submittedSlug}" est déjà utilisé. Choisis un slug unique, par exemple "${submittedSlug}-2".`);
             return;
         }
 
@@ -204,13 +243,13 @@ const AdminCategories = () => {
                 currentCategory?.showInMainMenu;
 
             if (wantsMainMenu && !alreadyCounted && mainMenuCount >= MAIN_MENU_LIMIT) {
-                setError(`Le menu principal peut contenir au maximum ${MAIN_MENU_LIMIT} categories.`);
+                setError(MAIN_MENU_LIMIT_MESSAGE);
                 return;
             }
 
             const payload = {
                 name,
-                slug: form.slug.trim(),
+                slug: submittedSlug,
                 parentId: form.parentId || null,
                 isActive: form.isActive,
                 showInMainMenu: form.parentId ? false : form.showInMainMenu,
@@ -218,18 +257,18 @@ const AdminCategories = () => {
             const result = editingId ? await updateCategory(editingId, payload) : await createCategory(payload);
 
             if (!result.success) {
-                setError(result.error || "Impossible d'enregistrer la categorie");
+                setError(result.error || "Impossible d'enregistrer la catégorie");
                 return;
             }
 
-            const successMessage = editingId ? "Cat\u00e9gorie modifi\u00e9e." : "Cat\u00e9gorie ajout\u00e9e avec succ\u00e8s.";
+            const successMessage = editingId ? "Catégorie modifiée." : "Catégorie ajoutée avec succès.";
             setSuccess(successMessage);
             if (!editingId) toast.success(successMessage);
             setEditingId(null);
             setForm(emptyForm);
-            await loadCategories();
+            await loadCatégories();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Erreur enregistrement categorie");
+            setError(err instanceof Error ? err.message : "Erreur enregistrement catégorie");
         } finally {
             setSaving(false);
         }
@@ -239,7 +278,7 @@ const AdminCategories = () => {
         const productCount = category.productCount || 0;
         const childCount = category.childCount || 0;
         if (productCount > 0 || childCount > 0) {
-            setError("Cette categorie contient encore des produits ou des sous-categories.");
+            setError("Cette catégorie contient encore des produits ou des sous-catégories.");
             return;
         }
 
@@ -249,13 +288,13 @@ const AdminCategories = () => {
         try {
             const result = await deleteCategory(category.id);
             if (!result.success) {
-                setError(result.error || "Impossible de supprimer la categorie");
+                setError(result.error || "Impossible de supprimer la catégorie");
                 return;
             }
-            setSuccess("Categorie supprimee.");
-            await loadCategories();
+            setSuccess("Catégorie supprimée.");
+            await loadCatégories();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Erreur suppression categorie");
+            setError(err instanceof Error ? err.message : "Erreur suppression catégorie");
         } finally {
             setDeletingId(null);
         }
@@ -288,26 +327,26 @@ const AdminCategories = () => {
         <div className="p-6 space-y-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">Catégories</h1>
                     <p className="text-sm text-gray-500 mt-1">
-                        {categories.length} categories - {rootCount} principales - {childCount} sous-categories - {mainMenuCount}/{MAIN_MENU_LIMIT} dans le menu principal
+                        {categories.length} catégories - {rootCount} principales - {childCount} sous-catégories - {mainMenuCount}/{MAIN_MENU_LIMIT} dans le menu principal
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <button
-                        onClick={loadCategories}
+                        onClick={loadCatégories}
                         disabled={loading}
                         className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
                     >
                         <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-                        Rafraichir
+                        Rafraîchir
                     </button>
                     <button
                         onClick={startCreate}
                         className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
                     >
                         <PlusCircle className="h-4 w-4" />
-                        Nouvelle categorie
+                        Nouvelle catégorie
                     </button>
                 </div>
             </div>
@@ -328,7 +367,7 @@ const AdminCategories = () => {
                     <div className="flex items-center gap-2">
                         <FolderTree className="h-5 w-5 text-gray-700" />
                         <h2 className="text-lg font-bold text-gray-900">
-                            {editingId ? "Modifier la categorie" : "Ajouter une categorie"}
+                            {editingId ? "Modifier la catégorie" : "Ajouter une catégorie"}
                         </h2>
                     </div>
                     {editingId && (
@@ -357,13 +396,16 @@ const AdminCategories = () => {
                         <span className="text-xs font-bold uppercase tracking-wide text-gray-600">Slug</span>
                         <input
                             value={form.slug}
-                            onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))}
+                            onChange={(event) => setForm((prev) => ({ ...prev, slug: normalizeSlug(event.target.value) }))}
                             className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                            placeholder="Automatique si vide"
+                            placeholder={normalizeSlug(form.name) || "valises-rigides"}
                         />
+                        <span className="block text-xs leading-5 text-gray-500">
+                            Le slug est l'identifiant utilisé dans l'URL de la page catégorie. Il doit être unique, sans espaces ni accents. Exemple : <strong>valises-rigides</strong>.
+                        </span>
                     </label>
                     <label className="space-y-1">
-                        <span className="text-xs font-bold uppercase tracking-wide text-gray-600">Categorie parente</span>
+                        <span className="text-xs font-bold uppercase tracking-wide text-gray-600">Catégorie parente</span>
                         <select
                             value={form.parentId}
                             onChange={(event) => {
@@ -376,7 +418,7 @@ const AdminCategories = () => {
                             }}
                             className="w-full border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
                         >
-                            <option value={0}>Categorie principale</option>
+                            <option value={0}>Catégorie principale</option>
                             {parentOptions.map((category) => (
                                 <option key={category.id} value={category.id}>
                                     {getCategoryPath(category)}
@@ -408,7 +450,7 @@ const AdminCategories = () => {
                             disabled={Boolean(form.parentId) || (!form.showInMainMenu && !canAddCurrentFormToMainMenu)}
                             onChange={(event) => {
                                 if (event.target.checked && !canAddCurrentFormToMainMenu) {
-                                    setError(`Le menu principal peut contenir au maximum ${MAIN_MENU_LIMIT} categories.`);
+                                    setError(MAIN_MENU_LIMIT_MESSAGE);
                                     return;
                                 }
                                 setForm((prev) => ({ ...prev, showInMainMenu: event.target.checked }));
@@ -473,7 +515,7 @@ const AdminCategories = () => {
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3 text-sm text-gray-500">
-                    <span>{paginationStart}-{paginationEnd} sur {displayedCategories.length} categorie(s)</span>
+                    <span>{paginationStart}-{paginationEnd} sur {displayedCatégories.length} catégorie(s)</span>
                     <label className="flex items-center gap-2 text-xs font-semibold text-gray-500">
                         Par page
                         <select
@@ -507,17 +549,17 @@ const AdminCategories = () => {
                             {loading ? (
                                 <tr>
                                     <td colSpan={8} className="px-4 py-10 text-center text-gray-500">
-                                        Chargement des categories...
+                                        Chargement des catégories...
                                     </td>
                                 </tr>
-                            ) : displayedCategories.length === 0 ? (
+                            ) : displayedCatégories.length === 0 ? (
                                 <tr>
                                     <td colSpan={8} className="px-4 py-10 text-center text-gray-500">
                                         Aucune categorie trouvee.
                                     </td>
                                 </tr>
                             ) : (
-                                paginatedCategories.map((category) => {
+                                paginatedCatégories.map((category) => {
                                     const canDelete = !(category.productCount || category.childCount);
                                     const depth = getCategoryDepth(category);
                                     const isRoot = depth === 0;
@@ -560,7 +602,7 @@ const AdminCategories = () => {
                                                                     : "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
                                                                     }`}
                                                             >
-                                                                {isRoot ? "Categorie principale" : "Sous-categorie"}
+                                                                {isRoot ? "Catégorie principale" : "Sous-catégorie"}
                                                             </span>
                                                         </div>
                                                         <div className="mt-1 text-xs text-gray-500">
@@ -592,7 +634,7 @@ const AdminCategories = () => {
                                                     confirmLabel={category.isActive ? "Désactiver" : "Activer"}
                                                     pendingLabel="Mise à jour..."
                                                     tone={category.isActive ? "warning" : "info"}
-                                                    onConfirm={() => updateCategory(category.id, { isActive: !category.isActive }).then(loadCategories)}
+                                                    onConfirm={() => applyCategoryUpdate(category.id, { isActive: !category.isActive })}
                                                 >
                                                     {(openDialog) => (
                                                         <button
@@ -611,10 +653,10 @@ const AdminCategories = () => {
                                                         type="button"
                                                         onClick={() => {
                                                             if (!category.showInMainMenu && mainMenuLimitReached) {
-                                                                setError(`Le menu principal peut contenir au maximum ${MAIN_MENU_LIMIT} categories.`);
+                                                                setError(MAIN_MENU_LIMIT_MESSAGE);
                                                                 return;
                                                             }
-                                                            updateCategory(category.id, { showInMainMenu: !category.showInMainMenu }).then(loadCategories);
+                                                            applyCategoryUpdate(category.id, { showInMainMenu: !category.showInMainMenu });
                                                         }}
                                                         disabled={!category.showInMainMenu && mainMenuLimitReached}
                                                         className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-50 ${category.showInMainMenu ? "bg-sky-50 text-sky-700 ring-1 ring-sky-200" : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"}`}
@@ -653,7 +695,7 @@ const AdminCategories = () => {
                                                                 type="button"
                                                                 onClick={openDialog}
                                                                 disabled={!canDelete || deletingId === category.id}
-                                                                title={!canDelete ? "Categorie utilisee" : "Supprimer"}
+                                                                title={!canDelete ? "Catégorie utilisée" : "Supprimer"}
                                                                 className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-200 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
                                                             >
                                                                 {deletingId === category.id ? (
@@ -673,7 +715,7 @@ const AdminCategories = () => {
                         </tbody>
                     </table>
                 </div>
-                {!loading && displayedCategories.length > 0 && (
+                {!loading && displayedCatégories.length > 0 && (
                     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
                         <p className="text-xs font-semibold text-gray-500">
                             Page {safePage} sur {totalPages}
@@ -717,7 +759,7 @@ const AdminCategories = () => {
     );
 };
 
-export default AdminCategories;
+export default AdminCatégories;
 
 
 

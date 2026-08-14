@@ -39,12 +39,12 @@ import {
 
 const statusLabels: Record<OrderStatus, string> = {
   new: "Nouvelle",
-  confirmed: "ConfirmÃ©e",
-  preparing: "En prÃ©paration",
-  shipped: "ExpÃ©diÃ©e",
-  fulfilled: "LivrÃ©e",
-  delivery_failed: "Ã‰chec livraison",
-  cancelled: "AnnulÃ©e",
+  confirmed: "Confirmée",
+  preparing: "En préparation",
+  shipped: "Expédiée",
+  fulfilled: "Livrée",
+  delivery_failed: "Échec livraison",
+  cancelled: "Annulée",
 };
 
 const statusClasses: Record<OrderStatus, string> = {
@@ -70,24 +70,24 @@ const statusTransitions: Record<OrderStatus, OrderStatus[]> = {
 const statusActionLabels: Record<OrderStatus, string> = {
   new: "Marquer nouvelle",
   confirmed: "Confirmer",
-  preparing: "PrÃ©parer",
-  shipped: "ExpÃ©dier",
+  preparing: "Préparer",
+  shipped: "Expédier",
   fulfilled: "Livrer",
-  delivery_failed: "Ã‰chec livraison",
+  delivery_failed: "Échec livraison",
   cancelled: "Annuler",
 };
 
 const statusTransitionDescriptions: Record<string, string> = {
-  "new:confirmed": "La commande a Ã©tÃ© vÃ©rifiÃ©e. Elle pourra ensuite passer en prÃ©paration ou Ãªtre annulÃ©e.",
-  "new:cancelled": "La commande sera arrÃªtÃ©e avant confirmation. Elle deviendra finale et ne pourra plus Ãªtre rÃ©activÃ©e.",
-  "confirmed:preparing": "La commande entre en prÃ©paration. Les articles doivent Ãªtre regroupÃ©s avant expÃ©dition.",
-  "confirmed:cancelled": "La commande sera annulÃ©e avant prÃ©paration. Elle deviendra finale.",
-  "preparing:shipped": "La commande est prÃªte et remise au livreur ou au client selon le mode de livraison.",
-  "preparing:cancelled": "La commande sera annulÃ©e pendant la prÃ©paration. VÃ©rifie le stock avant de confirmer.",
-  "shipped:fulfilled": "La commande sera marquÃ©e comme livrÃ©e. Ce statut est final et ne peut pas revenir en arriÃ¨re.",
-  "shipped:delivery_failed": "La livraison n'a pas abouti. Tu pourras relancer une expÃ©dition ou annuler la commande.",
-  "delivery_failed:shipped": "Une nouvelle tentative de livraison sera enregistrÃ©e.",
-  "delivery_failed:cancelled": "La commande sera annulÃ©e aprÃ¨s l'Ã©chec de livraison. Ce statut est final.",
+  "new:confirmed": "La commande a été vérifiée. Elle pourra ensuite passer en préparation ou être annulée.",
+  "new:cancelled": "La commande sera arrêtée avant confirmation. Elle deviendra finale et ne pourra plus être réactivée.",
+  "confirmed:preparing": "La commande entre en préparation. Les articles doivent être regroupés avant expédition.",
+  "confirmed:cancelled": "La commande sera annulée avant préparation. Elle deviendra finale.",
+  "preparing:shipped": "La commande est prête et remise au livreur ou au client selon le mode de livraison.",
+  "preparing:cancelled": "La commande sera annulée pendant la préparation. Vérifie le stock avant de confirmer.",
+  "shipped:fulfilled": "La commande sera marquée comme livrée. Ce statut est final et ne peut pas revenir en arrière.",
+  "shipped:delivery_failed": "La livraison n'a pas abouti. Tu pourras relancer une expédition ou annuler la commande.",
+  "delivery_failed:shipped": "Une nouvelle tentative de livraison sera enregistrée.",
+  "delivery_failed:cancelled": "La commande sera annulée après l'échec de livraison. Ce statut est final.",
 };
 
 const isFinalOrderStatus = (status: OrderStatus) => statusTransitions[status].length === 0;
@@ -95,31 +95,31 @@ const isFinalOrderStatus = (status: OrderStatus) => statusTransitions[status].le
 const statusGuides: Array<{ status: OrderStatus; description: string }> = [
   {
     status: "new",
-    description: "Commande reÃ§ue depuis le checkout. Elle doit Ãªtre vÃ©rifiÃ©e avant toute prÃ©paration.",
+    description: "Commande reçue depuis le checkout. Elle doit être vérifiée avant toute préparation.",
   },
   {
     status: "confirmed",
-    description: "Commande vÃ©rifiÃ©e par l'Ã©quipe: client, adresse, paiement et disponibilitÃ© sont cohÃ©rents.",
+    description: "Commande vérifiée par l'équipe: client, adresse, paiement et disponibilité sont cohérents.",
   },
   {
     status: "preparing",
-    description: "Les articles sont en cours de prÃ©paration. La commande n'est pas encore remise au livreur.",
+    description: "Les articles sont en cours de préparation. La commande n'est pas encore remise au livreur.",
   },
   {
     status: "shipped",
-    description: "Commande remise au livreur ou prÃªte Ã  Ãªtre retirÃ©e. Elle peut devenir livrÃ©e ou passer en Ã©chec livraison.",
+    description: "Commande remise au livreur ou prête à être retirée. Elle peut devenir livrée ou passer en échec livraison.",
   },
   {
     status: "delivery_failed",
-    description: "La livraison n'a pas abouti. Une nouvelle tentative ou une annulation peuvent Ãªtre dÃ©cidÃ©es.",
+    description: "La livraison n'a pas abouti. Une nouvelle tentative ou une annulation peuvent être décidées.",
   },
   {
     status: "fulfilled",
-    description: "Commande livrÃ©e au client. Statut final, aucun retour vers un ancien statut n'est autorisÃ©.",
+    description: "Commande livrée au client. Statut final, aucun retour vers un ancien statut n'est autorisé.",
   },
   {
     status: "cancelled",
-    description: "Commande arrÃªtÃ©e. Statut final, la commande ne peut plus Ãªtre rÃ©activÃ©e.",
+    description: "Commande arrêtée. Statut final, la commande ne peut plus être réactivée.",
   },
 ];
 
@@ -130,7 +130,7 @@ const shippingLabels: Record<ShippingMethod, string> = {
 };
 
 const paymentLabels: Record<PaymentMethod, string> = {
-  cash_on_delivery: "Paiement Ã  la livraison",
+  cash_on_delivery: "Paiement à la livraison",
   bank_transfer: "Virement bancaire",
 };
 
@@ -151,6 +151,29 @@ const htmlEscape = (value: string | number | null | undefined) =>
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+
+const formatDateForPdf = (dateValue: string | null | undefined, fallback: string) => {
+  if (!dateValue) return fallback;
+  const parsed = new Date(`${dateValue}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return fallback;
+  return new Intl.DateTimeFormat("fr-TN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(parsed);
+};
+
+const formatDisplayDate = (dateValue: string | null | undefined) => {
+  if (!dateValue) return "";
+  const parsed = new Date(`${dateValue}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return dateValue;
+
+  return new Intl.DateTimeFormat("fr-TN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(parsed);
+};
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState<StoredOrder[]>([]);
@@ -338,7 +361,7 @@ const AdminOrders = () => {
   </section>
   <h2>Articles</h2>
   <table>
-    <thead><tr><th>Article</th><th>QtÃ©</th><th>Prix unitaire</th><th>Total</th></tr></thead>
+    <thead><tr><th>Article</th><th>Qté</th><th>Prix unitaire</th><th>Total</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
   <div class="totals">
@@ -357,7 +380,7 @@ const AdminOrders = () => {
   const printOrder = (order: StoredOrder) => {
     const printWindow = window.open("", "_blank", "width=900,height=1100");
     if (!printWindow) {
-      setError("Impossible d ouvrir la fenÃªtre d impression. VÃ©rifie le bloqueur de pop-up.");
+      setError("Impossible d'ouvrir la fenêtre d'impression. Vérifie le bloqueur de pop-up.");
       return;
     }
     printWindow.document.open();
@@ -382,6 +405,15 @@ const AdminOrders = () => {
       )
       .join("");
     const total = filteredOrders.reduce((sum, order) => sum + order.totals.total, 0);
+    const periodStart = formatDateForPdf(dateFrom, "Début");
+    const periodEnd = formatDateForPdf(dateTo, "Aujourd'hui");
+    const hasPeriodFilter = Boolean(dateFrom || dateTo);
+    const periodSummary = hasPeriodFilter
+      ? `${periodStart} - ${periodEnd}`
+      : "Toute la période";
+    const periodExplanation = hasPeriodFilter
+      ? `Période sélectionnée : commandes du ${periodStart} au ${periodEnd}.`
+      : "Période : toutes les commandes enregistrées.";
 
     return `<!doctype html>
 <html lang="fr">
@@ -404,17 +436,17 @@ const AdminOrders = () => {
 </head>
 <body>
   <header>
-    <h1>Export commandes</h1>
-    <p class="muted">Samsonite Tunisie - gÃ©nÃ©rÃ© le ${htmlEscape(formatOrderDate(new Date().toISOString()))}</p>
+    <h1>Commandes valises Samsonite</h1>
+    <p class="muted">Samsonite Tunisie - généré le ${htmlEscape(formatOrderDate(new Date().toISOString()))}</p>
   </header>
   <section class="summary">
-    <div><strong>${filteredOrders.length}</strong><br><span class="muted">Commandes affichÃ©es</span></div>
-    <div><strong>${formatTnd(total)}</strong><br><span class="muted">Total filtrÃ©</span></div>
-    <div><strong>${htmlEscape(dateFrom || "DÃ©but")} - ${htmlEscape(dateTo || "Aujourd'hui")}</strong><br><span class="muted">PÃ©riode</span></div>
+    <div><strong>${filteredOrders.length}</strong><br><span class="muted">Commandes affichées</span></div>
+    <div><strong>${formatTnd(total)}</strong><br><span class="muted">Total filtré</span></div>
+    <div><strong>${htmlEscape(periodSummary)}</strong><br><span class="muted">${htmlEscape(periodExplanation)}</span></div>
   </section>
   <table>
     <thead>
-      <tr><th>RÃ©fÃ©rence</th><th>Statut</th><th>Date</th><th>Client</th><th>Livraison</th><th>Paiement</th><th>Articles</th><th>Total</th></tr>
+      <tr><th>Référence</th><th>Statut</th><th>Date</th><th>Client</th><th>Livraison</th><th>Paiement</th><th>Articles</th><th>Total</th></tr>
     </thead>
     <tbody>${rows}</tbody>
   </table>
@@ -426,7 +458,7 @@ const AdminOrders = () => {
   const printOrdersList = () => {
     const printWindow = window.open("", "_blank", "width=1100,height=900");
     if (!printWindow) {
-      setError("Impossible d'ouvrir la fenÃªtre d'impression. VÃ©rifie le bloqueur de pop-up.");
+      setError("Impossible d'ouvrir la fenêtre d'impression. Vérifie le bloqueur de pop-up.");
       return;
     }
     printWindow.document.open();
@@ -436,11 +468,11 @@ const AdminOrders = () => {
 
   const exportOrders = () => {
     const header = [
-      "RÃ©fÃ©rence",
+      "Référence",
       "Date",
       "Statut",
       "Client",
-      "TÃ©lÃ©phone",
+      "Téléphone",
       "Email",
       "Ville",
       "Livraison",
@@ -503,7 +535,7 @@ const AdminOrders = () => {
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Commandes</h1>
-          <p className="mt-1 text-sm text-gray-500">Suivi des commandes enregistrees depuis le checkout.</p>
+          <p className="mt-1 text-sm text-gray-500">Suivi des commandes enregistrées depuis le checkout.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <OrderStatusHelpDialog />
@@ -525,15 +557,7 @@ const AdminOrders = () => {
             <FileText className="h-4 w-4" />
             Export PDF
           </button>
-          <button
-            type="button"
-            onClick={loadOrders}
-            disabled={loading}
-            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Rafraichir
-          </button>
+         
         </div>
       </div>
 
@@ -555,7 +579,7 @@ const AdminOrders = () => {
             <div>
               <h2 className="text-sm font-bold uppercase tracking-wide text-gray-950">Filtres commandes</h2>
               <p className="text-xs text-gray-500">
-                {filteredOrders.length} resultat{filteredOrders.length > 1 ? "s" : ""} sur {orders.length} commandes
+                {filteredOrders.length} résultat{filteredOrders.length > 1 ? "s" : ""} sur {orders.length} commandes
               </p>
             </div>
           </div>
@@ -581,7 +605,7 @@ const AdminOrders = () => {
               disabled={!hasActiveFilters}
               className="inline-flex h-9 items-center justify-center rounded-full border border-gray-200 px-4 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Reinitialiser
+              Réinitialiser
             </button>
           </div>
         </div>
@@ -596,7 +620,7 @@ const AdminOrders = () => {
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Client, telephone, email, ville ou produit..."
+                  placeholder="Client, téléphone, email, ville ou produit..."
                   className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm font-medium text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 hover:bg-white focus:border-black focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
                 />
               </div>
@@ -635,7 +659,7 @@ const AdminOrders = () => {
             </label>
 
             <label className={filterLabelClass}>
-              Date dÃ©but
+              Date début
               <input
                 type="date"
                 value={dateFrom}
@@ -657,9 +681,9 @@ const AdminOrders = () => {
             <label className={filterLabelClass}>
               Tri
               <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)} className={filterControlClass}>
-                <option value="dateDesc">Plus recentes</option>
+                <option value="dateDesc">Plus récentes</option>
                 <option value="dateAsc">Plus anciennes</option>
-                <option value="totalDesc">Total eleve</option>
+                <option value="totalDesc">Total élevé</option>
                 <option value="totalAsc">Total faible</option>
               </select>
             </label>
@@ -676,13 +700,13 @@ const AdminOrders = () => {
               <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Paiement: {paymentLabels[paymentFilter]}</span>
             )}
             {dateFrom && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Depuis: {dateFrom}</span>
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Depuis: {formatDisplayDate(dateFrom)}</span>
             )}
             {dateTo && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Jusqu'au: {dateTo}</span>
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Jusqu'au: {formatDisplayDate(dateTo)}</span>
             )}
             {sortKey !== "dateDesc" && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Tri personnalise</span>
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Tri personnalisé</span>
             )}
               {!hasActiveFilters && (
                 <span className="text-xs font-medium text-gray-400">Aucun filtre actif</span>
@@ -700,8 +724,8 @@ const AdminOrders = () => {
       ) : filteredOrders.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 bg-white p-12 text-center">
           <PackageCheck className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-          <p className="font-medium text-gray-700">{orders.length === 0 ? "Aucune commande pour le moment" : "Aucune commande trouvee"}</p>
-          <p className="mt-1 text-sm text-gray-500">Les commandes validees depuis le checkout apparaitront ici.</p>
+          <p className="font-medium text-gray-700">{orders.length === 0 ? "Aucune commande pour le moment" : "Aucune commande trouvée"}</p>
+          <p className="mt-1 text-sm text-gray-500">Les commandes validées depuis le checkout apparaîtront ici.</p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg bg-white shadow">
@@ -797,7 +821,7 @@ const AdminOrders = () => {
                 disabled={safePage <= 1}
                 className="rounded-full border border-gray-200 px-3 py-2 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
               >
-                PrÃ©cÃ©dent
+                Précédent
               </button>
               {Array.from({ length: totalPages }).slice(0, 7).map((_, index) => {
                 const pageNumber = index + 1;
@@ -870,7 +894,7 @@ const OrderStatusControl = ({
           {open && <div className={compact ? "flex flex-col gap-1" : "flex flex-wrap gap-2"}>
           {nextStatuses.map((nextStatus) => {
             const transitionKey = `${order.status}:${nextStatus}`;
-            const description = statusTransitionDescriptions[transitionKey] || "Ce changement sera enregistrÃ© dans l'historique de la commande.";
+            const description = statusTransitionDescriptions[transitionKey] || "Ce changement sera enregistré dans l'historique de la commande.";
             const note = description;
             const isDanger = nextStatus === "cancelled" || nextStatus === "delivery_failed";
 
@@ -880,7 +904,7 @@ const OrderStatusControl = ({
                 title={`Passer la commande en ${statusLabels[nextStatus].toLowerCase()} ?`}
                 description={`${statusLabels[order.status]} -> ${statusLabels[nextStatus]}. ${description}`}
                 confirmLabel={statusActionLabels[nextStatus]}
-                pendingLabel="Mise Ã  jour..."
+                pendingLabel="Mise à jour..."
                 tone={isDanger ? "warning" : "info"}
                 disabled={updating}
                 onConfirm={() => onStatusChange(order.id, nextStatus, note)}
@@ -923,7 +947,7 @@ const OrderStatusHelpDialog = () => (
       <div className="border-b border-gray-200 px-6 py-5">
         <DialogTitle className="text-xl font-black uppercase tracking-tight">Guide des statuts de commande</DialogTitle>
         <DialogDescription className="mt-2 text-sm leading-6 text-gray-500">
-          Ce workflow Ã©vite les changements incohÃ©rents. Une commande livrÃ©e ou annulÃ©e est finale et ne peut plus revenir en arriÃ¨re.
+          Ce workflow évite les changements incohérents. Une commande livrée ou annulée est finale et ne peut plus revenir en arrière.
         </DialogDescription>
       </div>
       <div className="space-y-3 px-6 py-5">
@@ -945,7 +969,7 @@ const OrderStatusHelpDialog = () => (
                 )}
               </div>
               <div className="mt-4 border-t border-gray-100 pt-3">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Actions autorisÃ©es</p>
+                <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Actions autorisées</p>
                 {nextStatuses.length > 0 ? (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {nextStatuses.map((nextStatus) => (
@@ -1060,7 +1084,7 @@ const OrderDetailPanel = ({
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">Aucun historique enregistrÃ© pour cette commande.</p>
+            <p className="text-sm text-gray-500">Aucun historique enregistré pour cette commande.</p>
           )}
         </section>
 

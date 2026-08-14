@@ -327,9 +327,9 @@ const Checkout = () => {
               <section>
                 <h1 className="mb-5 border-b border-border pb-4 text-3xl font-normal uppercase tracking-tight">Panier</h1>
                 <div>{items.map((item) => renderCartItem(item))}</div>
-                <Link to="/" className="mt-6 inline-flex items-center gap-2 text-sm hover:underline">
+                <button onClick={() => navigate(-1)} className="mt-6 inline-flex items-center gap-2 text-sm hover:underline">
                   <ArrowLeft className="h-4 w-4" /> Continuer mes achats
-                </Link>
+                </button>
                 <div className="mt-8 space-y-4 border-t border-border pt-6 text-lg">
                   <div className="flex justify-between"><span>{totalItems} article{totalItems > 1 ? "s" : ""}</span><span className="font-black">{formatTnd(totalPrice)}</span></div>
                   <div className="flex justify-between"><span>Livraison</span><span className="font-black">{shippingFee === 0 ? "gratuit" : formatTnd(shippingFee)}</span></div>

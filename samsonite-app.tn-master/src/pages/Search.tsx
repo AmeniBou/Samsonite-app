@@ -1,4 +1,4 @@
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { Search as SearchIcon, SlidersHorizontal } from "lucide-react";
 
@@ -23,8 +23,8 @@ const sortOptions = [
 
 const Search = () => {
   const { t } = useLanguage();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
   const normalizedQuery = normalizeSearchText(query);
   const [searchInput, setSearchInput] = useState(query);
@@ -260,9 +260,9 @@ const Search = () => {
       ) : (
         <div className="text-center py-16">
           <p className="text-lg text-muted-foreground mb-4">{t("search.empty")}</p>
-          <Link to="/" className="text-sm font-bold underline">
+          <button onClick={() => navigate(-1)} className="text-sm font-bold underline">
             {t("product.backHome")}
-          </Link>
+          </button>
         </div>
       )}
     </div>
