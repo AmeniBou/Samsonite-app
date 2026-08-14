@@ -35,6 +35,7 @@ export interface AdminProduct {
     imageUrl?: string | null;
     stock: number;
     hasVariants: boolean;
+    variantCount?: number;
     description?: string;
     descriptionShort?: string;
     weight?: string;

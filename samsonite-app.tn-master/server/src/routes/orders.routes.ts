@@ -48,7 +48,7 @@ adminOrdersRouter.get("/", async (req: Request, res: Response): Promise<void> =>
 
 adminOrdersRouter.put("/:reference/status", async (req: Request, res: Response): Promise<void> => {
   try {
-    const order = await updateOrderStatus(req.params.reference, String(req.body.status || ""));
+    const order = await updateOrderStatus(req.params.reference, String(req.body.status || ""), String(req.body.note || ""));
     res.json({ success: true, order });
   } catch (err) {
     const detail = err instanceof Error ? err.message : "Erreur inconnue";

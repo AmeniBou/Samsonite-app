@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ExternalLink, Mail, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 
 import {
@@ -12,6 +12,8 @@ import {
   type ContactMessageStatus,
   type ContactSubject,
 } from "@/lib/contact";
+import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
+import { toast } from "@/components/ui/sonner";
 
 const statusLabels: Record<ContactMessageStatus, string> = {
   new: "Nouveau",
@@ -118,6 +120,7 @@ const AdminMessages = () => {
       });
       setSubjects((previous) => [...previous, created].sort((a, b) => a.position - b.position));
       setSubjectForm({ labelFr: "" });
+      toast.success(`Sujet de message "${created.labelFr}" ajout\u00e9 avec succ\u00e8s.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Impossible d'ajouter le sujet");
     } finally {
@@ -135,7 +138,6 @@ const AdminMessages = () => {
   };
 
   const handleDeleteSubject = async (subject: ContactSubject) => {
-    if (!window.confirm(`Supprimer le sujet "${subject.labelFr}" ?`)) return;
     try {
       await deleteContactSubject(subject.id);
       setSubjects((previous) => previous.filter((item) => item.id !== subject.id));
@@ -164,50 +166,6 @@ const AdminMessages = () => {
       </div>
 
       {error && <div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
-
-      <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Rechercher par sujet, email ou message..."
-              className="h-10 w-full rounded-md border border-gray-300 pl-10 pr-3 text-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black"
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={subjectFilter}
-              onChange={(event) => setSubjectFilter(event.target.value)}
-              className="h-9 rounded-full border border-gray-200 bg-white px-3 text-xs font-bold text-gray-700 focus:border-black focus:outline-none"
-            >
-              <option value="all">Tous les sujets</option>
-              {Array.from(new Set(messages.map((message) => message.subject).filter(Boolean))).map((subject) => (
-                <option key={subject} value={subject}>{subject}</option>
-              ))}
-            </select>
-            {([
-              ["all", "Tous"],
-              ["new", statusLabels.new],
-              ["read", statusLabels.read],
-              ["closed", statusLabels.closed],
-            ] as Array<[StatusFilter, string]>).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setStatusFilter(value)}
-                className={`rounded-full border px-3 py-2 text-xs font-bold transition-colors ${statusFilter === value
-                  ? "border-gray-900 bg-gray-900 text-white"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-400 hover:text-gray-900"
-                  }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
 
       <div className="mb-4 rounded-lg border border-gray-200 bg-white shadow-sm">
         <button
@@ -256,24 +214,47 @@ const AdminMessages = () => {
                       <p className="mt-1 text-xs text-gray-500">{subject.active ? "Visible dans le formulaire" : "Masque du formulaire"}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleSubject(subject)}
-                        className={`rounded-full border px-3 py-1.5 text-xs font-bold ${subject.active
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : "border-gray-200 bg-gray-50 text-gray-500"
-                          }`}
+                      <ConfirmDeleteDialog
+                        title={subject.active ? "Désactiver ce sujet ?" : "Activer ce sujet ?"}
+                        description={
+                          subject.active
+                            ? `Le sujet "${subject.labelFr}" ne sera plus proposé dans le formulaire Contact. Les messages déjà reçus avec ce sujet resteront conservés.`
+                            : `Le sujet "${subject.labelFr}" sera de nouveau proposé dans le formulaire Contact.`
+                        }
+                        confirmLabel={subject.active ? "Désactiver" : "Activer"}
+                        pendingLabel="Mise à jour..."
+                        tone={subject.active ? "warning" : "info"}
+                        onConfirm={() => handleToggleSubject(subject)}
                       >
-                        {subject.active ? "Actif" : "Inactif"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteSubject(subject)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-100 text-red-600 hover:bg-red-50"
-                        aria-label="Supprimer le sujet"
+                        {(openDialog) => (
+                          <button
+                            type="button"
+                            onClick={openDialog}
+                            className={`rounded-full border px-3 py-1.5 text-xs font-bold ${subject.active
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : "border-gray-200 bg-gray-50 text-gray-500"
+                              }`}
+                          >
+                            {subject.active ? "Actif" : "Inactif"}
+                          </button>
+                        )}
+                      </ConfirmDeleteDialog>
+                      <ConfirmDeleteDialog
+                        title="Supprimer ce sujet ?"
+                        description={`Le sujet "${subject.labelFr}" sera supprimé de la liste des choix.`}
+                        onConfirm={() => handleDeleteSubject(subject)}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                        {(openDialog) => (
+                          <button
+                            type="button"
+                            onClick={openDialog}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-100 text-red-600 hover:bg-red-50"
+                            aria-label="Supprimer le sujet"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </ConfirmDeleteDialog>
                     </div>
                   </div>
                 ))
@@ -281,6 +262,53 @@ const AdminMessages = () => {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Rechercher par sujet, email ou message..."
+              className="h-10 w-full rounded-md border border-gray-300 pl-10 pr-3 text-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={subjectFilter}
+              onChange={(event) => setSubjectFilter(event.target.value)}
+              className="h-9 rounded-full border border-gray-200 bg-white px-3 text-xs font-bold text-gray-700 focus:border-black focus:outline-none"
+            >
+              <option value="all">Tous les sujets</option>
+              {subjects
+                .slice()
+                .sort((a, b) => a.position - b.position)
+                .map((subject) => (
+                  <option key={subject.id} value={subject.labelFr}>{subject.labelFr}</option>
+                ))}
+            </select>
+            {([
+              ["all", "Tous"],
+              ["new", statusLabels.new],
+              ["read", statusLabels.read],
+              ["closed", statusLabels.closed],
+            ] as Array<[StatusFilter, string]>).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setStatusFilter(value)}
+                className={`rounded-full border px-3 py-2 text-xs font-bold transition-colors ${statusFilter === value
+                  ? "border-gray-900 bg-gray-900 text-white"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-400 hover:text-gray-900"
+                  }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -296,7 +324,7 @@ const AdminMessages = () => {
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_420px]">
           <div className="overflow-hidden rounded-lg bg-white shadow">
-            <div className="divide-y divide-gray-100">
+            <div className={`divide-y divide-gray-100 ${filteredMessages.length > 4 ? "max-h-[520px] overflow-y-auto" : ""}`}>
               {filteredMessages.map((message) => (
                 <button
                   key={message.id}

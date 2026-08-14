@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
     Trash2,
+    Pencil,
     PlusCircle,
     Search,
     RefreshCw,
@@ -18,6 +19,7 @@ import {
     updateProduct,
     type AdminProduct,
 } from "@/lib/admin-api";
+import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
 
 type SortKey = "id" | "name" | "reference" | "price" | "stock" | "categoryName" | "active";
 type SortDirection = "asc" | "desc";
@@ -94,7 +96,6 @@ const AdminDashboard = () => {
     }, [loadProducts]);
 
     const handleDelete = async (product: AdminProduct) => {
-        if (!window.confirm(`Supprimer "${decodeAdminText(product.name)}" (ID: ${product.id}) ?`)) return;
 
         setDeletingId(product.id);
         try {
@@ -613,8 +614,8 @@ const AdminDashboard = () => {
                                             </div>
                                             <div className="flex gap-1 mt-1">
                                                 {product.hasVariants && (
-                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100">
-                                                        Variantes
+                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                                                        {product.variantCount ?? product.variants?.length ?? 0} {(product.variantCount ?? product.variants?.length ?? 0) > 1 ? "variantes" : "variante"}
                                                     </span>
                                                 )}
                                                 {product.categoryId === 2 && (
@@ -643,43 +644,69 @@ const AdminDashboard = () => {
                                             {decodeAdminText(product.categoryName)}
                                         </td>
                                         <td className="px-4 py-3">
-                                            <button
-                                                onClick={() => handleToggleActive(product)}
+                                            <ConfirmDeleteDialog
+                                                title={product.active ? "Desactiver ce produit ?" : "Activer ce produit ?"}
+                                                description={product.active
+                                                    ? `Le produit "${decodeAdminText(product.name)}" ne sera plus affiche sur le site public ni dans le catalogue client. Il restera conserve dans le backoffice.`
+                                                    : `Le produit "${decodeAdminText(product.name)}" sera de nouveau visible sur le site public, si sa categorie est active.`}
+                                                confirmLabel={product.active ? "Desactiver" : "Activer"}
+                                                pendingLabel="Modification..."
+                                                tone={product.active ? "warning" : "info"}
                                                 disabled={togglingId === product.id}
-                                                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-colors ${product.active
-                                                    ? "bg-green-50 text-green-700 hover:bg-green-100"
-                                                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                                                    }`}
-                                                title={product.active ? "Cliquer pour desactiver" : "Cliquer pour activer"}
+                                                onConfirm={() => handleToggleActive(product)}
                                             >
-                                                {product.active ? (
-                                                    <>
-                                                        <Eye className="h-3 w-3" /> Actif
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <EyeOff className="h-3 w-3" /> Inactif
-                                                    </>
+                                                {(openDialog) => (
+                                                    <button
+                                                        type="button"
+                                                        onClick={openDialog}
+                                                        disabled={togglingId === product.id}
+                                                        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${product.active
+                                                            ? "bg-green-50 text-green-700 hover:bg-green-100"
+                                                            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                                                            }`}
+                                                        title={product.active ? "Cliquer pour desactiver" : "Cliquer pour activer"}
+                                                    >
+                                                        {product.active ? (
+                                                            <>
+                                                                <Eye className="h-3 w-3" /> Actif
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <EyeOff className="h-3 w-3" /> Inactif
+                                                            </>
+                                                        )}
+                                                    </button>
                                                 )}
-                                            </button>
+                                            </ConfirmDeleteDialog>
                                         </td>
                                         <td className="px-4 py-3 text-right">
                                             <div className="flex justify-end gap-2">
                                                 <Link
                                                     to={`/admin/produits/modifier/${product.id}`}
-                                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-blue-100 text-blue-600 transition-colors hover:bg-blue-50"
                                                     title="Modifier"
+                                                    aria-label="Modifier ce produit"
                                                 >
-                                                    Modifier
+                                                    <Pencil className="h-3.5 w-3.5" />
                                                 </Link>
-                                                <button
-                                                    onClick={() => handleDelete(product)}
+                                                <ConfirmDeleteDialog
+                                                    title="Supprimer ce produit ?"
+                                                    description={`"${decodeAdminText(product.name)}" (ID: ${product.id}) sera supprimé du catalogue.`}
                                                     disabled={deletingId === product.id}
-                                                    className="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
-                                                    title="Supprimer"
+                                                    onConfirm={() => handleDelete(product)}
                                                 >
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                </button>
+                                                    {(openDialog) => (
+                                                        <button
+                                                            type="button"
+                                                            onClick={openDialog}
+                                                            disabled={deletingId === product.id}
+                                                            className="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                                                            title="Supprimer"
+                                                        >
+                                                            <Trash2 className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    )}
+                                                </ConfirmDeleteDialog>
                                             </div>
                                         </td>
                                     </tr>

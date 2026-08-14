@@ -12,7 +12,7 @@ const authHeaders = (): HeadersInit => {
   };
 };
 
-export type OrderStatus = "new" | "confirmed" | "fulfilled" | "cancelled";
+export type OrderStatus = "new" | "confirmed" | "preparing" | "shipped" | "fulfilled" | "delivery_failed" | "cancelled";
 export type ShippingMethod = "standard" | "express" | "pickup";
 export type PaymentMethod = "cash_on_delivery" | "bank_transfer";
 
@@ -130,11 +130,11 @@ export const listOrders = async (reference?: string) => {
   return (data.orders || []) as StoredOrder[];
 };
 
-export const updateOrderStatus = async (id: string, status: OrderStatus) => {
+export const updateOrderStatus = async (id: string, status: OrderStatus, note?: string) => {
   const res = await fetch(`${API_BASE}/admin/orders/${encodeURIComponent(id)}/status`, {
     method: "PUT",
     headers: authHeaders(),
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, note }),
   });
   const data = await res.json();
   if (!res.ok || !data.order) {

@@ -7,6 +7,7 @@ import {
   Eye,
   FileText,
   Filter,
+  CircleHelp,
   Mail,
   MapPin,
   PackageCheck,
@@ -18,6 +19,14 @@ import {
   X,
 } from "lucide-react";
 
+import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { formatTnd } from "@/lib/currency";
 import {
   listOrders,
@@ -30,17 +39,89 @@ import {
 
 const statusLabels: Record<OrderStatus, string> = {
   new: "Nouvelle",
-  confirmed: "Confirmée",
-  fulfilled: "Livrée",
-  cancelled: "Annulée",
+  confirmed: "ConfirmÃ©e",
+  preparing: "En prÃ©paration",
+  shipped: "ExpÃ©diÃ©e",
+  fulfilled: "LivrÃ©e",
+  delivery_failed: "Ã‰chec livraison",
+  cancelled: "AnnulÃ©e",
 };
 
 const statusClasses: Record<OrderStatus, string> = {
   new: "border-blue-100 bg-blue-50 text-blue-700",
   confirmed: "border-amber-100 bg-amber-50 text-amber-700",
+  preparing: "border-violet-100 bg-violet-50 text-violet-700",
+  shipped: "border-cyan-100 bg-cyan-50 text-cyan-700",
   fulfilled: "border-emerald-100 bg-emerald-50 text-emerald-700",
+  delivery_failed: "border-orange-100 bg-orange-50 text-orange-700",
   cancelled: "border-red-100 bg-red-50 text-red-700",
 };
+
+const statusTransitions: Record<OrderStatus, OrderStatus[]> = {
+  new: ["confirmed", "cancelled"],
+  confirmed: ["preparing", "cancelled"],
+  preparing: ["shipped", "cancelled"],
+  shipped: ["fulfilled", "delivery_failed"],
+  delivery_failed: ["shipped", "cancelled"],
+  fulfilled: [],
+  cancelled: [],
+};
+
+const statusActionLabels: Record<OrderStatus, string> = {
+  new: "Marquer nouvelle",
+  confirmed: "Confirmer",
+  preparing: "PrÃ©parer",
+  shipped: "ExpÃ©dier",
+  fulfilled: "Livrer",
+  delivery_failed: "Ã‰chec livraison",
+  cancelled: "Annuler",
+};
+
+const statusTransitionDescriptions: Record<string, string> = {
+  "new:confirmed": "La commande a Ã©tÃ© vÃ©rifiÃ©e. Elle pourra ensuite passer en prÃ©paration ou Ãªtre annulÃ©e.",
+  "new:cancelled": "La commande sera arrÃªtÃ©e avant confirmation. Elle deviendra finale et ne pourra plus Ãªtre rÃ©activÃ©e.",
+  "confirmed:preparing": "La commande entre en prÃ©paration. Les articles doivent Ãªtre regroupÃ©s avant expÃ©dition.",
+  "confirmed:cancelled": "La commande sera annulÃ©e avant prÃ©paration. Elle deviendra finale.",
+  "preparing:shipped": "La commande est prÃªte et remise au livreur ou au client selon le mode de livraison.",
+  "preparing:cancelled": "La commande sera annulÃ©e pendant la prÃ©paration. VÃ©rifie le stock avant de confirmer.",
+  "shipped:fulfilled": "La commande sera marquÃ©e comme livrÃ©e. Ce statut est final et ne peut pas revenir en arriÃ¨re.",
+  "shipped:delivery_failed": "La livraison n'a pas abouti. Tu pourras relancer une expÃ©dition ou annuler la commande.",
+  "delivery_failed:shipped": "Une nouvelle tentative de livraison sera enregistrÃ©e.",
+  "delivery_failed:cancelled": "La commande sera annulÃ©e aprÃ¨s l'Ã©chec de livraison. Ce statut est final.",
+};
+
+const isFinalOrderStatus = (status: OrderStatus) => statusTransitions[status].length === 0;
+
+const statusGuides: Array<{ status: OrderStatus; description: string }> = [
+  {
+    status: "new",
+    description: "Commande reÃ§ue depuis le checkout. Elle doit Ãªtre vÃ©rifiÃ©e avant toute prÃ©paration.",
+  },
+  {
+    status: "confirmed",
+    description: "Commande vÃ©rifiÃ©e par l'Ã©quipe: client, adresse, paiement et disponibilitÃ© sont cohÃ©rents.",
+  },
+  {
+    status: "preparing",
+    description: "Les articles sont en cours de prÃ©paration. La commande n'est pas encore remise au livreur.",
+  },
+  {
+    status: "shipped",
+    description: "Commande remise au livreur ou prÃªte Ã  Ãªtre retirÃ©e. Elle peut devenir livrÃ©e ou passer en Ã©chec livraison.",
+  },
+  {
+    status: "delivery_failed",
+    description: "La livraison n'a pas abouti. Une nouvelle tentative ou une annulation peuvent Ãªtre dÃ©cidÃ©es.",
+  },
+  {
+    status: "fulfilled",
+    description: "Commande livrÃ©e au client. Statut final, aucun retour vers un ancien statut n'est autorisÃ©.",
+  },
+  {
+    status: "cancelled",
+    description: "Commande arrÃªtÃ©e. Statut final, la commande ne peut plus Ãªtre rÃ©activÃ©e.",
+  },
+];
 
 const shippingLabels: Record<ShippingMethod, string> = {
   standard: "Standard",
@@ -49,7 +130,7 @@ const shippingLabels: Record<ShippingMethod, string> = {
 };
 
 const paymentLabels: Record<PaymentMethod, string> = {
-  cash_on_delivery: "Paiement à la livraison",
+  cash_on_delivery: "Paiement Ã  la livraison",
   bank_transfer: "Virement bancaire",
 };
 
@@ -64,7 +145,6 @@ const formatOrderDate = (date: string) =>
     timeStyle: "short",
   }).format(new Date(date));
 
-const csvEscape = (value: string | number | null | undefined) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 const htmlEscape = (value: string | number | null | undefined) =>
   String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -75,7 +155,6 @@ const htmlEscape = (value: string | number | null | undefined) =>
 const AdminOrders = () => {
   const [orders, setOrders] = useState<StoredOrder[]>([]);
   const [search, setSearch] = useState("");
-  const [referenceSearch, setReferenceSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [shippingFilter, setShippingFilter] = useState<ShippingFilter>("all");
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
@@ -83,16 +162,18 @@ const AdminOrders = () => {
   const [dateTo, setDateTo] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("dateDesc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [selectedOrder, setSelectedOrder] = useState<StoredOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingReference, setUpdatingReference] = useState<string | null>(null);
 
-  const loadOrders = async (reference = referenceSearch) => {
+  const loadOrders = async () => {
     try {
       setLoading(true);
       setError("");
-      setOrders(await listOrders(reference));
+      setOrders(await listOrders());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Impossible de charger les commandes");
     } finally {
@@ -151,10 +232,23 @@ const AdminOrders = () => {
     });
   }, [dateFrom, dateTo, orders, paymentFilter, search, shippingFilter, sortKey, statusFilter]);
 
-  const handleStatusChange = async (id: string, status: OrderStatus) => {
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paginatedOrders = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return filteredOrders.slice(start, start + pageSize);
+  }, [filteredOrders, pageSize, safePage]);
+  const paginationStart = filteredOrders.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
+  const paginationEnd = Math.min(filteredOrders.length, safePage * pageSize);
+
+  useEffect(() => {
+    setPage(1);
+  }, [dateFrom, dateTo, pageSize, paymentFilter, search, shippingFilter, sortKey, statusFilter]);
+
+  const handleStatusChange = async (id: string, status: OrderStatus, note?: string) => {
     try {
       setUpdatingReference(id);
-      const updated = await updateOrderStatus(id, status);
+      const updated = await updateOrderStatus(id, status, note);
       setOrders((previous) => previous.map((order) => (order.id === id ? updated : order)));
       setSelectedOrder((previous) => (previous?.id === id ? updated : previous));
     } catch (err) {
@@ -165,7 +259,6 @@ const AdminOrders = () => {
   };
 
   const activeFilterCount = [
-    referenceSearch.trim(),
     search.trim(),
     statusFilter !== "all",
     shippingFilter !== "all",
@@ -181,14 +274,14 @@ const AdminOrders = () => {
 
   const clearFilters = () => {
     setSearch("");
-    setReferenceSearch("");
     setStatusFilter("all");
     setShippingFilter("all");
     setPaymentFilter("all");
     setDateFrom("");
     setDateTo("");
     setSortKey("dateDesc");
-    loadOrders("");
+    setPage(1);
+    loadOrders();
   };
 
 
@@ -245,7 +338,7 @@ const AdminOrders = () => {
   </section>
   <h2>Articles</h2>
   <table>
-    <thead><tr><th>Article</th><th>Qté</th><th>Prix unitaire</th><th>Total</th></tr></thead>
+    <thead><tr><th>Article</th><th>QtÃ©</th><th>Prix unitaire</th><th>Total</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
   <div class="totals">
@@ -264,7 +357,7 @@ const AdminOrders = () => {
   const printOrder = (order: StoredOrder) => {
     const printWindow = window.open("", "_blank", "width=900,height=1100");
     if (!printWindow) {
-      setError("Impossible d ouvrir la fenêtre d impression. Vérifie le bloqueur de pop-up.");
+      setError("Impossible d ouvrir la fenÃªtre d impression. VÃ©rifie le bloqueur de pop-up.");
       return;
     }
     printWindow.document.open();
@@ -277,7 +370,8 @@ const AdminOrders = () => {
       .map(
         (order) => `
           <tr>
-            <td>${htmlEscape(order.id)}<br><small>${htmlEscape(statusLabels[order.status])}</small></td>
+            <td>${htmlEscape(order.id)}</td>
+            <td>${htmlEscape(statusLabels[order.status])}</td>
             <td>${htmlEscape(formatOrderDate(order.createdAt))}</td>
             <td>${htmlEscape(order.customer.firstName)} ${htmlEscape(order.customer.lastName)}<br><small>${htmlEscape(order.customer.phone)}</small></td>
             <td>${htmlEscape(shippingLabels[order.shippingMethod])}</td>
@@ -311,16 +405,16 @@ const AdminOrders = () => {
 <body>
   <header>
     <h1>Export commandes</h1>
-    <p class="muted">Samsonite Tunisie - généré le ${htmlEscape(formatOrderDate(new Date().toISOString()))}</p>
+    <p class="muted">Samsonite Tunisie - gÃ©nÃ©rÃ© le ${htmlEscape(formatOrderDate(new Date().toISOString()))}</p>
   </header>
   <section class="summary">
-    <div><strong>${filteredOrders.length}</strong><br><span class="muted">Commandes affichées</span></div>
-    <div><strong>${formatTnd(total)}</strong><br><span class="muted">Total filtré</span></div>
-    <div><strong>${htmlEscape(dateFrom || "Début")} - ${htmlEscape(dateTo || "Aujourd'hui")}</strong><br><span class="muted">Période</span></div>
+    <div><strong>${filteredOrders.length}</strong><br><span class="muted">Commandes affichÃ©es</span></div>
+    <div><strong>${formatTnd(total)}</strong><br><span class="muted">Total filtrÃ©</span></div>
+    <div><strong>${htmlEscape(dateFrom || "DÃ©but")} - ${htmlEscape(dateTo || "Aujourd'hui")}</strong><br><span class="muted">PÃ©riode</span></div>
   </section>
   <table>
     <thead>
-      <tr><th>Référence</th><th>Date</th><th>Client</th><th>Livraison</th><th>Paiement</th><th>Articles</th><th>Total</th></tr>
+      <tr><th>RÃ©fÃ©rence</th><th>Statut</th><th>Date</th><th>Client</th><th>Livraison</th><th>Paiement</th><th>Articles</th><th>Total</th></tr>
     </thead>
     <tbody>${rows}</tbody>
   </table>
@@ -332,7 +426,7 @@ const AdminOrders = () => {
   const printOrdersList = () => {
     const printWindow = window.open("", "_blank", "width=1100,height=900");
     if (!printWindow) {
-      setError("Impossible d'ouvrir la fenêtre d'impression. Vérifie le bloqueur de pop-up.");
+      setError("Impossible d'ouvrir la fenÃªtre d'impression. VÃ©rifie le bloqueur de pop-up.");
       return;
     }
     printWindow.document.open();
@@ -341,6 +435,21 @@ const AdminOrders = () => {
   };
 
   const exportOrders = () => {
+    const header = [
+      "RÃ©fÃ©rence",
+      "Date",
+      "Statut",
+      "Client",
+      "TÃ©lÃ©phone",
+      "Email",
+      "Ville",
+      "Livraison",
+      "Paiement",
+      "Articles",
+      "Sous-total",
+      "Frais livraison",
+      "Total",
+    ];
     const rows = filteredOrders.map((order) => [
       order.id,
       formatOrderDate(order.createdAt),
@@ -356,27 +465,35 @@ const AdminOrders = () => {
       order.totals.shipping,
       order.totals.total,
     ]);
-    const header = [
-      "Reference",
-      "Date",
-      "Statut",
-      "Client",
-      "Telephone",
-      "Email",
-      "Ville",
-      "Livraison",
-      "Paiement",
-      "Articles",
-      "Sous-total",
-      "Frais livraison",
-      "Total",
-    ];
-    const csv = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const tableRows = [header, ...rows]
+      .map(
+        (row, rowIndex) =>
+          `<tr>${row
+            .map((cell) => `<${rowIndex === 0 ? "th" : "td"}>${htmlEscape(cell)}</${rowIndex === 0 ? "th" : "td"}>`)
+            .join("")}</tr>`
+      )
+      .join("");
+    const workbook = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    table { border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; }
+    th { background: #111; color: #fff; font-weight: 700; }
+    th, td { border: 1px solid #d9d9d9; padding: 8px; mso-number-format:"\\@"; }
+  </style>
+</head>
+<body>
+  <table>${tableRows}</table>
+</body>
+</html>`;
+    const blob = new Blob(["\ufeff", workbook], {
+      type: "application/vnd.ms-excel;charset=utf-8",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `commandes-samsonite-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `commandes-samsonite-${new Date().toISOString().slice(0, 10)}.xls`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -389,6 +506,7 @@ const AdminOrders = () => {
           <p className="mt-1 text-sm text-gray-500">Suivi des commandes enregistrees depuis le checkout.</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <OrderStatusHelpDialog />
           <button
             type="button"
             onClick={exportOrders}
@@ -396,7 +514,7 @@ const AdminOrders = () => {
             className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Download className="h-4 w-4" />
-            Export CSV
+            Export Excel
           </button>
           <button
             type="button"
@@ -470,23 +588,7 @@ const AdminOrders = () => {
 
         {filtersOpen && (
           <div className="p-4">
-          <div className="grid gap-3 lg:grid-cols-[240px_minmax(0,1fr)]">
-            <label className={filterLabelClass}>
-              Reference commande
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  value={referenceSearch}
-                  onChange={(event) => setReferenceSearch(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") loadOrders(referenceSearch);
-                  }}
-                  placeholder="Ex: CMD-..."
-                  className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm font-medium text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 hover:bg-white focus:border-black focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
-                />
-              </div>
-            </label>
-
+          <div className="grid gap-3">
             <label className={filterLabelClass}>
               Recherche globale
               <div className="relative">
@@ -533,7 +635,7 @@ const AdminOrders = () => {
             </label>
 
             <label className={filterLabelClass}>
-              Date début
+              Date dÃ©but
               <input
                 type="date"
                 value={dateFrom}
@@ -563,15 +665,7 @@ const AdminOrders = () => {
             </label>
           </div>
 
-          <div className="mt-3 flex min-h-7 flex-wrap items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => loadOrders(referenceSearch)}
-              className="inline-flex h-9 items-center justify-center rounded-full bg-gray-950 px-4 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-gray-800"
-            >
-              Rechercher
-            </button>
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="mt-3 flex min-h-7 flex-wrap items-center gap-2">
             {statusFilter !== "all" && (
               <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Statut: {statusLabels[statusFilter]}</span>
             )}
@@ -595,7 +689,6 @@ const AdminOrders = () => {
               )}
             </div>
           </div>
-        </div>
         )}
       </div>
 
@@ -612,7 +705,22 @@ const AdminOrders = () => {
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg bg-white shadow">
-          <div className="border-b border-gray-100 px-4 py-3 text-sm text-gray-500">{filteredOrders.length} commande(s) affichee(s)</div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3 text-sm text-gray-500">
+            <span>{paginationStart}-{paginationEnd} sur {filteredOrders.length} commande(s)</span>
+            <label className="flex items-center gap-2 text-xs font-semibold text-gray-500">
+              Par page
+              <select
+                value={pageSize}
+                onChange={(event) => setPageSize(Number(event.target.value))}
+                className="h-8 rounded-md border border-gray-200 bg-white px-2 text-xs font-bold text-gray-900"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </label>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="border-b bg-gray-50 text-gray-700">
@@ -628,7 +736,7 @@ const AdminOrders = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredOrders.map((order) => (
+                {paginatedOrders.map((order) => (
                   <tr key={order.id} className="align-top transition-colors hover:bg-gray-50">
                     <td className="px-4 py-4">
                       <p className="font-mono text-xs font-bold text-gray-900">{order.id}</p>
@@ -660,16 +768,12 @@ const AdminOrders = () => {
                     <td className="px-4 py-4 text-right font-bold">{formatTnd(order.totals.total)}</td>
                     <td className="px-4 py-4 text-xs text-gray-500">{formatOrderDate(order.createdAt)}</td>
                     <td className="px-4 py-4">
-                      <select
-                        value={order.status}
-                        onChange={(event) => handleStatusChange(order.id, event.target.value as OrderStatus)}
-                        disabled={updatingReference === order.id}
-                        className={`rounded-full border px-3 py-1 text-xs font-bold ${statusClasses[order.status]}`}
-                      >
-                        {Object.entries(statusLabels).map(([status, label]) => (
-                          <option key={status} value={status}>{label}</option>
-                        ))}
-                      </select>
+                      <OrderStatusControl
+                        order={order}
+                        onStatusChange={handleStatusChange}
+                        updating={updatingReference === order.id}
+                        compact
+                      />
                     </td>
                     <td className="px-4 py-4 text-right">
                       <button type="button" onClick={() => setSelectedOrder(order)} className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-semibold transition-colors hover:bg-gray-50">
@@ -682,6 +786,43 @@ const AdminOrders = () => {
               </tbody>
             </table>
           </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
+            <p className="text-xs font-semibold text-gray-500">
+              Page {safePage} sur {totalPages}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={safePage <= 1}
+                className="rounded-full border border-gray-200 px-3 py-2 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                PrÃ©cÃ©dent
+              </button>
+              {Array.from({ length: totalPages }).slice(0, 7).map((_, index) => {
+                const pageNumber = index + 1;
+                return (
+                  <button
+                    key={pageNumber}
+                    type="button"
+                    onClick={() => setPage(pageNumber)}
+                    className={`h-9 w-9 rounded-full border text-xs font-bold transition-colors ${safePage === pageNumber ? "border-black bg-black text-white" : "border-gray-200 text-gray-700 hover:border-black"}`}
+                  >
+                    {pageNumber}
+                  </button>
+                );
+              })}
+              {totalPages > 7 && <span className="px-1 text-xs font-bold text-gray-400">...</span>}
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                disabled={safePage >= totalPages}
+                className="rounded-full border border-gray-200 px-3 py-2 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Suivant
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -691,6 +832,139 @@ const AdminOrders = () => {
     </div>
   );
 };
+
+const OrderStatusControl = ({
+  order,
+  onStatusChange,
+  updating,
+  compact = false,
+}: {
+  order: StoredOrder;
+  onStatusChange: (id: string, status: OrderStatus, note?: string) => void;
+  updating: boolean;
+  compact?: boolean;
+}) => {
+  const [open, setOpen] = useState(false);
+  const nextStatuses = statusTransitions[order.status] || [];
+
+  return (
+    <div className={compact ? "space-y-2" : "flex flex-wrap items-center justify-end gap-2"}>
+      <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold ${statusClasses[order.status]}`}>
+        {statusLabels[order.status]}
+      </span>
+      {isFinalOrderStatus(order.status) ? (
+        <span className="inline-flex rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">
+          Statut final
+        </span>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            disabled={updating}
+            className="inline-flex items-center justify-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-black disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Actions
+            {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+          {open && <div className={compact ? "flex flex-col gap-1" : "flex flex-wrap gap-2"}>
+          {nextStatuses.map((nextStatus) => {
+            const transitionKey = `${order.status}:${nextStatus}`;
+            const description = statusTransitionDescriptions[transitionKey] || "Ce changement sera enregistrÃ© dans l'historique de la commande.";
+            const note = description;
+            const isDanger = nextStatus === "cancelled" || nextStatus === "delivery_failed";
+
+            return (
+              <ConfirmDeleteDialog
+                key={nextStatus}
+                title={`Passer la commande en ${statusLabels[nextStatus].toLowerCase()} ?`}
+                description={`${statusLabels[order.status]} -> ${statusLabels[nextStatus]}. ${description}`}
+                confirmLabel={statusActionLabels[nextStatus]}
+                pendingLabel="Mise Ã  jour..."
+                tone={isDanger ? "warning" : "info"}
+                disabled={updating}
+                onConfirm={() => onStatusChange(order.id, nextStatus, note)}
+              >
+                {(openDialog) => (
+                  <button
+                    type="button"
+                    onClick={openDialog}
+                    disabled={updating}
+                    className={`inline-flex items-center justify-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                      isDanger
+                        ? "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                        : "border-gray-200 bg-white text-gray-800 hover:border-black hover:bg-gray-50"
+                    }`}
+                  >
+                    {statusActionLabels[nextStatus]}
+                  </button>
+                )}
+              </ConfirmDeleteDialog>
+            );
+          })}
+          </div>}
+        </>
+      )}
+    </div>
+  );
+};
+const OrderStatusHelpDialog = () => (
+  <Dialog>
+    <DialogTrigger asChild>
+      <button
+        type="button"
+        className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold transition-colors hover:border-black hover:bg-gray-50"
+      >
+        <CircleHelp className="h-4 w-4" />
+        Guide statuts
+      </button>
+    </DialogTrigger>
+    <DialogContent className="max-h-[85vh] max-w-3xl overflow-auto rounded-none border-0 p-0 sm:rounded-none">
+      <div className="border-b border-gray-200 px-6 py-5">
+        <DialogTitle className="text-xl font-black uppercase tracking-tight">Guide des statuts de commande</DialogTitle>
+        <DialogDescription className="mt-2 text-sm leading-6 text-gray-500">
+          Ce workflow Ã©vite les changements incohÃ©rents. Une commande livrÃ©e ou annulÃ©e est finale et ne peut plus revenir en arriÃ¨re.
+        </DialogDescription>
+      </div>
+      <div className="space-y-3 px-6 py-5">
+        {statusGuides.map(({ status, description }) => {
+          const nextStatuses = statusTransitions[status];
+          return (
+            <div key={status} className="rounded-lg border border-gray-200 bg-white p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${statusClasses[status]}`}>
+                    {statusLabels[status]}
+                  </span>
+                  <p className="mt-3 text-sm leading-6 text-gray-600">{description}</p>
+                </div>
+                {isFinalOrderStatus(status) && (
+                  <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">
+                    Statut final
+                  </span>
+                )}
+              </div>
+              <div className="mt-4 border-t border-gray-100 pt-3">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Actions autorisÃ©es</p>
+                {nextStatuses.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {nextStatuses.map((nextStatus) => (
+                      <span key={nextStatus} className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-bold text-gray-700">
+                        {statusLabels[nextStatus]}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm font-medium text-gray-500">Aucun changement possible.</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </DialogContent>
+  </Dialog>
+);
 
 const StatCard = ({
   icon: Icon,
@@ -734,7 +1008,7 @@ const OrderDetailPanel = ({
 }: {
   order: StoredOrder;
   onClose: () => void;
-  onStatusChange: (id: string, status: OrderStatus) => void;
+  onStatusChange: (id: string, status: OrderStatus, note?: string) => void;
   onPrint: (order: StoredOrder) => void;
   updating: boolean;
 }) => (
@@ -761,16 +1035,7 @@ const OrderDetailPanel = ({
         <section className="rounded-lg border border-gray-200 p-4">
           <div className="mb-4 flex items-center justify-between gap-3">
             <h3 className="font-bold text-gray-900">Statut</h3>
-            <select
-              value={order.status}
-              onChange={(event) => onStatusChange(order.id, event.target.value as OrderStatus)}
-              disabled={updating}
-              className={`rounded-full border px-3 py-1 text-xs font-bold ${statusClasses[order.status]}`}
-            >
-              {Object.entries(statusLabels).map(([status, label]) => (
-                <option key={status} value={status}>{label}</option>
-              ))}
-            </select>
+            <OrderStatusControl order={order} onStatusChange={onStatusChange} updating={updating} />
           </div>
           <div className="grid gap-3 text-sm md:grid-cols-2">
             <InfoLine icon={Truck} label="Livraison" value={shippingLabels[order.shippingMethod]} />
@@ -795,7 +1060,7 @@ const OrderDetailPanel = ({
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">Aucun historique enregistré pour cette commande.</p>
+            <p className="text-sm text-gray-500">Aucun historique enregistrÃ© pour cette commande.</p>
           )}
         </section>
 

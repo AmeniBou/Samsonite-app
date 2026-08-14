@@ -4,6 +4,7 @@ import { Minus, Plus, Trash2, ArrowLeft, Lock } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { formatTnd } from "@/lib/currency";
 import { useLanguage } from "@/lib/i18n";
+import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
 
 const Cart = () => {
   const { t } = useLanguage();
@@ -65,15 +66,23 @@ const Cart = () => {
                       )}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeItem(item.product.id, item.selectedColor, item.variantId)}
-                    className="inline-flex items-center gap-2 self-start border border-red-100 bg-red-50 px-3 py-2 text-xs font-black uppercase tracking-wide text-red-600 transition-colors hover:border-red-200 hover:bg-red-100"
-                    aria-label="Supprimer cet article du panier"
+                  <ConfirmDeleteDialog
+                    title="Supprimer cet article ?"
+                    description={`"${item.product.name}" sera retire de votre panier.`}
+                    onConfirm={() => removeItem(item.product.id, item.selectedColor, item.variantId)}
                   >
-                    <Trash2 className="h-4 w-4" />
-                    Supprimer
-                  </button>
+                    {(openDialog) => (
+                      <button
+                        type="button"
+                        onClick={openDialog}
+                        className="inline-flex items-center gap-2 self-start border border-red-100 bg-red-50 px-3 py-2 text-xs font-black uppercase tracking-wide text-red-600 transition-colors hover:border-red-200 hover:bg-red-100"
+                        aria-label="Supprimer cet article du panier"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Supprimer
+                      </button>
+                    )}
+                  </ConfirmDeleteDialog>
                 </div>
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center border border-border">

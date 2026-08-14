@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+﻿import { Link, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
@@ -21,21 +21,24 @@ const shippingLabels: Record<ShippingMethod, string> = {
 };
 
 const shippingDelays: Record<ShippingMethod, string> = {
-  standard: "Livraison estimée sous 2 à 4 jours ouvrables après confirmation.",
-  express: "Livraison prioritaire sous 24 à 48h ouvrables après confirmation.",
-  pickup: "Retrait possible après confirmation de la disponibilité par notre équipe.",
+  standard: "Livraison estimÃ©e sous 2 Ã  4 jours ouvrables aprÃ¨s confirmation.",
+  express: "Livraison prioritaire sous 24 Ã  48h ouvrables aprÃ¨s confirmation.",
+  pickup: "Retrait possible aprÃ¨s confirmation de la disponibilitÃ© par notre Ã©quipe.",
 };
 
 const paymentLabels: Record<PaymentMethod, string> = {
-  cash_on_delivery: "Paiement à la livraison",
+  cash_on_delivery: "Paiement Ã  la livraison",
   bank_transfer: "Virement bancaire",
 };
 
 const statusLabels: Record<StoredOrder["status"], string> = {
-  new: "Commande reçue",
-  confirmed: "Confirmée",
-  fulfilled: "Livrée",
-  cancelled: "Annulée",
+  new: "Commande reÃ§ue",
+  confirmed: "ConfirmÃ©e",
+  preparing: "En prÃ©paration",
+  shipped: "ExpÃ©diÃ©e",
+  fulfilled: "LivrÃ©e",
+  delivery_failed: "Ã‰chec livraison",
+  cancelled: "AnnulÃ©e",
 };
 
 const formatOrderDate = (date: string) =>
@@ -44,6 +47,143 @@ const formatOrderDate = (date: string) =>
     timeStyle: "short",
   }).format(new Date(date));
 
+const htmlEscape = (value: unknown) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+const buildOrderDetailsHtml = (order: StoredOrder, customerName: string) => {
+  const rows = order.items
+    .map(
+      (item) => `
+        <tr>
+          <td>
+            <strong>${htmlEscape(item.name)}</strong>
+            <small>${htmlEscape([item.selectedColor, item.selectedSize, item.sku ? `RÃ©f: ${item.sku}` : ""].filter(Boolean).join(" Â· "))}</small>
+          </td>
+          <td class="center">${item.quantity}</td>
+          <td class="right">${htmlEscape(formatTnd(item.unitPrice))}</td>
+          <td class="right">${htmlEscape(formatTnd(item.total))}</td>
+        </tr>`
+    )
+    .join("");
+
+  return `<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>DÃ©tails de commande ${htmlEscape(order.id)}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #111; font-family: Arial, Helvetica, sans-serif; background: #fff; }
+    .invoice { width: 190mm; min-height: 270mm; margin: 0 auto; padding: 18mm 14mm; }
+    .top { display: flex; justify-content: space-between; gap: 24px; border-bottom: 3px solid #111; padding-bottom: 18px; }
+    .brand { font-size: 28px; font-weight: 900; letter-spacing: -1px; }
+    .muted { color: #666; }
+    .meta { text-align: right; font-size: 12px; line-height: 1.7; }
+    h1 { margin: 26px 0 8px; font-size: 24px; text-transform: uppercase; letter-spacing: 0.08em; }
+    h2 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 22px 0; }
+    .box { border: 1px solid #ddd; padding: 14px; min-height: 118px; font-size: 13px; line-height: 1.6; }
+    table { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 12px; }
+    th { background: #f4f4f4; text-align: left; padding: 10px; border-bottom: 1px solid #ccc; text-transform: uppercase; font-size: 11px; }
+    td { padding: 12px 10px; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+    small { display: block; margin-top: 4px; color: #666; line-height: 1.4; }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .totals { width: 78mm; margin-left: auto; margin-top: 18px; font-size: 13px; }
+    .totals div { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e5e5; }
+    .totals .grand { font-size: 17px; font-weight: 900; border-bottom: 3px solid #111; }
+    .footer { margin-top: 34px; border-top: 1px solid #ddd; padding-top: 14px; font-size: 11px; line-height: 1.6; color: #555; }
+    .actions { position: fixed; right: 18px; top: 18px; display: flex; gap: 8px; }
+    button { border: 1px solid #111; background: #111; color: #fff; padding: 10px 14px; font-weight: 700; cursor: pointer; }
+    @media print {
+      @page { size: A4; margin: 0; }
+      .actions { display: none; }
+      .invoice { margin: 0; width: auto; min-height: auto; padding: 16mm 14mm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="actions">
+    <button onclick="window.print()">Imprimer / PDF</button>
+    <button onclick="window.close()">Fermer</button>
+  </div>
+  <main class="invoice">
+    <header class="top">
+      <div>
+        <div class="brand">Samsonite</div>
+        <p class="muted">9, Rue 8601 Zone Industrielle<br />Charguia 1, 2035 Ariana, Tunisie</p>
+      </div>
+      <div class="meta">
+        <strong>DÃ©tails de commande</strong><br />
+        RÃ©fÃ©rence: ${htmlEscape(order.id)}<br />
+        Date: ${htmlEscape(formatOrderDate(order.createdAt))}<br />
+        Statut: ${htmlEscape(statusLabels[order.status] || order.status)}
+      </div>
+    </header>
+
+    <h1>RÃ©capitulatif de commande</h1>
+    <p class="muted">Document gÃ©nÃ©rÃ© pour la commande ${htmlEscape(order.id)}.</p>
+
+    <section class="grid">
+      <div class="box">
+        <h2>Client</h2>
+        <strong>${htmlEscape(customerName || "Client")}</strong><br />
+        ${htmlEscape(order.customer.email)}<br />
+        ${htmlEscape(order.customer.phone)}
+      </div>
+      <div class="box">
+        <h2>Adresse de livraison</h2>
+        ${htmlEscape(order.customer.address)}<br />
+        ${htmlEscape([order.customer.postalCode, order.customer.city].filter(Boolean).join(" "))}<br />
+        Tunisie
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="box">
+        <h2>Livraison</h2>
+        ${htmlEscape(shippingLabels[order.shippingMethod])}<br />
+        ${htmlEscape(shippingDelays[order.shippingMethod])}
+      </div>
+      <div class="box">
+        <h2>Paiement</h2>
+        ${htmlEscape(paymentLabels[order.paymentMethod] || order.paymentMethod)}
+      </div>
+    </section>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Article</th>
+          <th class="center">QtÃ©</th>
+          <th class="right">Prix unitaire</th>
+          <th class="right">Total</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+
+    <section class="totals">
+      <div><span>Sous-total</span><strong>${htmlEscape(formatTnd(order.totals.subtotal))}</strong></div>
+      <div><span>Livraison</span><strong>${order.totals.shipping === 0 ? "Gratuite" : htmlEscape(formatTnd(order.totals.shipping))}</strong></div>
+      <div class="grand"><span>Total</span><span>${htmlEscape(formatTnd(order.totals.total))}</span></div>
+    </section>
+
+    <footer class="footer">
+      Samsonite Tunisie Â· Appelez-nous: 26 528 103 / 71 809 209 Â· commercial@samsonite.com.tn<br />
+      Ce document prÃ©sente les dÃ©tails de votre commande. Notre Ã©quipe vous contactera si une confirmation complÃ©mentaire est nÃ©cessaire.
+    </footer>
+  </main>
+  <script>window.onload = () => window.print();</script>
+</body>
+</html>`;
+};
+
 const OrderConfirmation = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useLanguage();
@@ -51,7 +191,7 @@ const OrderConfirmation = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = "Commande reçue | Samsonite Tunisie";
+    document.title = "Commande reÃ§ue | Samsonite Tunisie";
   }, []);
 
   useEffect(() => {
@@ -86,6 +226,18 @@ const OrderConfirmation = () => {
     );
   }
 
+  const printOrderDetails = () => {
+    if (!order) return;
+    const printWindow = window.open("", "_blank", "width=900,height=1100");
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+    printWindow.document.open();
+    printWindow.document.write(buildOrderDetailsHtml(order, customerName));
+    printWindow.document.close();
+  };
+
   if (!order) {
     return (
       <div className="samsonite-container py-20 text-center">
@@ -109,14 +261,14 @@ const OrderConfirmation = () => {
               </div>
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-700">
-                  Commande enregistrée
+                  Commande enregistrÃ©e
                 </p>
                 <h1 className="mt-2 text-2xl font-black uppercase tracking-tight md:text-3xl">
-                  Merci, {order.customer.firstName || "votre commande est reçue"}
+                  Merci, {order.customer.firstName || "votre commande est reÃ§ue"}
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  Nous avons bien reçu votre commande. Notre équipe va vérifier les informations et vous contacter si
-                  nécessaire avant l'expédition.
+                  Nous avons bien reÃ§u votre commande. Notre Ã©quipe va vÃ©rifier les informations et vous contacter si
+                  nÃ©cessaire avant l'expÃ©dition.
                 </p>
               </div>
             </div>
@@ -124,7 +276,7 @@ const OrderConfirmation = () => {
             <div className="print:hidden flex flex-col gap-2 sm:flex-row lg:flex-col">
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={printOrderDetails}
                 className="premium-control inline-flex items-center justify-center gap-2 border border-foreground bg-white px-5 py-3 text-xs font-black uppercase tracking-wide hover:bg-foreground hover:text-background"
               >
                 <Printer className="h-4 w-4" />
@@ -141,7 +293,7 @@ const OrderConfirmation = () => {
 
           <div className="mt-8 grid gap-3 border-y border-border py-5 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">Numéro commande</p>
+              <p className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">NumÃ©ro commande</p>
               <p className="mt-1 text-lg font-black">{order.id}</p>
             </div>
             <div>
@@ -162,7 +314,7 @@ const OrderConfirmation = () => {
 
           <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
             <section>
-              <h2 className="mb-4 text-sm font-black uppercase tracking-wide">Résumé de la commande</h2>
+              <h2 className="mb-4 text-sm font-black uppercase tracking-wide">RÃ©sumÃ© de la commande</h2>
               <div className="divide-y divide-border border-y border-border">
                 {order.items.map((item) => (
                   <div key={`${item.productId}-${item.variantId || item.selectedColor || item.name}`} className="flex gap-4 py-4">
@@ -179,10 +331,10 @@ const OrderConfirmation = () => {
                       <div className="mt-1 space-y-0.5 text-sm text-muted-foreground">
                         {item.selectedColor && <p>{item.selectedColor}</p>}
                         {item.selectedSize && <p>Taille: {item.selectedSize}</p>}
-                        {item.sku && <p>Référence: {item.sku}</p>}
+                        {item.sku && <p>RÃ©fÃ©rence: {item.sku}</p>}
                       </div>
                       <p className="mt-2 text-sm text-muted-foreground">
-                        Quantité {item.quantity} x {formatTnd(item.unitPrice)}
+                        QuantitÃ© {item.quantity} x {formatTnd(item.unitPrice)}
                       </p>
                     </div>
                     <p className="text-right font-black">{formatTnd(item.total)}</p>
@@ -242,17 +394,17 @@ const OrderConfirmation = () => {
               </div>
               <p className="font-bold">{paymentLabels[order.paymentMethod]}</p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Votre commande sera traitée selon le mode de paiement sélectionné.
+                Votre commande sera traitÃ©e selon le mode de paiement sÃ©lectionnÃ©.
               </p>
             </div>
 
             <div className="border border-border bg-white p-5">
               <div className="mb-3 flex items-center gap-3">
                 <Clock3 className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-sm font-black uppercase tracking-wide">Prochaine étape</h3>
+                <h3 className="text-sm font-black uppercase tracking-wide">Prochaine Ã©tape</h3>
               </div>
               <p className="text-sm leading-6 text-muted-foreground">
-                Conservez votre numéro de commande. Il permet à notre service client de retrouver rapidement votre dossier.
+                Conservez votre numÃ©ro de commande. Il permet Ã  notre service client de retrouver rapidement votre dossier.
               </p>
             </div>
           </div>

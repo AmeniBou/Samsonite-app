@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, Loader2, Upload, ImageOff, Copy, X, GripVertical } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Upload, ImageOff, Copy, X, GripVertical, ShoppingBag } from "lucide-react";
 import {
     fetchAdminProduct,
     createProduct,
@@ -11,6 +11,8 @@ import {
     type AdminCategory,
     type AdminBrand,
 } from "@/lib/admin-api";
+import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
+import { toast } from "@/components/ui/sonner";
 
 const decodeAdminText = (value?: string | null): string => {
     let text = value || "";
@@ -153,6 +155,7 @@ const AdminProductForm = () => {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [currentStep, setCurrentStep] = useState<ProductFormStep>(1);
+    const [previewVariantIndex, setPreviewVariantIndex] = useState(0);
     const [draggedVariantImage, setDraggedVariantImage] = useState<{
         variantIndex: number;
         imageIndex: number;
@@ -208,6 +211,9 @@ const AdminProductForm = () => {
         variants: [createEmptyVariant()] as ProductVariantForm[],
     });
 
+    useEffect(() => {
+        setPreviewVariantIndex((index) => Math.min(index, Math.max(0, form.variants.length - 1)));
+    }, [form.variants.length]);
     useEffect(() => {
         const loadReferences = async () => {
             try {
@@ -775,6 +781,7 @@ const AdminProductForm = () => {
                     ? "Produit mis à jour avec succès"
                     : `Produit créé avec succès (ID: ${(result as any).id})`;
                 setSuccess(msg);
+                toast.success(msg);
                 setTimeout(() => navigate("/admin"), 1500);
             } else {
                 setError(result.error || "Une erreur est survenue");
@@ -799,13 +806,57 @@ const AdminProductForm = () => {
     const allProductImages = allVariantImages;
     const selectedBrandName = brands.find((brand) => String(brand.id) === form.brandId)?.name || "Samsonite";
     const selectedCategoryName = categories.find((category) => String(category.id) === form.categoryId)?.name || selectedParent?.name || "Categorie";
-    const previewImage = allProductImages[0] || "/placeholder.svg";
     const previewDescription = form.descriptionShort || form.description || "Description courte du produit.";
-    const firstPreviewVariant = form.variants.find((variant) => variant.price.trim());
-    const previewPrice =
-        firstPreviewVariant?.price && Number.isFinite(Number(firstPreviewVariant.price))
-            ? Number(firstPreviewVariant.price).toLocaleString("fr-TN", { minimumFractionDigits: 3 })
-            : "0,000";
+    const previewVariants = form.variants.map((variant, index) => ({
+        ...variant,
+        index,
+        images: parseLines(variant.imagesText),
+        priceNumber: Number(variant.price),
+        stockNumber: Number(variant.stock),
+        dimension: [variant.height, variant.width, variant.depth].map((value) => value.trim()).filter(Boolean).join(" x "),
+        expandedDimension: [variant.expandedHeight, variant.expandedWidth, variant.expandedDepth].map((value) => value.trim()).filter(Boolean).join(" x "),
+    }));
+    const safePreviewVariantIndex = Math.min(previewVariantIndex, Math.max(0, previewVariants.length - 1));
+    const selectedPreviewVariant = previewVariants[safePreviewVariantIndex] || previewVariants[0] || createEmptyVariant();
+    const previewVariantImages = selectedPreviewVariant.images?.length ? selectedPreviewVariant.images : allProductImages;
+    const previewImage = previewVariantImages[0] || "/placeholder.svg";
+    const previewPrice = Number.isFinite(selectedPreviewVariant.priceNumber) && selectedPreviewVariant.priceNumber > 0
+        ? selectedPreviewVariant.priceNumber.toLocaleString("fr-TN", { minimumFractionDigits: 3 })
+        : "0,000";
+    const previewStock = Number.isFinite(selectedPreviewVariant.stockNumber) ? selectedPreviewVariant.stockNumber : 0;
+    const previewAvailability = previewStock > 0 ? "Disponible" : "Temporairement indisponible";
+    const previewColorOptions = Array.from(
+        new Map(
+            previewVariants
+                .filter((variant) => variant.colorName.trim() || variant.colorHex.trim())
+                .map((variant) => [
+                    `${variant.colorName.trim().toLowerCase()}::${variant.colorHex.trim().toLowerCase()}`,
+                    variant,
+                ])
+        ).values()
+    );
+    const previewSizeOptions = Array.from(
+        new Map(
+            previewVariants
+                .filter((variant) => variant.size.trim())
+                .map((variant) => [variant.size.trim().toLowerCase(), variant])
+        ).values()
+    );
+    const previewSpecRows = [
+        { label: "Reference", value: form.reference },
+        { label: "Modele", value: form.model },
+        { label: "Matiere", value: form.matiere },
+        { label: "Poignees", value: form.poignees },
+        { label: "Poignee de traction", value: form.poigneeTraction },
+        { label: "Roulettes", value: form.roulettes },
+        { label: "Type de roues", value: form.typeRoues },
+        { label: "Dimension", value: selectedPreviewVariant.dimension ? `${selectedPreviewVariant.dimension} cm` : "" },
+        { label: "Dimension extensible", value: selectedPreviewVariant.isExpandable && selectedPreviewVariant.expandedDimension ? `${selectedPreviewVariant.expandedDimension} cm` : "" },
+        { label: "Taille", value: selectedPreviewVariant.size },
+        { label: "Volume", value: selectedPreviewVariant.volume },
+        { label: "Poids", value: selectedPreviewVariant.weight },
+        { label: "Stock", value: selectedPreviewVariant.stock },
+    ].filter((row) => String(row.value || "").trim());
     const steps: Array<{ id: ProductFormStep; label: string; helper: string }> = [
         { id: 1, label: "Informations", helper: "Produit" },
         { id: 2, label: "Variantes", helper: "Couleurs, tailles, stock" },
@@ -1299,15 +1350,24 @@ const AdminProductForm = () => {
                                     >
                                         Dupliquer
                                     </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => removeVariant(index)}
+                                    <ConfirmDeleteDialog
+                                        title="Supprimer cette variante ?"
+                                        description={`La variante #${index + 1} et ses images associées seront retirées du formulaire.`}
                                         disabled={form.variants.length === 1}
-                                        className="text-xs text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-gray-300 disabled:no-underline"
-                                        title={form.variants.length === 1 ? "Un produit doit garder au moins une variante" : "Supprimer cette variante"}
+                                        onConfirm={() => removeVariant(index)}
                                     >
-                                        Supprimer
-                                    </button>
+                                        {(openDialog) => (
+                                            <button
+                                                type="button"
+                                                onClick={openDialog}
+                                                disabled={form.variants.length === 1}
+                                                className="text-xs text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-gray-300 disabled:no-underline"
+                                                title={form.variants.length === 1 ? "Un produit doit garder au moins une variante" : "Supprimer cette variante"}
+                                            >
+                                                Supprimer
+                                            </button>
+                                        )}
+                                    </ConfirmDeleteDialog>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -1497,14 +1557,22 @@ const AdminProductForm = () => {
                                                 }`}
                                                 title="Glisser pour changer l'ordre"
                                             >
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeVariantImage(index, image)}
-                                                    className="absolute right-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-gray-900 shadow-sm ring-1 ring-gray-200 transition hover:bg-red-600 hover:text-white"
-                                                    aria-label="Supprimer cette image"
+                                                <ConfirmDeleteDialog
+                                                    title="Supprimer cette image ?"
+                                                    description="Cette image sera retiree de la variante."
+                                                    onConfirm={() => removeVariantImage(index, image)}
                                                 >
-                                                    <X className="h-4 w-4" />
-                                                </button>
+                                                    {(openDialog) => (
+                                                        <button
+                                                            type="button"
+                                                            onClick={openDialog}
+                                                            className="absolute right-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-gray-900 shadow-sm ring-1 ring-gray-200 transition hover:bg-red-600 hover:text-white"
+                                                            aria-label="Supprimer cette image"
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                </ConfirmDeleteDialog>
                                                 <div className="absolute left-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-gray-500 shadow-sm ring-1 ring-gray-200">
                                                     <GripVertical className="h-4 w-4" />
                                                 </div>
@@ -1538,14 +1606,17 @@ const AdminProductForm = () => {
                     ))}
                 </div>
                 )}
-
                 {currentStep === 3 && (
                 <div className="space-y-5">
-                    <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                        <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Aperçu page détail</p>
-                        <div className="mt-4 grid gap-5 md:grid-cols-[260px_minmax(0,1fr)]">
-                            <div className="overflow-hidden rounded-md border border-gray-100 bg-white">
-                                <div className="aspect-square bg-white p-4">
+                    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                        <div className="border-b border-gray-100 px-5 py-4">
+                            <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Aperçu fidèle de la fiche produit client</p>
+                            <p className="mt-1 text-xs text-gray-500">Clique sur les tailles et couleurs pour vérifier l'image, le prix, le stock et les caractéristiques de chaque variante.</p>
+                        </div>
+
+                        <div className="grid gap-8 p-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.8fr)]">
+                            <div>
+                                <div className="mx-auto flex aspect-square max-w-[460px] items-center justify-center border border-gray-100 bg-white p-6">
                                     <img
                                         src={previewImage}
                                         alt="Aperçu produit"
@@ -1555,66 +1626,122 @@ const AdminProductForm = () => {
                                         }}
                                     />
                                 </div>
+                                {previewVariantImages.length > 1 && (
+                                    <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
+                                        {previewVariantImages.map((image, imageIndex) => (
+                                            <button
+                                                key={`${image}-${imageIndex}`}
+                                                type="button"
+                                                className={`h-16 w-16 flex-shrink-0 border-2 bg-white p-1 ${imageIndex === 0 ? "border-black" : "border-transparent hover:border-gray-300"}`}
+                                                title={`Image ${imageIndex + 1}`}
+                                            >
+                                                <img src={image} alt="" className="h-full w-full object-contain" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                            <div className="space-y-3">
+
+                            <div className="space-y-4">
                                 <div>
-                                    <p className="text-xs font-bold uppercase text-gray-400">{selectedBrandName}</p>
-                                    <h2 className="mt-1 text-2xl font-black uppercase leading-tight text-gray-950">{form.name || "Nom du produit"}</h2>
-                                    <p className="mt-1 text-sm text-gray-500">{selectedCategoryName}</p>
+                                    <p className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">{selectedBrandName}</p>
+                                    <h2 className="mt-1 text-3xl font-black uppercase leading-tight text-gray-950">{form.name || "Nom du produit"}</h2>
+                                    <p className="mt-2 text-base leading-7 text-gray-700">{previewDescription}</p>
                                 </div>
-                                <p className="text-xl font-black text-gray-950">{previewPrice} DT</p>
-                                <p className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${form.active ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
-                                    {form.active ? "Visible sur le site" : "Non visible"}
-                                </p>
-                                <p className="line-clamp-4 text-sm leading-6 text-gray-600">{previewDescription}</p>
-                                <button type="button" className="w-full rounded-md bg-black px-4 py-3 text-sm font-black uppercase text-white">
+
+                                <div className="flex flex-wrap items-center gap-3 border-y border-gray-200 py-4">
+                                    <p className="min-w-[135px] text-2xl font-black text-gray-950">{previewPrice} DT</p>
+                                    <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black uppercase ${previewStock > 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
+                                        <span className="h-2 w-2 rounded-full bg-current" />
+                                        {previewAvailability}
+                                    </span>
+                                    <span className="text-xs font-semibold text-gray-500">TVA incl.</span>
+                                </div>
+
+                                {previewSizeOptions.length > 0 && (
+                                    <div className="grid gap-2 sm:grid-cols-[110px_minmax(0,1fr)]">
+                                        <p className="pt-2 text-xs font-black uppercase tracking-wide text-gray-950">Taille</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {previewSizeOptions.map((variant) => {
+                                                const isSelected = variant.index === selectedPreviewVariant.index;
+                                                return (
+                                                    <button
+                                                        key={`preview-size-${variant.index}`}
+                                                        type="button"
+                                                        onClick={() => setPreviewVariantIndex(variant.index)}
+                                                        className={`min-h-11 min-w-[74px] border px-4 py-2 text-sm font-semibold ${isSelected ? "border-black bg-black text-white" : "border-gray-300 bg-white text-black hover:border-black"}`}
+                                                    >
+                                                        {variant.size}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {previewSpecRows.some((row) => /dimension|volume|poids/i.test(row.label)) && (
+                                    <dl className="grid gap-2 border-y border-gray-200 py-4 text-sm">
+                                        {previewSpecRows.filter((row) => /dimension|volume|poids/i.test(row.label)).map((row) => (
+                                            <div key={row.label} className="grid grid-cols-[130px_minmax(0,1fr)] gap-4">
+                                                <dt className="font-black uppercase text-gray-950">{row.label}</dt>
+                                                <dd className="text-gray-600">{row.value}</dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+                                )}
+
+                                {previewColorOptions.length > 0 && (
+                                    <div className="grid gap-2 sm:grid-cols-[110px_minmax(0,1fr)]">
+                                        <p className="pt-2 text-xs font-black uppercase tracking-wide text-gray-950">
+                                            Couleur
+                                            {selectedPreviewVariant.colorName && <span className="mt-1 block text-xs font-semibold normal-case text-gray-500">{selectedPreviewVariant.colorName}</span>}
+                                        </p>
+                                        <div className="flex flex-wrap gap-3">
+                                            {previewColorOptions.map((variant) => {
+                                                const isSelected = variant.index === selectedPreviewVariant.index;
+                                                return (
+                                                    <button
+                                                        key={`preview-color-${variant.index}`}
+                                                        type="button"
+                                                        onClick={() => setPreviewVariantIndex(variant.index)}
+                                                        className={`flex h-11 w-11 items-center justify-center rounded-full border bg-white ${isSelected ? "border-black shadow-[0_0_0_4px_rgba(0,0,0,0.06)]" : "border-gray-300"}`}
+                                                        title={variant.colorName || "Couleur"}
+                                                    >
+                                                        <span className="h-7 w-7 rounded-full border border-black/10" style={{ backgroundColor: variant.colorHex || "#d1d5db" }} />
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <button type="button" className="flex w-full items-center justify-center gap-2 bg-black px-4 py-4 text-sm font-black uppercase tracking-wide text-white">
+                                    <ShoppingBag className="h-4 w-4" />
                                     Ajouter au panier
                                 </button>
                             </div>
                         </div>
+
+                        {previewSpecRows.length > 0 && (
+                            <div className="border-t border-gray-200 p-5">
+                                <h3 className="mb-4 text-base font-black uppercase tracking-tight">Détails du produit</h3>
+                                <div className="bg-gray-50">
+                                    <div className="bg-gray-100 px-5 py-4 text-sm font-black uppercase tracking-wide text-gray-600">Specifications</div>
+                                    <dl className="divide-y divide-gray-200 px-5">
+                                        {previewSpecRows.map((row) => (
+                                            <div key={`${row.label}-${row.value}`} className="grid gap-3 py-3.5 text-sm sm:grid-cols-[190px_minmax(0,1fr)]">
+                                                <dt className="font-semibold text-gray-600">{row.label}</dt>
+                                                <dd className="leading-6 text-gray-600">{row.value}</dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+                                </div>
+                            </div>
+                        )}
                     </div>
-
-                {/* Toggles */}
-                <div className="grid md:grid-cols-3 gap-4">
-                    <label className="flex items-center gap-3 text-sm text-gray-700">
-                        <input
-                            id="product-active"
-                            name="active"
-                            type="checkbox"
-                            checked={form.active}
-                            onChange={handleChange}
-                            className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
-                        />
-                        Produit actif (visible sur le site)
-                    </label>
-                    <label className="flex items-center gap-3 text-sm text-gray-700">
-                        <input
-                            id="product-onSale"
-                            name="onSale"
-                            type="checkbox"
-                            checked={form.onSale}
-                            onChange={handleChange}
-                            className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
-                        />
-                        Produit en promotion
-                    </label>
-                    <label className="flex items-center gap-3 text-sm text-gray-700">
-                        <input
-                            id="product-onlineOnly"
-                            name="onlineOnly"
-                            type="checkbox"
-                            checked={form.onlineOnly}
-                            onChange={handleChange}
-                            className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
-                        />
-                        Vente en ligne uniquement
-                    </label>
-                </div>
-
                 </div>
                 )}
-
-                {/* Step navigation */}
+{/* Step navigation */}
                 <div className="flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
                     <button
                         type="button"

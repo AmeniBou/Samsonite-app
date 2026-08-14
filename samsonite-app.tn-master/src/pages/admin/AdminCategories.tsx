@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, CornerDownRight, Folder, FolderTree, Pencil, PlusCircle, RefreshCw, Save, Search, Trash2, X } from "lucide-react";
 import {
     createCategory,
@@ -7,6 +7,8 @@ import {
     updateCategory,
     type AdminCategory,
 } from "@/lib/admin-api";
+import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
+import { toast } from "@/components/ui/sonner";
 
 type CategoryForm = {
     name: string;
@@ -36,6 +38,8 @@ const AdminCategories = () => {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [form, setForm] = useState<CategoryForm>(emptyForm);
     const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
     const [expandedRootIds, setExpandedRootIds] = useState<Set<number>>(new Set());
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -139,6 +143,19 @@ const AdminCategories = () => {
         });
     }, [expandedRootIds, filteredCategories, getRootCategoryId, search]);
 
+    const totalPages = Math.max(1, Math.ceil(displayedCategories.length / pageSize));
+    const safePage = Math.min(page, totalPages);
+    const paginatedCategories = useMemo(() => {
+        const start = (safePage - 1) * pageSize;
+        return displayedCategories.slice(start, start + pageSize);
+    }, [displayedCategories, pageSize, safePage]);
+    const paginationStart = displayedCategories.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
+    const paginationEnd = Math.min(displayedCategories.length, safePage * pageSize);
+
+    useEffect(() => {
+        setPage(1);
+    }, [search, expandedRootIds, pageSize]);
+
     const startCreate = () => {
         setEditingId(null);
         setForm(emptyForm);
@@ -205,7 +222,9 @@ const AdminCategories = () => {
                 return;
             }
 
-            setSuccess(editingId ? "Categorie modifiee." : "Categorie creee.");
+            const successMessage = editingId ? "Cat\u00e9gorie modifi\u00e9e." : "Cat\u00e9gorie ajout\u00e9e avec succ\u00e8s.";
+            setSuccess(successMessage);
+            if (!editingId) toast.success(successMessage);
             setEditingId(null);
             setForm(emptyForm);
             await loadCategories();
@@ -223,8 +242,6 @@ const AdminCategories = () => {
             setError("Cette categorie contient encore des produits ou des sous-categories.");
             return;
         }
-
-        if (!window.confirm(`Supprimer la categorie "${normalizeText(category.name)}" ?`)) return;
 
         setDeletingId(category.id);
         setError("");
@@ -455,6 +472,23 @@ const AdminCategories = () => {
                     </div>
                 </div>
 
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3 text-sm text-gray-500">
+                    <span>{paginationStart}-{paginationEnd} sur {displayedCategories.length} categorie(s)</span>
+                    <label className="flex items-center gap-2 text-xs font-semibold text-gray-500">
+                        Par page
+                        <select
+                            value={pageSize}
+                            onChange={(event) => setPageSize(Number(event.target.value))}
+                            className="h-8 rounded-md border border-gray-200 bg-white px-2 text-xs font-bold text-gray-900"
+                        >
+                            <option value={5}>5</option>
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                            <option value={50}>50</option>
+                        </select>
+                    </label>
+                </div>
+
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead className="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500">
@@ -483,7 +517,7 @@ const AdminCategories = () => {
                                     </td>
                                 </tr>
                             ) : (
-                                displayedCategories.map((category) => {
+                                paginatedCategories.map((category) => {
                                     const canDelete = !(category.productCount || category.childCount);
                                     const depth = getCategoryDepth(category);
                                     const isRoot = depth === 0;
@@ -548,13 +582,28 @@ const AdminCategories = () => {
                                             </td>
                                             <td className="px-4 py-3 text-gray-600">{normalizeText(category.slug) || "-"}</td>
                                             <td className="px-4 py-3 text-center">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => updateCategory(category.id, { isActive: !category.isActive }).then(loadCategories)}
-                                                    className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${category.isActive ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-gray-100 text-gray-500 ring-1 ring-gray-200"}`}
+                                                <ConfirmDeleteDialog
+                                                    title={category.isActive ? "Désactiver cette catégorie ?" : "Activer cette catégorie ?"}
+                                                    description={
+                                                        category.isActive
+                                                            ? `La catégorie "${normalizeText(category.name)}" ne sera plus visible dans le menu et les listes publiques. Les produits associés restent conservés.`
+                                                            : `La catégorie "${normalizeText(category.name)}" redeviendra visible selon sa configuration de menu.`
+                                                    }
+                                                    confirmLabel={category.isActive ? "Désactiver" : "Activer"}
+                                                    pendingLabel="Mise à jour..."
+                                                    tone={category.isActive ? "warning" : "info"}
+                                                    onConfirm={() => updateCategory(category.id, { isActive: !category.isActive }).then(loadCategories)}
                                                 >
-                                                    {category.isActive ? "Actif" : "Masqué"}
-                                                </button>
+                                                    {(openDialog) => (
+                                                        <button
+                                                            type="button"
+                                                            onClick={openDialog}
+                                                            className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${category.isActive ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-gray-100 text-gray-500 ring-1 ring-gray-200"}`}
+                                                        >
+                                                            {category.isActive ? "Actif" : "Masqué"}
+                                                        </button>
+                                                    )}
+                                                </ConfirmDeleteDialog>
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 {isRoot ? (
@@ -585,21 +634,36 @@ const AdminCategories = () => {
                                                     <button
                                                         type="button"
                                                         onClick={() => startEdit(category)}
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-gray-300 rounded-md text-xs hover:bg-gray-50"
+                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                                        title="Modifier"
+                                                        aria-label="Modifier cette categorie"
                                                     >
                                                         <Pencil className="h-3.5 w-3.5" />
-                                                        Modifier
                                                     </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleDelete(category)}
+                                                    <ConfirmDeleteDialog
+                                                        title="Supprimer cette catégorie ?"
+                                                        description={`La catégorie "${normalizeText(category.name)}" sera définitivement supprimée de la base. Cette action est possible uniquement si elle ne contient ni produits ni sous-catégories.`}
+                                                        confirmLabel="Supprimer"
+                                                        pendingLabel="Suppression..."
                                                         disabled={!canDelete || deletingId === category.id}
-                                                        title={!canDelete ? "Categorie utilisee" : "Supprimer"}
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-red-200 rounded-md text-xs text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                        onConfirm={() => handleDelete(category)}
                                                     >
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                        {deletingId === category.id ? "..." : "Supprimer"}
-                                                    </button>
+                                                        {(openDialog) => (
+                                                            <button
+                                                                type="button"
+                                                                onClick={openDialog}
+                                                                disabled={!canDelete || deletingId === category.id}
+                                                                title={!canDelete ? "Categorie utilisee" : "Supprimer"}
+                                                                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-200 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                                            >
+                                                                {deletingId === category.id ? (
+                                                                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                                                                ) : (
+                                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                                )}
+                                                            </button>
+                                                        )}
+                                                    </ConfirmDeleteDialog>
                                                 </div>
                                             </td>
                                         </tr>
@@ -609,6 +673,45 @@ const AdminCategories = () => {
                         </tbody>
                     </table>
                 </div>
+                {!loading && displayedCategories.length > 0 && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
+                        <p className="text-xs font-semibold text-gray-500">
+                            Page {safePage} sur {totalPages}
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                                disabled={safePage <= 1}
+                                className="rounded-full border border-gray-200 px-3 py-2 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                Précédent
+                            </button>
+                            {Array.from({ length: totalPages }).slice(0, 7).map((_, index) => {
+                                const pageNumber = index + 1;
+                                return (
+                                    <button
+                                        key={pageNumber}
+                                        type="button"
+                                        onClick={() => setPage(pageNumber)}
+                                        className={`h-9 w-9 rounded-full border text-xs font-bold transition-colors ${safePage === pageNumber ? "border-black bg-black text-white" : "border-gray-200 text-gray-700 hover:border-black"}`}
+                                    >
+                                        {pageNumber}
+                                    </button>
+                                );
+                            })}
+                            {totalPages > 7 && <span className="px-1 text-xs font-bold text-gray-400">...</span>}
+                            <button
+                                type="button"
+                                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                                disabled={safePage >= totalPages}
+                                className="rounded-full border border-gray-200 px-3 py-2 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                Suivant
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

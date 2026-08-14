@@ -1,4 +1,4 @@
-﻿import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -20,6 +20,7 @@ import { formatTnd } from "@/lib/currency";
 import { createStoredOrder, type PaymentMethod, type ShippingMethod } from "@/lib/orders";
 import type { CartItem, ProductVariant } from "@/lib/prestashop/types";
 import { useLanguage } from "@/lib/i18n";
+import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
 
 interface CheckoutFormState {
   title: "M" | "Mme";
@@ -27,7 +28,6 @@ interface CheckoutFormState {
   lastName: string;
   phone: string;
   email: string;
-  password: string;
   birthDate: string;
   addressAlias: string;
   company: string;
@@ -51,7 +51,6 @@ const initialFormState: CheckoutFormState = {
   lastName: "",
   phone: "",
   email: "",
-  password: "",
   birthDate: "",
   addressAlias: "",
   company: "",
@@ -70,7 +69,14 @@ const initialFormState: CheckoutFormState = {
 };
 
 const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-const isValidPhone = (phone: string) => /^[+()\s0-9.-]{8,20}$/.test(phone.trim());
+const isValidPhone = (phone: string) => /^\d{8}$/.test(phone.trim());
+const isValidBirthDate = (date: string) => {
+  if (!date) return true;
+  const parsed = new Date(date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return !Number.isNaN(parsed.getTime()) && parsed <= today;
+};
 const normalizeKey = (value?: string) => (value || "").trim().toLowerCase();
 
 const getCartVariant = (item: CartItem): ProductVariant | undefined =>
@@ -116,7 +122,6 @@ const Checkout = () => {
 
   const paymentOptions: Array<{ value: PaymentMethod; title: string; description: string }> = [
     { value: "cash_on_delivery", title: "Payer comptant à la livraison", description: "Paiement à la réception de la commande." },
-    { value: "bank_transfer", title: "Payer par virement bancaire", description: "Notre équipe vous communiquera les informations de paiement." },
   ];
 
   const shippingFee = shippingMethod === "pickup" ? 0 : shippingMethod === "express" ? 12 : totalPrice >= 300 ? 0 : 7;
@@ -124,6 +129,8 @@ const Checkout = () => {
   const orderTotal = totalPrice + shippingFee + giftWrapFee;
   const emailValid = isValidEmail(form.email);
   const phoneValid = isValidPhone(form.phone);
+  const birthDateValid = isValidBirthDate(form.birthDate);
+  const todayIso = new Date().toISOString().slice(0, 10);
 
   const personalValid = Boolean(
     form.firstName.trim() &&
@@ -132,6 +139,7 @@ const Checkout = () => {
       emailValid &&
       form.phone.trim() &&
       phoneValid &&
+      birthDateValid &&
       form.privacy
   );
   const addressValid = Boolean(form.address.trim() && form.city.trim());
@@ -242,14 +250,22 @@ const Checkout = () => {
               </div>
             </div>
             {!compact && (
-              <button
-                type="button"
-                onClick={() => removeItem(item.product.id, item.selectedColor, item.variantId)}
-                className="self-start p-2 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Supprimer cet article"
+              <ConfirmDeleteDialog
+                title="Supprimer cet article ?"
+                description={`"${item.product.name}" sera retire de votre panier.`}
+                onConfirm={() => removeItem(item.product.id, item.selectedColor, item.variantId)}
               >
-                <Trash2 className="h-5 w-5" />
-              </button>
+                {(openDialog) => (
+                  <button
+                    type="button"
+                    onClick={openDialog}
+                    className="self-start p-2 text-muted-foreground transition-colors hover:text-red-600"
+                    aria-label="Supprimer cet article"
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </button>
+                )}
+              </ConfirmDeleteDialog>
             )}
           </div>
 
@@ -278,6 +294,13 @@ const Checkout = () => {
       <Icon className="h-5 w-5 text-foreground" />
       <h2 className="text-xl font-normal uppercase tracking-tight">{title}</h2>
     </div>
+  );
+
+  const RequiredLabel = ({ children, className = "pt-3 text-sm font-black" }: { children: string; className?: string }) => (
+    <label className={className}>
+      <span className="mr-1 text-red-600">*</span>
+      {children}
+    </label>
   );
 
   return (
@@ -327,28 +350,44 @@ const Checkout = () => {
                   <label className="inline-flex items-center gap-2"><input type="radio" checked={form.title === "Mme"} onChange={() => updateField("title", "Mme")} /> Mme</label>
                 </div>
                 <div className="grid gap-4 md:grid-cols-[150px_minmax(0,1fr)] md:items-start">
-                  <label className="pt-3 text-sm font-black">Prénom</label>
+                  <RequiredLabel>Prénom</RequiredLabel>
                   <input required className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.firstName} onChange={(event) => updateField("firstName", event.target.value)} />
-                  <label className="pt-3 text-sm font-black">Nom</label>
+                  <RequiredLabel>Nom</RequiredLabel>
                   <input required className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.lastName} onChange={(event) => updateField("lastName", event.target.value)} />
-                  <label className="pt-3 text-sm font-black">E-mail</label>
+                  <RequiredLabel>E-mail</RequiredLabel>
                   <div>
                     <input required type="email" className={`h-11 w-full border bg-[#f8f8f8] px-3 ${form.email && !emailValid ? "border-red-400" : "border-border"}`} value={form.email} onChange={(event) => updateField("email", event.target.value)} />
                     {form.email && !emailValid && <p className="mt-1 text-xs font-semibold text-red-600">Adresse e-mail invalide.</p>}
                   </div>
-                  <label className="pt-3 text-sm font-black">Téléphone</label>
+                  <RequiredLabel>Téléphone</RequiredLabel>
                   <div>
-                    <input required className={`h-11 w-full border bg-[#f8f8f8] px-3 ${form.phone && !phoneValid ? "border-red-400" : "border-border"}`} value={form.phone} onChange={(event) => updateField("phone", event.target.value)} />
-                    {form.phone && !phoneValid && <p className="mt-1 text-xs font-semibold text-red-600">Numéro de téléphone invalide.</p>}
+                    <input
+                      required
+                      inputMode="numeric"
+                      pattern="[0-9]{8}"
+                      maxLength={8}
+                      placeholder="Ex: 26528103"
+                      className={`h-11 w-full border bg-[#f8f8f8] px-3 ${form.phone && !phoneValid ? "border-red-400" : "border-border"}`}
+                      value={form.phone}
+                      onChange={(event) => updateField("phone", event.target.value.replace(/\D/g, "").slice(0, 8))}
+                    />
+                    {form.phone && !phoneValid && <p className="mt-1 text-xs font-semibold text-red-600">Le numéro de téléphone doit contenir exactement 8 chiffres.</p>}
                   </div>
-                  <label className="pt-3 text-sm font-black">Mot de passe</label>
-                  <input type="password" className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.password} onChange={(event) => updateField("password", event.target.value)} />
                   <label className="pt-3 text-sm font-black">Date de naissance</label>
-                  <input placeholder="DD/MM/YYYY" className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.birthDate} onChange={(event) => updateField("birthDate", event.target.value)} />
+                  <div>
+                    <input
+                      type="date"
+                      max={todayIso}
+                      className={`h-11 w-full border bg-[#f8f8f8] px-3 ${form.birthDate && !birthDateValid ? "border-red-400" : "border-border"}`}
+                      value={form.birthDate}
+                      onChange={(event) => updateField("birthDate", event.target.value)}
+                    />
+                    {form.birthDate && !birthDateValid && <p className="mt-1 text-xs font-semibold text-red-600">Date de naissance invalide.</p>}
+                  </div>
                 </div>
                 <div className="mt-6 space-y-4 text-sm">
                   <label className="flex gap-3"><input type="checkbox" checked={form.newsletter} onChange={(event) => updateField("newsletter", event.target.checked)} /> Recevoir notre newsletter</label>
-                  <label className="flex gap-3"><input type="checkbox" checked={form.privacy} onChange={(event) => updateField("privacy", event.target.checked)} /> J'accepte l'utilisation de mes données pour le traitement de ma commande.</label>
+                  <label className="flex gap-3"><input type="checkbox" checked={form.privacy} onChange={(event) => updateField("privacy", event.target.checked)} /> <span><span className="mr-1 text-red-600">*</span>J'accepte l'utilisation de mes données pour le traitement de ma commande.</span></label>
                 </div>
               </section>
             )}
@@ -364,13 +403,13 @@ const Checkout = () => {
                   <input className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.company} onChange={(event) => updateField("company", event.target.value)} />
                   <label className="pt-3 text-sm font-black">Numéro de TVA</label>
                   <input className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.taxNumber} onChange={(event) => updateField("taxNumber", event.target.value)} />
-                  <label className="pt-3 text-sm font-black">Adresse</label>
+                  <RequiredLabel>Adresse</RequiredLabel>
                   <input required className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.address} onChange={(event) => updateField("address", event.target.value)} />
                   <label className="pt-3 text-sm font-black">Complément d'adresse</label>
                   <input className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.address2} onChange={(event) => updateField("address2", event.target.value)} />
                   <label className="pt-3 text-sm font-black">Code postal</label>
                   <input className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.postalCode} onChange={(event) => updateField("postalCode", event.target.value)} />
-                  <label className="pt-3 text-sm font-black">Ville</label>
+                  <RequiredLabel>Ville</RequiredLabel>
                   <input required className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.city} onChange={(event) => updateField("city", event.target.value)} />
                   <label className="pt-3 text-sm font-black">Pays</label>
                   <select className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.country} onChange={(event) => updateField("country", event.target.value)}><option>Tunisie</option></select>
@@ -408,7 +447,7 @@ const Checkout = () => {
                     </label>
                   ))}
                 </div>
-                <label className="mt-6 flex gap-3 text-sm"><input type="checkbox" checked={form.terms} onChange={(event) => updateField("terms", event.target.checked)} /> J'ai lu les conditions générales de vente et j'y adhère sans réserve.</label>
+                <label className="mt-6 flex gap-3 text-sm"><input type="checkbox" checked={form.terms} onChange={(event) => updateField("terms", event.target.checked)} /> <span><span className="mr-1 text-red-600">*</span>J'ai lu les conditions générales de vente et j'y adhère sans réserve.</span></label>
 
                 <div className="mt-8 space-y-6">
                   <h3 className="text-lg font-black">Veuillez vérifier votre commande avant validation</h3>

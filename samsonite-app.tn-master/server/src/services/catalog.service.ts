@@ -593,6 +593,7 @@ const mapAdminProduct = (product: {
     imageUrl: mainImage?.imageUrl ?? null,
     stock,
     hasVariants: variants.length > 0,
+    variantCount: variants.length,
     description: product.description || "",
     descriptionShort: product.description || "",
     weight: product.weight || "",

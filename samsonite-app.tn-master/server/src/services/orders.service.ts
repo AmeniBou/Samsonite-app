@@ -9,7 +9,38 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const orderEmailsDir = path.join(__dirname, "../../public/order-emails");
 
-const ORDER_STATUSES = new Set(["new", "confirmed", "fulfilled", "cancelled"]);
+const ORDER_STATUSES = new Set([
+  "new",
+  "confirmed",
+  "preparing",
+  "shipped",
+  "fulfilled",
+  "delivery_failed",
+  "cancelled",
+]);
+
+const ORDER_STATUS_TRANSITIONS: Record<string, string[]> = {
+  new: ["confirmed", "cancelled"],
+  confirmed: ["preparing", "cancelled"],
+  preparing: ["shipped", "cancelled"],
+  shipped: ["fulfilled", "delivery_failed"],
+  delivery_failed: ["shipped", "cancelled"],
+  fulfilled: [],
+  cancelled: [],
+};
+
+const ORDER_STATUS_TRANSITION_NOTES: Record<string, string> = {
+  "new:confirmed": "Commande confirmee par le backoffice",
+  "new:cancelled": "Commande annulee avant confirmation",
+  "confirmed:preparing": "Commande envoyee en preparation",
+  "confirmed:cancelled": "Commande annulee avant preparation",
+  "preparing:shipped": "Commande expediee",
+  "preparing:cancelled": "Commande annulee pendant la preparation",
+  "shipped:fulfilled": "Commande livree au client",
+  "shipped:delivery_failed": "Livraison echouee",
+  "delivery_failed:shipped": "Nouvelle tentative de livraison",
+  "delivery_failed:cancelled": "Commande annulee apres echec de livraison",
+};
 const PAYMENT_METHODS = new Set(["cash_on_delivery", "bank_transfer"]);
 const SHIPPING_METHODS = new Set(["standard", "express", "pickup"]);
 
@@ -427,7 +458,7 @@ export const listOrders = async (reference?: string) => {
   return orders.map(mapOrder);
 };
 
-export const updateOrderStatus = async (reference: string, status: string) => {
+export const updateOrderStatus = async (reference: string, status: string, note?: string) => {
   if (!ORDER_STATUSES.has(status)) {
     throw new Error("Statut invalide");
   }
@@ -440,6 +471,19 @@ export const updateOrderStatus = async (reference: string, status: string) => {
     throw new Error("Commande introuvable");
   }
 
+  if (existingOrder.status !== status) {
+    const allowedTargets = ORDER_STATUS_TRANSITIONS[existingOrder.status] || [];
+    if (!allowedTargets.includes(status)) {
+      const available = allowedTargets.length
+        ? allowedTargets.join(", ")
+        : "aucun changement possible";
+      throw new Error(
+        `Transition de statut interdite: ${existingOrder.status} -> ${status}. Statuts autorises: ${available}.`
+      );
+    }
+  }
+
+  const transitionKey = `${existingOrder.status}:${status}`;
   const order = await prisma.order.update({
     where: { reference },
     data: {
@@ -450,7 +494,7 @@ export const updateOrderStatus = async (reference: string, status: string) => {
               create: {
                 previousStatus: existingOrder.status,
                 newStatus: status,
-                note: "Statut modifié depuis le backoffice",
+                note: String(note || ORDER_STATUS_TRANSITION_NOTES[transitionKey] || "Statut modifie depuis le backoffice").trim(),
               },
             },
           }
