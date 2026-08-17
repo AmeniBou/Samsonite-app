@@ -290,9 +290,9 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 text-black shadow-[0_1px_0_rgba(0,0,0,0.08)] backdrop-blur-xl">
-      <div className="h-11 bg-[#e3ae82] text-black">
-        <div className="mx-auto flex h-full max-w-[1760px] items-center justify-center px-6 text-[15px] font-medium">
+    <header className="sticky top-0 z-[200] bg-white/95 text-black shadow-[0_1px_0_rgba(0,0,0,0.08)] backdrop-blur-xl">
+      <div className="h-10 bg-black text-white sm:h-11">
+        <div className="mx-auto flex h-full max-w-[1760px] items-center justify-center px-4 text-xs font-medium sm:px-6 sm:text-[15px]">
           <Link to="/nous-contacter" className="underline underline-offset-4 transition-opacity hover:opacity-75">
             {t("top.offer")}
           </Link>
@@ -303,7 +303,7 @@ const Header = () => {
             </Link>
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-70"
+              className="in nline-flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-70"
               onClick={() => setLanguage(language === "fr" ? "en" : "fr")}
               aria-label={t("nav.language")}
             >
@@ -314,12 +314,12 @@ const Header = () => {
         </div>
       </div>
 
-      <div className="mx-auto flex h-[68px] max-w-[1760px] items-center px-6 lg:px-10">
-        <Link to="/" className="flex min-w-[250px] items-center transition-transform duration-200 hover:scale-[1.015]" onClick={closeMenus}>
+      <div className="mx-auto flex h-[60px] max-w-[1760px] items-center px-4 sm:h-[68px] sm:px-6 lg:px-10">
+        <Link to="/" className="flex min-w-0 flex-1 items-center transition-transform duration-200 hover:scale-[1.015] lg:min-w-[250px]" onClick={closeMenus}>
           <img
             src="/assets/samsonite-logo.png"
             alt="Samsonite"
-            className="h-10 w-auto object-contain"
+            className="h-8 w-auto object-contain sm:h-10"
             onError={(event) => {
               event.currentTarget.src = "/placeholder.svg";
             }}
@@ -510,7 +510,7 @@ const Header = () => {
           </button>
         </nav>
 
-        <div className="ml-auto flex min-w-[210px] items-center justify-end gap-5">
+        <div className="ml-auto flex shrink-0 items-center justify-end gap-1 sm:gap-5 lg:min-w-[210px]">
           <div className="relative hidden lg:block">
             {searchOpen && (
               <form
@@ -653,3 +653,4 @@ const Header = () => {
 };
 
 export default Header;
+

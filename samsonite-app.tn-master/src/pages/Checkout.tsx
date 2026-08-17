@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { useCart } from "@/hooks/useCart";
+import { Info } from "lucide-react";
 import { formatTnd } from "@/lib/currency";
 import { createStoredOrder, type PaymentMethod, type ShippingMethod } from "@/lib/orders";
 import type { CartItem, ProductVariant } from "@/lib/prestashop/types";
@@ -68,6 +69,14 @@ const initialFormState: CheckoutFormState = {
   giftWrap: false,
 };
 
+// Shared field styling so every input/select/textarea looks the same:
+// white background (not grey, which reads as "disabled"), a visible
+// focus ring, and a red border when the field is invalid.
+const fieldBaseClass =
+  "border border-border bg-white px-3 transition-colors focus:border-black focus:outline-none focus:ring-1 focus:ring-black";
+const fieldInvalidClass = (invalid: boolean) => (invalid ? "border-red-400" : "border-border");
+const labelClass = "pt-3 text-sm font-medium text-foreground/90";
+
 const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 const isValidPhone = (phone: string) => /^\d{8}$/.test(phone.trim());
 const isValidBirthDate = (date: string) => {
@@ -84,7 +93,7 @@ const getCartVariant = (item: CartItem): ProductVariant | undefined =>
     item.variantId
       ? variant.combinationId === item.variantId
       : normalizeKey(variant.color?.name) === normalizeKey(item.selectedColor) &&
-        normalizeKey(variant.size) === normalizeKey(item.selectedSize)
+      normalizeKey(variant.size) === normalizeKey(item.selectedSize)
   );
 
 const getVariantDimensions = (variant?: ProductVariant, item?: CartItem) => {
@@ -134,13 +143,13 @@ const Checkout = () => {
 
   const personalValid = Boolean(
     form.firstName.trim() &&
-      form.lastName.trim() &&
-      form.email.trim() &&
-      emailValid &&
-      form.phone.trim() &&
-      phoneValid &&
-      birthDateValid &&
-      form.privacy
+    form.lastName.trim() &&
+    form.email.trim() &&
+    emailValid &&
+    form.phone.trim() &&
+    phoneValid &&
+    birthDateValid &&
+    form.privacy
   );
   const addressValid = Boolean(form.address.trim() && form.city.trim());
   const canSubmit = personalValid && addressValid && form.terms;
@@ -149,6 +158,14 @@ const Checkout = () => {
     () => [true, personalValid, addressValid, Boolean(shippingMethod), form.terms],
     [addressValid, form.terms, personalValid, shippingMethod]
   );
+
+  const unlockedSteps = useMemo(() => {
+    const unlocked = [true];
+    for (let i = 1; i < stepStatus.length; i++) {
+      unlocked.push(unlocked[i - 1] && stepStatus[i - 1]);
+    }
+    return unlocked;
+  }, [stepStatus]);
 
   const updateField = <K extends keyof CheckoutFormState>(field: K, value: CheckoutFormState[K]) => {
     setForm((previous) => ({ ...previous, [field]: value }));
@@ -210,7 +227,7 @@ const Checkout = () => {
   if (items.length === 0) {
     return (
       <div className="samsonite-container py-16 text-center">
-        <h1 className="mb-3 text-2xl font-bold">{t("cart.emptyTitle")}</h1>
+        <h1 className="mb-3 text-xl font-bold">{t("cart.emptyTitle")}</h1>
         <p className="mb-8 text-muted-foreground">{t("checkout.addProducts")}</p>
         <Link to="/" className="premium-control inline-block bg-foreground px-8 py-3 text-sm font-bold tracking-wider text-background">
           {t("cart.continue")}
@@ -227,26 +244,27 @@ const Checkout = () => {
     const dimensions = getVariantDimensions(variant, item);
     const volume = getVariantVolume(item, variant);
     const weight = getVariantWeight(item, variant);
+    const sku = item.sku || variant?.sku;
     const lineTotal = item.product.price * item.quantity;
 
     return (
-      <div key={`${item.product.id}-${item.variantId || item.selectedColor}`} className={`grid gap-5 border-b border-border py-5 ${compact ? "grid-cols-[72px_minmax(0,1fr)]" : "sm:grid-cols-[150px_minmax(0,1fr)]"}`}>
-        <Link to={`/produit/${item.product.slug}`} className={`${compact ? "h-20 w-20" : "h-36 w-36"} bg-white`}>
+      <div key={`${item.product.id}-${item.variantId || item.selectedColor}`} className={`flex gap-4 border-b border-border transition-colors ${compact ? "py-4" : "pb-6 hover:bg-accent/35 sm:p-3"}`}>
+        <Link to={`/produit/${item.product.slug}`} className={`${compact ? "h-16 w-16" : "h-28 w-28"} shrink-0 bg-white`}>
           <img src={getVariantImage(item, variant)} alt={item.product.name} className="h-full w-full object-contain" />
         </Link>
-        <div className="min-w-0">
-          <div className="flex gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <Link to={`/produit/${item.product.slug}`} className="text-base font-black uppercase hover:underline">
+              <Link to={`/produit/${item.product.slug}`} className="text-xs font-bold hover:underline">
                 {item.product.name}
               </Link>
-              <p className="mt-1 text-lg font-black text-samsonite-teal">{formatTnd(item.product.price)}</p>
-              <div className="mt-2 text-sm leading-6 text-foreground/90">
-                {item.selectedSize && <p><span className="font-black">Taille:</span> {item.selectedSize}</p>}
-                {item.selectedColor && <p><span className="font-black">Couleur:</span> {item.selectedColor}</p>}
-                {dimensions && <p><span className="font-black">Dimension:</span> {dimensions}</p>}
-                {volume && <p><span className="font-black">Volume:</span> {volume}</p>}
-                {weight && <p><span className="font-black">Poids:</span> {weight}</p>}
+              <div className="mt-1 space-y-0.5">
+                {item.selectedColor && <p className="text-[11px] text-muted-foreground">Couleur: {item.selectedColor}</p>}
+                {item.selectedSize && <p className="text-[11px] text-muted-foreground">Taille: {item.selectedSize}</p>}
+                {dimensions && <p className="text-[11px] text-muted-foreground">Dimension: {dimensions}</p>}
+                {volume && <p className="text-[11px] text-muted-foreground">Volume: {volume}</p>}
+                {weight && <p className="text-[11px] text-muted-foreground">Poids: {weight}</p>}
+                {sku && <p className="text-[11px] text-muted-foreground">SKU: {sku}</p>}
               </div>
             </div>
             {!compact && (
@@ -259,10 +277,11 @@ const Checkout = () => {
                   <button
                     type="button"
                     onClick={openDialog}
-                    className="self-start p-2 text-muted-foreground transition-colors hover:text-red-600"
-                    aria-label="Supprimer cet article"
+                    className="inline-flex shrink-0 items-center gap-2 self-start border border-red-100 bg-red-50 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-red-600 transition-colors hover:border-red-200 hover:bg-red-100"
+                    aria-label="Supprimer cet article du panier"
                   >
-                    <Trash2 className="h-5 w-5" />
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Supprimer
                   </button>
                 )}
               </ConfirmDeleteDialog>
@@ -270,17 +289,17 @@ const Checkout = () => {
           </div>
 
           {!compact && (
-            <div className="mt-5 flex items-center justify-between gap-5">
-              <div className="flex h-11 items-center border border-border bg-white">
-                <button type="button" onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedColor, item.variantId)} className="flex h-full w-11 items-center justify-center hover:bg-neutral-50">
-                  <Minus className="h-4 w-4" />
+            <div className="mt-4 flex items-center justify-between gap-5">
+              <div className="flex items-center border border-border">
+                <button type="button" onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedColor, item.variantId)} className="flex h-8 w-8 items-center justify-center transition-colors hover:bg-accent">
+                  <Minus className="h-3 w-3" />
                 </button>
-                <span className="flex h-full w-12 items-center justify-center border-x border-border text-base font-semibold">{item.quantity}</span>
-                <button type="button" onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedColor, item.variantId)} className="flex h-full w-11 items-center justify-center hover:bg-neutral-50">
-                  <Plus className="h-4 w-4" />
+                <span className="flex h-8 w-10 items-center justify-center border-x border-border text-xs">{item.quantity}</span>
+                <button type="button" onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedColor, item.variantId)} className="flex h-8 w-8 items-center justify-center transition-colors hover:bg-accent">
+                  <Plus className="h-3 w-3" />
                 </button>
               </div>
-              <p className="text-lg font-black">{formatTnd(lineTotal)}</p>
+              <p className="text-sm font-bold">{formatTnd(lineTotal)}</p>
             </div>
           )}
         </div>
@@ -296,10 +315,12 @@ const Checkout = () => {
     </div>
   );
 
-  const RequiredLabel = ({ children, className = "pt-3 text-sm font-black" }: { children: string; className?: string }) => (
+  // Required-field asterisk goes after the label text now (not before).
+  // The two consent checkboxes keep their asterisk in front, inline.
+  const RequiredLabel = ({ children, className = labelClass }: { children: string; className?: string }) => (
     <label className={className}>
-      <span className="mr-1 text-red-600">*</span>
       {children}
+      <span className="ml-1 text-red-600">*</span>
     </label>
   );
 
@@ -311,10 +332,14 @@ const Checkout = () => {
             <button
               key={label}
               type="button"
-              onClick={() => index <= step || stepStatus[index] ? goToStep(index) : undefined}
-              className={`rounded-full border px-3 py-1.5 transition-colors ${
-                step === index ? "border-black bg-black text-white" : stepStatus[index] ? "border-border bg-white text-foreground" : "border-border bg-white/60 text-muted-foreground"
-              }`}
+              disabled={!unlockedSteps[index]}
+              onClick={() => unlockedSteps[index] && goToStep(index)}
+              className={`rounded-full border px-3 py-1.5 transition-colors ${step === index
+                ? "border-black bg-black text-white"
+                : unlockedSteps[index]
+                  ? "border-border bg-white text-foreground hover:bg-neutral-50"
+                  : "cursor-not-allowed border-border bg-white/60 text-muted-foreground"
+                }`}
             >
               {index + 1}. {label}
             </button>
@@ -325,17 +350,25 @@ const Checkout = () => {
           <div className="bg-white p-6 shadow-sm md:p-8">
             {step === 0 && (
               <section>
-                <h1 className="mb-5 border-b border-border pb-4 text-3xl font-normal uppercase tracking-tight">Panier</h1>
+                <h1 className="mb-5 border-b border-border pb-4 text-xl font-normal uppercase tracking-tight">Panier</h1>
                 <div>{items.map((item) => renderCartItem(item))}</div>
                 <button onClick={() => navigate(-1)} className="mt-6 inline-flex items-center gap-2 text-sm hover:underline">
                   <ArrowLeft className="h-4 w-4" /> Continuer mes achats
                 </button>
-                <div className="mt-8 space-y-4 border-t border-border pt-6 text-lg">
-                  <div className="flex justify-between"><span>{totalItems} article{totalItems > 1 ? "s" : ""}</span><span className="font-black">{formatTnd(totalPrice)}</span></div>
-                  <div className="flex justify-between"><span>Livraison</span><span className="font-black">{shippingFee === 0 ? "gratuit" : formatTnd(shippingFee)}</span></div>
-                  <div className="flex justify-between border-t border-border pt-4 font-black"><span>Total</span><span>{formatTnd(orderTotal)}</span></div>
+                <div className="mt-8 space-y-2 border-t border-border pt-4 text-xs">
+                  <div className="flex justify-between"><span className="text-muted-foreground"> Articles</span><span>{totalItems}</span></div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Livraison</span>
+                    <span className="font-medium">
+                      {shippingFee === 0 ? (
+                        <span className="text-samsonite-teal">{t("cart.free")}</span>
+                      ) : (
+                        formatTnd(shippingFee)
+                      )}
+                    </span>
+                  </div>                  <div className="flex justify-between border-t border-border pt-4 text-sm font-bold"><span>Total</span><span>{formatTnd(orderTotal)}</span></div>
                 </div>
-                <button type="button" onClick={() => goToStep(1)} className="premium-control mt-8 flex w-full items-center justify-center bg-[#27b9d2] px-6 py-4 text-sm font-black uppercase tracking-wide text-white hover:bg-[#1ea8bf]">
+                <button type="button" onClick={() => goToStep(1)} className="premium-control mt-6 flex w-full items-center justify-center bg-[#27b9d2] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#1ea8bf]">
                   Commander
                 </button>
               </section>
@@ -345,18 +378,18 @@ const Checkout = () => {
               <section>
                 <StepTitle number={1} title="Informations personnelles" icon={CheckCircle2} />
                 <div className="mb-5 flex flex-wrap items-center gap-5 text-sm">
-                  <span className="font-black">Titre</span>
+                  <span className="font-medium">Titre</span>
                   <label className="inline-flex items-center gap-2"><input type="radio" checked={form.title === "M"} onChange={() => updateField("title", "M")} /> M</label>
                   <label className="inline-flex items-center gap-2"><input type="radio" checked={form.title === "Mme"} onChange={() => updateField("title", "Mme")} /> Mme</label>
                 </div>
                 <div className="grid gap-4 md:grid-cols-[150px_minmax(0,1fr)] md:items-start">
                   <RequiredLabel>Prénom</RequiredLabel>
-                  <input required className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.firstName} onChange={(event) => updateField("firstName", event.target.value)} />
+                  <input required className={`h-11 ${fieldBaseClass}`} value={form.firstName} onChange={(event) => updateField("firstName", event.target.value)} />
                   <RequiredLabel>Nom</RequiredLabel>
-                  <input required className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.lastName} onChange={(event) => updateField("lastName", event.target.value)} />
+                  <input required className={`h-11 ${fieldBaseClass}`} value={form.lastName} onChange={(event) => updateField("lastName", event.target.value)} />
                   <RequiredLabel>E-mail</RequiredLabel>
                   <div>
-                    <input required type="email" className={`h-11 w-full border bg-[#f8f8f8] px-3 ${form.email && !emailValid ? "border-red-400" : "border-border"}`} value={form.email} onChange={(event) => updateField("email", event.target.value)} />
+                    <input required type="email" className={`h-11 w-full ${fieldBaseClass} ${fieldInvalidClass(Boolean(form.email && !emailValid))}`} value={form.email} onChange={(event) => updateField("email", event.target.value)} />
                     {form.email && !emailValid && <p className="mt-1 text-xs font-semibold text-red-600">Adresse e-mail invalide.</p>}
                   </div>
                   <RequiredLabel>Téléphone</RequiredLabel>
@@ -367,18 +400,18 @@ const Checkout = () => {
                       pattern="[0-9]{8}"
                       maxLength={8}
                       placeholder="Ex: 26528103"
-                      className={`h-11 w-full border bg-[#f8f8f8] px-3 ${form.phone && !phoneValid ? "border-red-400" : "border-border"}`}
+                      className={`h-11 w-full ${fieldBaseClass} ${fieldInvalidClass(Boolean(form.phone && !phoneValid))}`}
                       value={form.phone}
                       onChange={(event) => updateField("phone", event.target.value.replace(/\D/g, "").slice(0, 8))}
                     />
                     {form.phone && !phoneValid && <p className="mt-1 text-xs font-semibold text-red-600">Le numéro de téléphone doit contenir exactement 8 chiffres.</p>}
                   </div>
-                  <label className="pt-3 text-sm font-black">Date de naissance</label>
+                  <label className={labelClass}>Date de naissance</label>
                   <div>
                     <input
                       type="date"
                       max={todayIso}
-                      className={`h-11 w-full border bg-[#f8f8f8] px-3 ${form.birthDate && !birthDateValid ? "border-red-400" : "border-border"}`}
+                      className={`h-11 w-full ${fieldBaseClass} ${fieldInvalidClass(Boolean(form.birthDate && !birthDateValid))}`}
                       value={form.birthDate}
                       onChange={(event) => updateField("birthDate", event.target.value)}
                     />
@@ -397,22 +430,22 @@ const Checkout = () => {
                 <StepTitle number={2} title="Adresses" icon={MapPin} />
                 <p className="mb-5 text-sm leading-6 text-muted-foreground">L'adresse sélectionnée sera utilisée comme adresse personnelle, de facturation et de livraison.</p>
                 <div className="grid gap-4 md:grid-cols-[150px_minmax(0,1fr)] md:items-start">
-                  <label className="pt-3 text-sm font-black">Alias</label>
-                  <input className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.addressAlias} onChange={(event) => updateField("addressAlias", event.target.value)} />
-                  <label className="pt-3 text-sm font-black">Société</label>
-                  <input className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.company} onChange={(event) => updateField("company", event.target.value)} />
-                  <label className="pt-3 text-sm font-black">Numéro de TVA</label>
-                  <input className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.taxNumber} onChange={(event) => updateField("taxNumber", event.target.value)} />
+                  <label className={labelClass}>Alias</label>
+                  <input className={`h-11 ${fieldBaseClass}`} value={form.addressAlias} onChange={(event) => updateField("addressAlias", event.target.value)} />
+                  <label className={labelClass}>Société</label>
+                  <input className={`h-11 ${fieldBaseClass}`} value={form.company} onChange={(event) => updateField("company", event.target.value)} />
+                  <label className={labelClass}>Numéro de TVA</label>
+                  <input className={`h-11 ${fieldBaseClass}`} value={form.taxNumber} onChange={(event) => updateField("taxNumber", event.target.value)} />
                   <RequiredLabel>Adresse</RequiredLabel>
-                  <input required className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.address} onChange={(event) => updateField("address", event.target.value)} />
-                  <label className="pt-3 text-sm font-black">Complément d'adresse</label>
-                  <input className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.address2} onChange={(event) => updateField("address2", event.target.value)} />
-                  <label className="pt-3 text-sm font-black">Code postal</label>
-                  <input className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.postalCode} onChange={(event) => updateField("postalCode", event.target.value)} />
+                  <input required className={`h-11 ${fieldBaseClass}`} value={form.address} onChange={(event) => updateField("address", event.target.value)} />
+                  <label className={labelClass}>Complément d'adresse</label>
+                  <input className={`h-11 ${fieldBaseClass}`} value={form.address2} onChange={(event) => updateField("address2", event.target.value)} />
+                  <label className={labelClass}>Code postal</label>
+                  <input className={`h-11 ${fieldBaseClass}`} value={form.postalCode} onChange={(event) => updateField("postalCode", event.target.value)} />
                   <RequiredLabel>Ville</RequiredLabel>
-                  <input required className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.city} onChange={(event) => updateField("city", event.target.value)} />
-                  <label className="pt-3 text-sm font-black">Pays</label>
-                  <select className="h-11 border border-border bg-[#f8f8f8] px-3" value={form.country} onChange={(event) => updateField("country", event.target.value)}><option>Tunisie</option></select>
+                  <input required className={`h-11 ${fieldBaseClass}`} value={form.city} onChange={(event) => updateField("city", event.target.value)} />
+                  <label className={labelClass}>Pays</label>
+                  <select className={`h-11 ${fieldBaseClass}`} value={form.country} onChange={(event) => updateField("country", event.target.value)}><option>Tunisie</option></select>
                 </div>
                 <label className="mt-5 flex gap-3 text-sm"><input type="checkbox" checked={form.sameBilling} onChange={(event) => updateField("sameBilling", event.target.checked)} /> Utiliser aussi cette adresse pour la facturation</label>
               </section>
@@ -430,8 +463,8 @@ const Checkout = () => {
                     </label>
                   ))}
                 </div>
-                <label className="mt-5 block text-sm font-semibold">Message à propos de votre commande</label>
-                <textarea className="mt-2 min-h-20 w-full resize-none border border-border bg-white p-3" value={form.notes} onChange={(event) => updateField("notes", event.target.value)} />
+                <label className="mt-5 block text-sm font-medium">Message à propos de votre commande</label>
+                <textarea className={`mt-2 min-h-20 w-full resize-none p-3 ${fieldBaseClass}`} value={form.notes} onChange={(event) => updateField("notes", event.target.value)} />
                 <label className="mt-4 flex gap-3 text-sm"><input type="checkbox" checked={form.giftWrap} onChange={(event) => updateField("giftWrap", event.target.checked)} /> Je souhaite que ma commande soit emballée dans un papier cadeau, coût additionnel de 7,000 TND</label>
               </section>
             )}
@@ -481,18 +514,34 @@ const Checkout = () => {
             )}
           </div>
 
-          <aside className="self-start bg-white p-6 shadow-sm lg:sticky lg:top-32">
-            <h2 className="mb-5 text-sm font-black uppercase tracking-wider">Résumé</h2>
-            <div className="space-y-3 text-sm">
+          <aside className="premium-surface self-start space-y-4 bg-white p-6 lg:sticky lg:top-36">
+            <h2 className="text-sm font-bold tracking-wider">Récapitulatif</h2>
+            <div className="space-y-2 text-xs">
               <div className="flex justify-between"><span className="text-muted-foreground">Articles</span><span>{totalItems}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Sous-total</span><span>{formatTnd(totalPrice)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Livraison</span><span>{shippingFee === 0 ? "gratuit" : formatTnd(shippingFee)}</span></div>
-              {form.giftWrap && <div className="flex justify-between"><span className="text-muted-foreground">Emballage cadeau</span><span>{formatTnd(giftWrapFee)}</span></div>}
-              <div className="flex justify-between border-t border-border pt-4 text-lg font-black"><span>Total</span><span>{formatTnd(orderTotal)}</span></div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Livraison</span>
+                <span className="font-medium">
+                  {shippingFee === 0 ? (
+                    <span className="text-samsonite-teal">{t("cart.free")}</span>
+                  ) : (
+                    formatTnd(shippingFee)
+                  )}
+                </span>
+              </div>              {form.giftWrap && <div className="flex justify-between"><span className="text-muted-foreground">Emballage cadeau</span><span>{formatTnd(giftWrapFee)}</span></div>}
             </div>
-            {step >= 3 && <p className="mt-5 text-xs leading-5 text-muted-foreground">Livraison: {selectedShipping.title}. Paiement: {selectedPayment.title}.</p>}
-            <p className="mt-5 text-xs leading-5 text-muted-foreground">Votre commande sera enregistrée et confirmée par téléphone par notre équipe.</p>
-          </aside>
+            <div className="flex justify-between border-t border-border pt-4 text-sm font-bold"><span>Total</span><span>{formatTnd(orderTotal)}</span></div>
+            {step >= 3 &&
+              <div>
+                <p className="text-xs leading-5 text-muted-foreground">Livraison: {selectedShipping.title}. </p>
+                <p className="text-xs leading-5 text-muted-foreground"> Paiement: {selectedPayment.title}.</p>
+              </div>}
+            <div className="flex items-start gap-2 rounded-lg bg-blue-50 p-3 text-blue-800">
+              <Info className="mt-0.5 h-4 w-4 shrink-0" />
+              <p className="text-xs leading-5">
+                Votre commande sera enregistrée et confirmée par téléphone par notre équipe.
+              </p>
+            </div>          </aside>
         </form>
       </div>
     </div>

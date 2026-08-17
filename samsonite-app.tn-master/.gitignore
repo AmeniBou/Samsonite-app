@@ -31,7 +31,4 @@ desktop.ini
 *.mkv
 public/assets/Captures/
 
-# Local image cache
-server/public/images/
-server/public/attachments/
-server/public/order-emails/
+*.env

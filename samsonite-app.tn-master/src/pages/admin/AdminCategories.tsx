@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, CornerDownRight, Folder, FolderTree, Pencil, PlusCircle, RefreshCw, Save, Search, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, CornerDownRight, Filter, Folder, FolderTree, Pencil, PlusCircle, RefreshCw, Save, Search, Trash2, X } from "lucide-react";
 import {
     createCategory,
     deleteCategory,
@@ -51,6 +51,14 @@ const AdminCatégories = () => {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [expandedRootIds, setExpandedRootIds] = useState<Set<number>>(new Set());
+    const [showForm, setShowForm] = useState(false);
+    const [filtersOpen, setFiltersOpen] = useState(false);
+    const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+    const [typeFilter, setTypeFilter] = useState<"all" | "root" | "child">("all");
+    const [menuFilter, setMenuFilter] = useState<"all" | "inMenu" | "notInMenu">("all");
+    const [parentFilter, setParentFilter] = useState("all");
+    const [productsFilter, setProductsFilter] = useState<"all" | "with" | "without">("all");
+    const [childrenFilter, setChildrenFilter] = useState<"all" | "with" | "without">("all");
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
@@ -132,16 +140,32 @@ const AdminCatégories = () => {
             getCategoryPath(a).localeCompare(getCategoryPath(b), "fr", { sensitivity: "base" })
         );
 
-        if (!query) return sorted;
-        return sorted.filter((category) => {
+        const filtered = sorted.filter((category) => {
+            const isRoot = !category.parentId;
             const path = getCategoryPath(category).toLowerCase();
-            return (
+            const matchesSearch =
+                !query ||
                 path.includes(query) ||
                 normalizeText(category.slug).toLowerCase().includes(query) ||
-                String(category.id).includes(query)
-            );
+                String(category.id).includes(query);
+
+            if (!matchesSearch) return false;
+            if (statusFilter === "active" && !category.isActive) return false;
+            if (statusFilter === "inactive" && category.isActive) return false;
+            if (typeFilter === "root" && !isRoot) return false;
+            if (typeFilter === "child" && isRoot) return false;
+            if (menuFilter === "inMenu" && !category.showInMainMenu) return false;
+            if (menuFilter === "notInMenu" && category.showInMainMenu) return false;
+            if (parentFilter !== "all" && String(category.parentId) !== parentFilter) return false;
+            if (productsFilter === "with" && !(category.productCount > 0)) return false;
+            if (productsFilter === "without" && (category.productCount > 0)) return false;
+            if (childrenFilter === "with" && !(category.childCount > 0)) return false;
+            if (childrenFilter === "without" && (category.childCount > 0)) return false;
+            return true;
         });
-    }, [categories, getCategoryPath, search]);
+
+        return filtered;
+    }, [categories, getCategoryPath, search, statusFilter, typeFilter, menuFilter, parentFilter, productsFilter, childrenFilter]);
 
     const displayedCatégories = useMemo(() => {
         const query = search.trim();
@@ -162,15 +186,44 @@ const AdminCatégories = () => {
     const paginationStart = displayedCatégories.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
     const paginationEnd = Math.min(displayedCatégories.length, safePage * pageSize);
 
+    const activeFilterCount = [
+        search.trim(),
+        statusFilter !== "all",
+        typeFilter !== "all",
+        menuFilter !== "all",
+        parentFilter !== "all",
+        productsFilter !== "all",
+        childrenFilter !== "all",
+    ].filter(Boolean).length;
+
+    const hasActiveFilters = activeFilterCount > 0;
+
+    const resetFilters = () => {
+        setSearch("");
+        setStatusFilter("all");
+        setTypeFilter("all");
+        setMenuFilter("all");
+        setParentFilter("all");
+        setProductsFilter("all");
+        setChildrenFilter("all");
+    };
+
+    const parentFilterOptions = categories.filter((category) => !category.parentId);
+
+    const filterLabelClass = "space-y-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-500";
+    const filterControlClass =
+        "h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm font-medium normal-case text-gray-900 shadow-sm transition-colors hover:border-gray-300 focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10";
+
     useEffect(() => {
         setPage(1);
-    }, [search, expandedRootIds, pageSize]);
+    }, [search, expandedRootIds, pageSize, statusFilter, typeFilter, menuFilter, parentFilter, productsFilter, childrenFilter]);
 
     const startCreate = () => {
         setEditingId(null);
         setForm(emptyForm);
         setError("");
         setSuccess("");
+        setShowForm(true);
     };
 
     const startEdit = (category: AdminCategory) => {
@@ -184,27 +237,42 @@ const AdminCatégories = () => {
         });
         setError("");
         setSuccess("");
+        setShowForm(true);
+        requestAnimationFrame(() => {
+            document.getElementById("category-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
     };
 
     const cancelEdit = () => {
         setEditingId(null);
         setForm(emptyForm);
         setError("");
+        setShowForm(false);
     };
 
     const applyCategoryUpdate = async (
         categoryId: number,
         fields: Partial<{ name: string; slug: string; parentId: number | null; isActive: boolean; showInMainMenu: boolean }>
-    ) => {
+    ): Promise<void> => {
         setError("");
         setSuccess("");
         const result = await updateCategory(categoryId, fields);
         if (!result.success) {
-            setError(result.error || "Impossible de mettre à jour la catégorie.");
-            return false;
+            const message = result.error || "Impossible de mettre à jour la catégorie.";
+            setError(message);
+            toast.error(message);
+            return;
         }
+
+        if (fields.isActive !== undefined) {
+            toast.success(fields.isActive ? "Catégorie activée." : "Catégorie désactivée.");
+        } else if (fields.showInMainMenu !== undefined) {
+            toast.success(fields.showInMainMenu ? "Catégorie ajoutée au menu principal." : "Catégorie retirée du menu principal.");
+        } else {
+            toast.success("Catégorie mise à jour.");
+        }
+
         await loadCatégories();
-        return true;
     };
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -263,9 +331,10 @@ const AdminCatégories = () => {
 
             const successMessage = editingId ? "Catégorie modifiée." : "Catégorie ajoutée avec succès.";
             setSuccess(successMessage);
-            if (!editingId) toast.success(successMessage);
+            toast.success(successMessage);
             setEditingId(null);
             setForm(emptyForm);
+            setShowForm(false);
             await loadCatégories();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Erreur enregistrement catégorie");
@@ -292,6 +361,7 @@ const AdminCatégories = () => {
                 return;
             }
             setSuccess("Catégorie supprimée.");
+            toast.success("Catégorie supprimée.");
             await loadCatégories();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Erreur suppression catégorie");
@@ -328,9 +398,29 @@ const AdminCatégories = () => {
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Catégories</h1>
-                    <p className="text-sm text-gray-500 mt-1">
-                        {categories.length} catégories - {rootCount} principales - {childCount} sous-catégories - {mainMenuCount}/{MAIN_MENU_LIMIT} dans le menu principal
-                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
+                        <span>
+                            <strong className="text-gray-700">{categories.length}</strong> catégories
+                        </span>
+
+                        <span className="text-gray-300">•</span>
+
+                        <span>
+                            <strong className="text-gray-700">{rootCount}</strong> principales
+                        </span>
+
+                        <span className="text-gray-300">•</span>
+
+                        <span>
+                            <strong className="text-gray-700">{childCount}</strong> sous-catégories
+                        </span>
+
+                        <span className="text-gray-300">•</span>
+
+                        <span>
+                            <strong className="text-gray-700">{mainMenuCount}</strong> / {MAIN_MENU_LIMIT} dans le menu principal
+                        </span>
+                    </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <button
@@ -362,7 +452,8 @@ const AdminCatégories = () => {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="bg-white border border-gray-200 p-5 space-y-4">
+            {showForm && (
+            <form id="category-form" onSubmit={handleSubmit} className="bg-white border border-gray-200 p-5 space-y-4">
                 <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                         <FolderTree className="h-5 w-5 text-gray-700" />
@@ -370,16 +461,16 @@ const AdminCatégories = () => {
                             {editingId ? "Modifier la catégorie" : "Ajouter une catégorie"}
                         </h2>
                     </div>
-                    {editingId && (
-                        <button
-                            type="button"
-                            onClick={cancelEdit}
-                            className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
-                        >
-                            <X className="h-4 w-4" />
-                            Annuler
-                        </button>
-                    )}
+                    <button
+                        type="button"
+                        onClick={cancelEdit}
+                        className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+                        title="Fermer"
+                        aria-label="Fermer le formulaire"
+                    >
+                        <X className="h-4 w-4" />
+                        Fermer
+                    </button>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
@@ -433,44 +524,78 @@ const AdminCatégories = () => {
                         <input
                             type="checkbox"
                             checked={form.isActive}
-                            onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.checked }))}
+                            onChange={(event) =>
+                                setForm((prev) => ({
+                                    ...prev,
+                                    isActive: event.target.checked,
+                                }))
+                            }
                             className="mt-1 h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
                         />
-                        <span>
-                            <span className="block text-sm font-bold text-gray-900">Catégorie active</span>
-                            <span className="block text-xs text-gray-500">
+
+                        <div className="rounded border border-gray-200 bg-gray-50 px-3 py-3">
+                            <div className="text-sm font-bold text-gray-900">
+                                Catégorie active
+                            </div>
+                            <div className="text-xs text-gray-500">
                                 Active = visible dans Explorer et utilisable sur le site.
-                            </span>
-                        </span>
+                            </div>
+                        </div>
                     </label>
-                    <label className={`flex items-start gap-3 rounded-md border px-4 py-3 ${form.parentId ? "cursor-not-allowed border-gray-100 bg-gray-50 opacity-50" : "cursor-pointer border-gray-200 bg-gray-50"}`}>
+
+                    <label
+                        className={`flex items-start gap-3 rounded-md border px-4 py-3 ${form.parentId
+                            ? "cursor-not-allowed border-gray-100 bg-gray-50 opacity-50"
+                            : "cursor-pointer border-gray-200 bg-gray-50"
+                            }`}
+                    >
                         <input
                             type="checkbox"
                             checked={!form.parentId && form.showInMainMenu}
-                            disabled={Boolean(form.parentId) || (!form.showInMainMenu && !canAddCurrentFormToMainMenu)}
+                            disabled={
+                                Boolean(form.parentId) ||
+                                (!form.showInMainMenu && !canAddCurrentFormToMainMenu)
+                            }
                             onChange={(event) => {
                                 if (event.target.checked && !canAddCurrentFormToMainMenu) {
                                     setError(MAIN_MENU_LIMIT_MESSAGE);
                                     return;
                                 }
-                                setForm((prev) => ({ ...prev, showInMainMenu: event.target.checked }));
+
+                                setForm((prev) => ({
+                                    ...prev,
+                                    showInMainMenu: event.target.checked,
+                                }));
                             }}
                             className="mt-1 h-4 w-4 rounded border-gray-300 text-black focus:ring-black disabled:cursor-not-allowed"
                         />
-                        <span>
-                            <span className="block text-sm font-bold text-gray-900">Menu principal + Explorer</span>
-                            <span className="block text-xs text-gray-500">
+
+                        <div
+                            className={`rounded border px-3 py-3 ${mainMenuLimitReached
+                                ? "border-amber-200 bg-amber-50"
+                                : "border-gray-200 bg-gray-50"
+                                }`}
+                        >
+                            <div className="text-sm font-bold text-gray-900">
+                                Menu principal + Explorer
+                            </div>
+
+                            <div className="text-xs text-gray-600">
                                 Réservé aux catégories principales. Maximum {MAIN_MENU_LIMIT} catégories dans le menu principal.
-                            </span>
-                            {!form.parentId && !form.showInMainMenu && mainMenuLimitReached && (
-                                <span className="mt-1 block text-xs font-semibold text-amber-700">
-                                    Limite atteinte : retire d'abord une autre catégorie du menu principal.
-                                </span>
+                            </div>
+
+                            {mainMenuLimitReached && (
+                                <div className="mt-2 border-t border-amber-200 pt-2 text-sm text-amber-800">
+                                    <strong>Limite atteinte :</strong> 7 catégories sont déjà présentes dans le menu principal.
+
+                                    <p className="mt-1 text-xs text-amber-700">
+                                        Retirez une catégorie existante du menu principal pour pouvoir ajouter celle-ci.
+                                    </p>
+                                </div>
                             )}
-                        </span>
+                        </div>
                     </label>
                 </div>
-
                 <button
                     type="submit"
                     disabled={saving}
@@ -480,19 +605,191 @@ const AdminCatégories = () => {
                     {saving ? "Enregistrement..." : "Enregistrer"}
                 </button>
             </form>
+            )}
 
-            <div className="bg-white border border-gray-200">
-                <div className="flex flex-col gap-3 border-b border-gray-200 p-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                            value={search}
-                            onChange={(event) => setSearch(event.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-                            placeholder="Rechercher par nom, slug, parent ou ID..."
-                        />
+            <div className="mb-5 rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-950 text-white">
+                            <Filter className="h-4 w-4" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm font-bold uppercase tracking-wide text-gray-950">Filtres catégories</h2>
+                            <p className="text-xs text-gray-500">
+                                {displayedCatégories.length} résultat{displayedCatégories.length > 1 ? "s" : ""} sur {categories.length} catégories
+                            </p>
+                        </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setFiltersOpen((prev) => !prev)}
+                            className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-gray-950 px-4 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-gray-800"
+                            aria-expanded={filtersOpen}
+                        >
+                            {filtersOpen ? "Masquer les filtres" : "Afficher les filtres"}
+                            {activeFilterCount > 0 && (
+                                <span className="rounded-full bg-white px-2 py-0.5 text-[10px] text-gray-950">
+                                    {activeFilterCount}
+                                </span>
+                            )}
+                            {filtersOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={resetFilters}
+                            disabled={!hasActiveFilters}
+                            className="inline-flex h-9 items-center justify-center rounded-full border border-gray-200 px-4 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            Reinitialiser
+                        </button>
+                    </div>
+                </div>
+
+                <div className="p-4">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Nom, slug, parent ou ID..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="h-11 w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm font-medium text-gray-900 transition-colors placeholder:text-gray-400 hover:bg-white focus:border-black focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
+                        />
+                    </div>
+
+                    {filtersOpen && (
+                        <>
+                    <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        <label className={filterLabelClass}>
+                            Statut
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
+                                className={filterControlClass}
+                            >
+                                <option value="all">Tous les statuts</option>
+                                <option value="active">Actives</option>
+                                <option value="inactive">Masquées</option>
+                            </select>
+                        </label>
+
+                        <label className={filterLabelClass}>
+                            Type
+                            <select
+                                value={typeFilter}
+                                onChange={(e) => setTypeFilter(e.target.value as "all" | "root" | "child")}
+                                className={filterControlClass}
+                            >
+                                <option value="all">Tous les types</option>
+                                <option value="root">Catégories principales</option>
+                                <option value="child">Sous-catégories</option>
+                            </select>
+                        </label>
+
+                        <label className={filterLabelClass}>
+                            Menu principal
+                            <select
+                                value={menuFilter}
+                                onChange={(e) => setMenuFilter(e.target.value as "all" | "inMenu" | "notInMenu")}
+                                className={filterControlClass}
+                            >
+                                <option value="all">Tous</option>
+                                <option value="inMenu">Dans le menu principal</option>
+                                <option value="notInMenu">Hors menu principal</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        <label className={filterLabelClass}>
+                            Catégorie parente
+                            <select
+                                value={parentFilter}
+                                onChange={(e) => setParentFilter(e.target.value)}
+                                className={filterControlClass}
+                            >
+                                <option value="all">Toutes les catégories</option>
+                                <option value="0">Catégories racines</option>
+                                {parentFilterOptions.map((category) => (
+                                    <option key={category.id} value={category.id}>
+                                        {getCategoryPath(category)}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+
+                        <label className={filterLabelClass}>
+                            Produits
+                            <select
+                                value={productsFilter}
+                                onChange={(e) => setProductsFilter(e.target.value as "all" | "with" | "without")}
+                                className={filterControlClass}
+                            >
+                                <option value="all">Tous</option>
+                                <option value="with">Avec produits</option>
+                                <option value="without">Sans produits</option>
+                            </select>
+                        </label>
+
+                        <label className={filterLabelClass}>
+                            Sous-catégories
+                            <select
+                                value={childrenFilter}
+                                onChange={(e) => setChildrenFilter(e.target.value as "all" | "with" | "without")}
+                                className={filterControlClass}
+                            >
+                                <option value="all">Tous</option>
+                                <option value="with">Avec sous-catégories</option>
+                                <option value="without">Sans sous-catégories</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-end gap-2">
+                        {statusFilter !== "all" && (
+                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
+                                Statut: {statusFilter === "active" ? "actives" : "masquées"}
+                            </span>
+                        )}
+                        {typeFilter !== "all" && (
+                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
+                                Type: {typeFilter === "root" ? "principales" : "sous-catégories"}
+                            </span>
+                        )}
+                        {menuFilter !== "all" && (
+                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
+                                Menu: {menuFilter === "inMenu" ? "dans le menu" : "hors menu"}
+                            </span>
+                        )}
+                        {parentFilter !== "all" && (
+                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
+                                Parent: {parentFilter === "0" ? "racine" : getCategoryPath(categories.find((c) => String(c.id) === parentFilter)!)}
+                            </span>
+                        )}
+                        {productsFilter !== "all" && (
+                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
+                                Produits: {productsFilter === "with" ? "avec" : "sans"}
+                            </span>
+                        )}
+                        {childrenFilter !== "all" && (
+                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
+                                Sous-cat.: {childrenFilter === "with" ? "avec" : "sans"}
+                            </span>
+                        )}
+                        {!hasActiveFilters && (
+                            <span className="text-xs font-medium text-gray-400">Aucun filtre actif</span>
+                        )}
+                    </div>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            <div className="bg-white border border-gray-200">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3 text-sm text-gray-500">
+                    <span>{paginationStart}-{paginationEnd} sur {displayedCatégories.length} catégorie(s)</span>
+                    <div className="flex flex-wrap items-center gap-2">
                         <button
                             type="button"
                             onClick={() => setExpandedRootIds(new Set(rootCategoryIds))}
@@ -511,24 +808,20 @@ const AdminCatégories = () => {
                             <ChevronRight className="h-4 w-4" />
                             Tout fermer
                         </button>
+                        <label className="flex items-center gap-2 text-xs font-semibold text-gray-500">
+                            Par page
+                            <select
+                                value={pageSize}
+                                onChange={(event) => setPageSize(Number(event.target.value))}
+                                className="h-8 rounded-md border border-gray-200 bg-white px-2 text-xs font-bold text-gray-900"
+                            >
+                                <option value={5}>5</option>
+                                <option value={10}>10</option>
+                                <option value={20}>20</option>
+                                <option value={50}>50</option>
+                            </select>
+                        </label>
                     </div>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3 text-sm text-gray-500">
-                    <span>{paginationStart}-{paginationEnd} sur {displayedCatégories.length} catégorie(s)</span>
-                    <label className="flex items-center gap-2 text-xs font-semibold text-gray-500">
-                        Par page
-                        <select
-                            value={pageSize}
-                            onChange={(event) => setPageSize(Number(event.target.value))}
-                            className="h-8 rounded-md border border-gray-200 bg-white px-2 text-xs font-bold text-gray-900"
-                        >
-                            <option value={5}>5</option>
-                            <option value={10}>10</option>
-                            <option value={20}>20</option>
-                            <option value={50}>50</option>
-                        </select>
-                    </label>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -634,7 +927,9 @@ const AdminCatégories = () => {
                                                     confirmLabel={category.isActive ? "Désactiver" : "Activer"}
                                                     pendingLabel="Mise à jour..."
                                                     tone={category.isActive ? "warning" : "info"}
-                                                    onConfirm={() => applyCategoryUpdate(category.id, { isActive: !category.isActive })}
+                                                    onConfirm={async () => {
+                                                        await applyCategoryUpdate(category.id, { isActive: !category.isActive });
+                                                    }}
                                                 >
                                                     {(openDialog) => (
                                                         <button
@@ -649,20 +944,37 @@ const AdminCatégories = () => {
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 {isRoot ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            if (!category.showInMainMenu && mainMenuLimitReached) {
-                                                                setError(MAIN_MENU_LIMIT_MESSAGE);
-                                                                return;
-                                                            }
-                                                            applyCategoryUpdate(category.id, { showInMainMenu: !category.showInMainMenu });
+                                                    <ConfirmDeleteDialog
+                                                        title={category.showInMainMenu ? "Retirer cette catégorie du menu principal ?" : "Ajouter cette catégorie au menu principal ?"}
+                                                        description={
+                                                            category.showInMainMenu
+                                                                ? `La catégorie "${normalizeText(category.name)}" ne figurera plus dans le menu principal et dans l'explorateur de navigation.`
+                                                                : `La catégorie "${normalizeText(category.name)}" sera ajoutée au menu principal et apparaîtra dans l'explorateur de navigation.`
+                                                        }
+                                                        confirmLabel={category.showInMainMenu ? "Retirer du menu" : "Ajouter au menu"}
+                                                        pendingLabel="Mise à jour..."
+                                                        tone={category.showInMainMenu ? "warning" : "info"}
+                                                        onConfirm={async () => {
+                                                            await applyCategoryUpdate(category.id, { showInMainMenu: !category.showInMainMenu });
                                                         }}
-                                                        disabled={!category.showInMainMenu && mainMenuLimitReached}
-                                                        className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-50 ${category.showInMainMenu ? "bg-sky-50 text-sky-700 ring-1 ring-sky-200" : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"}`}
                                                     >
-                                                        {category.showInMainMenu ? "Principal + Explorer" : "Explorer seul"}
-                                                    </button>
+                                                        {(openDialog) => (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    if (!category.showInMainMenu && mainMenuLimitReached) {
+                                                                        setError(MAIN_MENU_LIMIT_MESSAGE);
+                                                                        return;
+                                                                    }
+                                                                    openDialog();
+                                                                }}
+                                                                disabled={!category.showInMainMenu && mainMenuLimitReached}
+                                                                className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-50 ${category.showInMainMenu ? "bg-sky-50 text-sky-700 ring-1 ring-sky-200" : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"}`}
+                                                            >
+                                                                {category.showInMainMenu ? "Principal + Explorer" : "Explorer seul"}
+                                                            </button>
+                                                        )}
+                                                    </ConfirmDeleteDialog>
                                                 ) : (
                                                     <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gray-500">
                                                         Sous-cat.

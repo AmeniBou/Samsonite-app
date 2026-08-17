@@ -67,26 +67,26 @@ const ConfirmDeleteDialog = ({
         if (!disabled) setOpen(true);
       })}
       <Dialog open={open} onOpenChange={(nextOpen) => !busy && setOpen(nextOpen)}>
-        <DialogContent className="max-w-md rounded-none border-0 p-0 sm:rounded-none">
-          <div className="border-b border-border px-6 py-5">
+        <DialogContent className="max-w-[390px] gap-0 overflow-hidden rounded-lg border border-border bg-white p-0 shadow-2xl sm:rounded-lg">
+          <div className="px-5 pb-4 pt-5">
             <div className="flex items-start gap-3">
-              <span className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${toneClasses.icon}`}>
-                <AlertTriangle className="h-5 w-5" />
+              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${toneClasses.icon}`}>
+                <AlertTriangle className="h-4 w-4" />
               </span>
-              <div>
-                <DialogTitle className="text-lg font-black uppercase tracking-tight">{title}</DialogTitle>
-                <DialogDescription className="mt-2 text-sm leading-6 text-muted-foreground">
+              <div className="min-w-0 pr-6">
+                <DialogTitle className="text-sm font-bold leading-5 text-foreground">{title}</DialogTitle>
+                <DialogDescription className="mt-1 text-xs leading-5 text-muted-foreground">
                   {description}
                 </DialogDescription>
               </div>
             </div>
           </div>
-          <div className="flex flex-col-reverse gap-3 px-6 py-5 sm:flex-row sm:justify-end">
+          <div className="flex flex-col gap-2 border-t border-border bg-muted/30 px-5 py-3 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={() => setOpen(false)}
               disabled={busy}
-              className="border border-border px-5 py-3 text-sm font-black uppercase tracking-wide transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="min-w-24 border border-border bg-white px-4 py-2.5 text-xs font-bold transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {cancelLabel}
             </button>
@@ -94,7 +94,7 @@ const ConfirmDeleteDialog = ({
               type="button"
               onClick={handleConfirm}
               disabled={busy}
-              className={`px-5 py-3 text-sm font-black uppercase tracking-wide text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${toneClasses.confirm}`}
+              className={`min-w-24 px-4 py-2.5 text-xs font-bold text-white transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${toneClasses.confirm}`}
             >
               {busy ? pendingLabel : confirmLabel}
             </button>

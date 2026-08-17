@@ -233,7 +233,8 @@ if (typeof window !== "undefined") {
 const fetchAppCatalog = async (): Promise<PSCatalogData> => {
   const response = await fetch("/api/catalog", { cache: "no-store" });
   if (!response.ok) {
-    throw new Error(`Backend catalog error (${response.status})`);
+    throw new Error(`Problème de récupération du catalogue.`);
+    //throw new Error(`Backend catalog error (${response.status})`);
   }
   return (await parseJsonResponse(response)) as PSCatalogData;
 };
@@ -315,7 +316,7 @@ export const getStockAvailables = async (): Promise<PSStockAvailable[]> => {
 };
 
 export const getProductImageUrl = (productId: number, imageId: number) => {
-  // We prefer using the `associations.images[].imageUrl` provided by `/api/catalog`.
+  // We prefer using the `associations.images[].imageUrl` provided by ` `.
   // Return an empty string here to avoid constructing any proxy or PrestaShop URLs.
   // This ensures the UI falls back to the local DB-provided image URLs only.
   return "";

@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import compression from "compression";
 import path from "path";
 import { fileURLToPath } from "url";
 import { config } from "./config.js";
@@ -18,6 +19,8 @@ const app = express();
 // ---------------------------------------------------------------------------
 
 app.use(cors({ origin: true, credentials: true }));
+// Compress responses to reduce payload size and improve load times
+app.use(compression());
 app.use(express.json({ limit: "25mb" }));
 app.use("/images", express.static(path.join(__dirname, "../public/images")));
 app.use("/attachments", express.static(path.join(__dirname, "../public/attachments")));
@@ -49,7 +52,6 @@ const displayStartupInfo = (port: number) => {
     console.log(`\n🚀 Samsonite Admin Server`);
     console.log(`   Port:        ${port}`);
     console.log(`   PrestaShop:  ${config.ps.apiUrl}`);
-    console.log(`   Admins:      ${config.adminUsers.map((u) => u.username).join(", ")}`);
     console.log(`   Endpoints:`);
     console.log(`     POST /api/auth/login`);
     console.log(`     GET  /api/catalog`);

@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import {
   ChevronLeft,
@@ -74,7 +74,7 @@ const Product = () => {
             products.find((p) => (p.slug || "").toLowerCase() === normalized) ||
             products.find((p) => (p.slug || "").toLowerCase().includes(normalized)) ||
             products.find((p) => normalized.includes((p.slug || "").toLowerCase())) ||
-            products.find((p) => (p.name || "").toLowerCase().includes(normalized.replace(/-/g, " ")) ) ||
+            products.find((p) => (p.name || "").toLowerCase().includes(normalized.replace(/-/g, " "))) ||
             null;
         }
 
@@ -231,10 +231,10 @@ const Product = () => {
   const availabilityText = isOutOfStock
     ? "Temporairement indisponible"
     : isLowStock
-    ? "Plus que quelques pièces disponibles"
-    : t("product.available");
+      ? "Plus que quelques pièces disponibles"
+      : "";
 
-  
+
 
   const rootCategory = useMemo(() => {
     if (!product) return null;
@@ -255,14 +255,14 @@ const Product = () => {
   const isSelectableVariant = (variant: ProductVariant) =>
     Boolean(
       variant.color ||
-        variant.images.length > 0 ||
-        variant.price > 0 ||
-        variant.stock > 0 ||
-        variant.width ||
-        variant.height ||
-        variant.depth ||
-        variant.volume ||
-        variant.weight
+      variant.images.length > 0 ||
+      variant.price > 0 ||
+      variant.stock > 0 ||
+      variant.width ||
+      variant.height ||
+      variant.depth ||
+      variant.volume ||
+      variant.weight
     );
   const selectableVariants = variants.filter(isSelectableVariant);
   const effectiveVariants = selectableVariants.length > 0 ? selectableVariants : variants;
@@ -802,9 +802,8 @@ const Product = () => {
                   <button
                     key={`${img}-${idx}`}
                     onClick={() => setSelectedImageIdx(idx)}
-                    className={`h-16 w-16 flex-shrink-0 border-2 bg-white transition-all duration-200 hover:-translate-y-0.5 ${
-                      idx === selectedImageIdx ? "border-foreground shadow-[0_10px_24px_rgba(0,0,0,0.08)]" : "border-transparent"
-                    }`}
+                    className={`h-16 w-16 flex-shrink-0 border-2 bg-white transition-all duration-200 hover:-translate-y-0.5 ${idx === selectedImageIdx ? "border-foreground shadow-[0_10px_24px_rgba(0,0,0,0.08)]" : "border-transparent"
+                      }`}
                   >
                     <img
                       src={img}
@@ -834,16 +833,21 @@ const Product = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 border-y border-border py-3">
-                <div className="min-w-[135px] text-xl font-black">{formatTnd(selectedPrice)}</div>
+              <div className="min-w-[135px] text-xl font-black">{formatTnd(selectedPrice)}</div>
+              <p className="text-xs font-semibold text-muted-foreground">TVA incl.</p>
+              {availabilityText && (
                 <p
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${
-                    isOutOfStock ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"
-                  }`}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${isOutOfStock
+                    ? "bg-red-50 text-red-600"
+                    : isLowStock
+                      ? "bg-orange-50 text-orange-600"
+                      : "bg-emerald-50 text-emerald-700"
+                    }`}
                 >
                   <span className="inline-block h-2 w-2 rounded-full bg-current" />
                   {availabilityText}
                 </p>
-              <p className="text-xs font-semibold text-muted-foreground">TVA incl.</p>
+              )}
             </div>
 
             {sizeOptions.length > 1 && (
@@ -871,15 +875,14 @@ const Product = () => {
                         disabled={doesNotExist}
                         title={doesNotExist ? "Cette taille n'est pas proposée dans la couleur sélectionnée." : size.label}
                         onClick={() => handleSizeSelect(size.label)}
-                        className={`premium-control relative min-h-12 min-w-[82px] border px-4 py-3 text-sm font-semibold leading-none ${
-                          isSelected
-                            ? "border-black bg-black text-white"
-                            : doesNotExist
+                        className={`premium-control relative min-h-12 min-w-[82px] border px-4 py-3 text-sm font-semibold leading-none ${isSelected
+                          ? "border-black bg-black text-white"
+                          : doesNotExist
                             ? "cursor-not-allowed border-neutral-200 bg-neutral-50 text-muted-foreground opacity-50"
                             : isUnavailable
-                            ? "border-red-200 bg-red-50 text-red-700 hover:border-red-400"
-                            : "border-neutral-300 bg-white text-black hover:border-black"
-                        }`}
+                              ? "border-red-200 bg-red-50 text-red-700 hover:border-red-400"
+                              : "border-neutral-300 bg-white text-black hover:border-black"
+                          }`}
                       >
                         <span className={doesNotExist ? "line-through" : ""}>{size.label}</span>
                         {isUnavailable && (
@@ -918,15 +921,14 @@ const Product = () => {
                         disabled={doesNotExist}
                         title={doesNotExist ? "Cette dimension n'est pas proposée dans la couleur sélectionnée." : dimension.label}
                         onClick={() => handleDimensionSelect(dimension.label)}
-                        className={`premium-control relative min-h-9 min-w-[118px] border px-3 py-2 text-sm font-semibold leading-none ${
-                          isSelected
-                            ? "border-black bg-black text-white"
-                            : doesNotExist
+                        className={`premium-control relative min-h-9 min-w-[118px] border px-3 py-2 text-sm font-semibold leading-none ${isSelected
+                          ? "border-black bg-black text-white"
+                          : doesNotExist
                             ? "cursor-not-allowed border-neutral-200 bg-neutral-50 text-muted-foreground opacity-50"
                             : isUnavailable
-                            ? "border-red-200 bg-red-50 text-red-700 hover:border-red-400"
-                            : "border-neutral-300 bg-white text-black hover:border-black"
-                        }`}
+                              ? "border-red-200 bg-red-50 text-red-700 hover:border-red-400"
+                              : "border-neutral-300 bg-white text-black hover:border-black"
+                          }`}
                       >
                         <span className={doesNotExist ? "line-through" : ""}>{dimension.label}</span>
                         {isUnavailable && (
@@ -1003,9 +1005,8 @@ const Product = () => {
                           setSelectedInferredColorKey("");
                           handleColorSelect(color.key);
                         }}
-                        className={`premium-control relative flex h-10 w-10 items-center justify-center rounded-full border bg-white ${
-                          isSelected ? "border-black shadow-[0_0_0_4px_rgba(0,0,0,0.06)]" : isUnavailable ? "border-red-300" : "border-neutral-300"
-                        } ${doesNotExist ? "cursor-not-allowed opacity-35" : ""}`}
+                        className={`premium-control relative flex h-10 w-10 items-center justify-center rounded-full border bg-white ${isSelected ? "border-black shadow-[0_0_0_4px_rgba(0,0,0,0.06)]" : isUnavailable ? "border-red-300" : "border-neutral-300"
+                          } ${doesNotExist ? "cursor-not-allowed opacity-35" : ""}`}
                       >
                         <span
                           className="block h-6 w-6 rounded-full border border-black/10"
@@ -1145,7 +1146,7 @@ const Product = () => {
           <div className="border-b border-border px-6 py-5">
             <DialogTitle className="text-xl font-black uppercase tracking-tight">Article ajouté au panier</DialogTitle>
             <DialogDescription className="mt-1 text-sm text-muted-foreground">
-              Votre sélection a bien été ajoutée.
+              Votre sélection a bien été ajoutée!
             </DialogDescription>
           </div>
           <div className="flex gap-4 px-6 py-5">
@@ -1156,13 +1157,30 @@ const Product = () => {
                 className="h-full w-full object-contain"
               />
             </div>
+
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-black uppercase leading-5">{product.name}</p>
-              <p className="mt-1 text-lg font-black text-samsonite-teal">{formatTnd(selectedPrice)}</p>
-              <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-                {selectedVariant?.size && <p>Taille: {selectedVariant.size}</p>}
-                {selectedVariant?.color?.name && <p>Couleur: {selectedVariant.color.name}</p>}
-                <p>Quantité: {quantity}</p>
+              <p className="text-xs font-bold leading-5">
+                {product.name}
+              </p>
+
+              <p className="text-lg font-black text-samsonite-teal">
+                {formatTnd(selectedPrice)}
+              </p>
+
+              <div className="mt-1 space-y-0.5">
+                {selectedVariant?.size && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Taille: {selectedVariant.size}
+                  </p>
+                )}
+                {selectedVariant?.color?.name && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Couleur: {selectedVariant.color.name}
+                  </p>
+                )}
+                <p className="text-[11px] text-muted-foreground">
+                  Quantité: {quantity}
+                </p>
               </div>
             </div>
           </div>
@@ -1170,14 +1188,14 @@ const Product = () => {
             <button
               type="button"
               onClick={() => setCartConfirmOpen(false)}
-              className="border border-border px-4 py-3 text-sm font-black uppercase tracking-wide transition-colors hover:bg-neutral-50"
+              className="border border-border px-4 py-3 text-xs font-black uppercase tracking-wide transition-colors hover:bg-neutral-50"
             >
               Continuer mes achats
             </button>
             <Link
               to="/panier"
               onClick={() => setCartConfirmOpen(false)}
-              className="flex items-center justify-center bg-black px-4 py-3 text-sm font-black uppercase tracking-wide text-white transition-colors hover:bg-black/85"
+              className="flex items-center justify-center bg-black px-4 py-3 text-xs font-black uppercase tracking-wide text-white transition-colors hover:bg-black/85"
             >
               Voir mon panier
             </Link>

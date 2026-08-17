@@ -13,12 +13,15 @@ const CACHE_TTL = 60_000; // 60s
 router.get("/", async (_req: Request, res: Response): Promise<void> => {
     try {
         if (catalogCache && Date.now() - catalogCache.ts < CACHE_TTL) {
+            // Allow client-side caching for the same TTL as server cache
+            res.setHeader("Cache-Control", `public, max-age=${Math.floor(CACHE_TTL / 1000)}`);
             res.json(catalogCache.data);
             return;
         }
 
         const data = await getPublicCatalog();
         catalogCache = { data, ts: Date.now() };
+        res.setHeader("Cache-Control", `public, max-age=${Math.floor(CACHE_TTL / 1000)}`);
         res.json(data);
     } catch (err) {
         console.error("Erreur catalogue:", err);

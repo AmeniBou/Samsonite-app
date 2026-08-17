@@ -1,4 +1,6 @@
 import { prisma } from "../db/prisma.js";
+import fs from "fs";
+import path from "path";
 
 const normalizeSlug = (value: string): string =>
   value
@@ -232,103 +234,126 @@ const mapProductToRaw = (product: {
 };
 
 export const getPublicCatalog = async () => {
-  const [categories, products] = await Promise.all([
-    prisma.category.findMany({ orderBy: { name: "asc" } }),
-    prisma.product.findMany({
-      orderBy: { id: "asc" },
-      include: {
-        images: { orderBy: { position: "asc" } },
-        categories: { include: { category: true } },
-        brand: true,
-        variants: { orderBy: { id: "asc" } },
-        features: { orderBy: { id: "asc" } },
-      },
-    }),
-  ]);
+  try {
+    const [categories, products] = await Promise.all([
+      prisma.category.findMany({ orderBy: { name: "asc" } }),
+      prisma.product.findMany({
+        orderBy: { id: "asc" },
+        include: {
+          images: { orderBy: { position: "asc" } },
+          categories: { include: { category: true } },
+          brand: true,
+          variants: { orderBy: { id: "asc" } },
+          features: { orderBy: { id: "asc" } },
+        },
+      }),
+    ]);
 
-  const groupNameById = new Map<string, number>();
-  const getGroupId = (groupName: string) => {
-    const key = normalizeLabel(groupName);
-    const existing = groupNameById.get(key);
-    if (existing) return existing;
-    const nextId = groupNameById.size + 1;
-    groupNameById.set(key, nextId);
-    return nextId;
-  };
+    const groupNameById = new Map<string, number>();
+    const getGroupId = (groupName: string) => {
+      const key = normalizeLabel(groupName);
+      const existing = groupNameById.get(key);
+      if (existing) return existing;
+      const nextId = groupNameById.size + 1;
+      groupNameById.set(key, nextId);
+      return nextId;
+    };
 
-  for (const product of products) {
-    for (const variant of getCatalogProductVariants(product.variants, product.images)) {
-      getGroupId(variant.groupName);
+    for (const product of products) {
+      for (const variant of getCatalogProductVariants(product.variants, product.images)) {
+        getGroupId(variant.groupName);
+      }
+    }
+
+    const variants = products.flatMap((product) =>
+      getCatalogProductVariants(product.variants, product.images).map((variant) => ({
+        product,
+        variant,
+        groupId: getGroupId(variant.groupName),
+      }))
+    );
+
+    return {
+      products: products.map(mapProductToRaw),
+      categories: categories.map(mapCategoryToRaw),
+      combinations: variants.map(({ product, variant }) => ({
+        id: variant.id,
+        id_product: product.id,
+        price: variant.price?.toString() || "0",
+        default_on: "0",
+        colorName: variant.colorName || undefined,
+        colorHex: variant.colorHex || undefined,
+        size: variant.size || undefined,
+        weight: variant.weight || undefined,
+        width: variant.width || undefined,
+        height: variant.height || undefined,
+        depth: variant.depth || undefined,
+        isExpandable: variant.isExpandable || undefined,
+        expandedWidth: variant.expandedWidth || undefined,
+        expandedHeight: variant.expandedHeight || undefined,
+        expandedDepth: variant.expandedDepth || undefined,
+        volume: variant.volume || undefined,
+        stockInitial: variant.stockInitial ?? undefined,
+        stock: variant.stock ?? undefined,
+        images: variant.images || [],
+        associations: {
+          product_option_values: [{ id: variant.id }],
+          images: (variant.images || []).map((imageUrl, index) => ({ id: variant.id * 1000 + index + 1, imageUrl })),
+        },
+      })),
+      productOptions: Array.from(groupNameById.entries()).map(([groupName, id]) => ({
+        id,
+        name: buildLangField(groupName),
+        public_name: buildLangField(groupName),
+      })),
+      productOptionValues: variants.map(({ variant, groupId }) => ({
+        id: variant.id,
+        id_attribute_group: groupId,
+        color: /couleur|color/i.test(variant.groupName) ? getColorHex(variant.value) : undefined,
+        name: buildLangField(variant.value),
+      })),
+      stockAvailables: variants.map(({ product, variant }) => ({
+        id: variant.id,
+        id_product: product.id,
+        id_product_attribute: variant.id,
+        quantity: variant.stock ?? getCatalogQuantity(product.availability, product.quantity),
+      })),
+      features: products.flatMap((product) =>
+        product.features.map((feature) => ({
+          id: feature.id,
+          name: buildLangField(feature.featureName),
+        }))
+      ),
+      featureValues: products.flatMap((product) =>
+        product.features.map((feature) => ({
+          id: feature.id,
+          id_feature: feature.id,
+          value: buildLangField(feature.featureValue),
+        }))
+      ),
+    };
+  } catch (err) {
+    console.warn("Prisma/DB unavailable, serving diagnostic fallback catalog", err);
+    try {
+      const base = path.join(process.cwd(), "server");
+      const productsRaw = JSON.parse(fs.readFileSync(path.join(base, "products_diag.json"), "utf-8"));
+      const categoriesRaw = JSON.parse(fs.readFileSync(path.join(base, "categories_diag.json"), "utf-8"));
+
+      return {
+        products: productsRaw,
+        categories: categoriesRaw,
+        combinations: [],
+        productOptions: [],
+        productOptionValues: [],
+        stockAvailables: [],
+        features: [],
+        featureValues: [],
+      };
+    } catch (diagErr) {
+      console.error("Failed to load diagnostic catalog fallback:", diagErr);
+      throw err;
     }
   }
-
-  const variants = products.flatMap((product) =>
-    getCatalogProductVariants(product.variants, product.images).map((variant) => ({
-      product,
-      variant,
-      groupId: getGroupId(variant.groupName),
-    }))
-  );
-
-  return {
-    products: products.map(mapProductToRaw),
-    categories: categories.map(mapCategoryToRaw),
-    combinations: variants.map(({ product, variant }) => ({
-      id: variant.id,
-      id_product: product.id,
-      price: variant.price?.toString() || "0",
-      default_on: "0",
-      colorName: variant.colorName || undefined,
-      colorHex: variant.colorHex || undefined,
-      size: variant.size || undefined,
-      weight: variant.weight || undefined,
-      width: variant.width || undefined,
-      height: variant.height || undefined,
-      depth: variant.depth || undefined,
-      isExpandable: variant.isExpandable || undefined,
-      expandedWidth: variant.expandedWidth || undefined,
-      expandedHeight: variant.expandedHeight || undefined,
-      expandedDepth: variant.expandedDepth || undefined,
-      volume: variant.volume || undefined,
-      stockInitial: variant.stockInitial ?? undefined,
-      stock: variant.stock ?? undefined,
-      images: variant.images || [],
-      associations: {
-        product_option_values: [{ id: variant.id }],
-        images: (variant.images || []).map((imageUrl, index) => ({ id: variant.id * 1000 + index + 1, imageUrl })),
-      },
-    })),
-    productOptions: Array.from(groupNameById.entries()).map(([groupName, id]) => ({
-      id,
-      name: buildLangField(groupName),
-      public_name: buildLangField(groupName),
-    })),
-    productOptionValues: variants.map(({ variant, groupId }) => ({
-      id: variant.id,
-      id_attribute_group: groupId,
-      color: /couleur|color/i.test(variant.groupName) ? getColorHex(variant.value) : undefined,
-      name: buildLangField(variant.value),
-    })),
-    stockAvailables: variants.map(({ product, variant }) => ({
-      id: variant.id,
-      id_product: product.id,
-      id_product_attribute: variant.id,
-      quantity: variant.stock ?? getCatalogQuantity(product.availability, product.quantity),
-    })),
-    features: products.flatMap((product) =>
-      product.features.map((feature) => ({
-        id: feature.id,
-        name: buildLangField(feature.featureName),
-      }))
-    ),
-    featureValues: products.flatMap((product) =>
-      product.features.map((feature) => ({
-        id: feature.id,
-        id_feature: feature.id,
-        value: buildLangField(feature.featureValue),
-      }))
-    ),
-  };
 };
 
 export const getBrands = async () => {
@@ -585,7 +610,12 @@ const mapAdminProduct = (product: {
 }) => {
   const mainImage = product.images[0] ?? null;
   const imageId = mainImage?.id ?? null;
-  const stock = getCatalogQuantity(product.availability, product.quantity);
+  // "Stock Actuel" is stored in ProductVariant.stock. For products with
+  // variants, the product stock is always their current-stock total.
+  const variantStock = product.variants.length > 0
+    ? product.variants.reduce((total, variant) => total + Math.max(0, variant.stock ?? 0), 0)
+    : null;
+  const stock = variantStock ?? getCatalogQuantity(product.availability, product.quantity);
   const meaningfulVariants = getCatalogProductVariants(product.variants, product.images);
   const variants = meaningfulVariants.map((variant) => {
     const group = normalizeLabel(variant.groupName);
@@ -881,6 +911,18 @@ const createOrUpdateVariants = async (
   if (!data.length) return;
   await prisma.productVariant.createMany({ data });
 };
+
+const syncProductQuantityFromVariants = async (productId: number) => {
+  const result = await prisma.productVariant.aggregate({
+    where: { productId },
+    _sum: { stock: true },
+  });
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: { quantity: Math.max(0, result._sum.stock ?? 0) },
+  });
+};
 export const createProduct = async (fields: {
   name: string;
   description?: string;
@@ -936,6 +978,7 @@ export const createProduct = async (fields: {
     await createOrUpdateImages(product.id, fields.images || []);
     await createOrUpdateFeatures(product.id, fields.features || []);
     await createOrUpdateVariants(product.id, fields.variants || []);
+    await syncProductQuantityFromVariants(product.id);
 
     return { success: true, id: product.id };
   } catch (err) {
@@ -1015,6 +1058,7 @@ export const updateProduct = async (
 
     if (fields.variants) {
       await createOrUpdateVariants(id, fields.variants);
+      await syncProductQuantityFromVariants(id);
     }
 
     return { success: true };

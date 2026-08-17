@@ -228,7 +228,7 @@ const Category = () => {
         }
       }
 
-if (appliedFilters.sizes.length > 0) {
+      if (appliedFilters.sizes.length > 0) {
         const productSizes = product.variants.map((variant) => variant.size).filter(Boolean) as string[];
         if (!appliedFilters.sizes.some((size) => productSizes.includes(size))) {
           return false;
@@ -409,8 +409,8 @@ if (appliedFilters.sizes.length > 0) {
         </div>
       )}
 
-      <div className="relative z-[120] overflow-visible border-y border-border bg-white/80 backdrop-blur">
-        <div className="samsonite-container relative z-[120] flex items-center justify-between overflow-visible py-3">
+      <div className="relative z-[140] overflow-visible border-y border-border bg-white/80 backdrop-blur">
+        <div className="samsonite-container relative  flex items-center justify-between overflow-visible py-3">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setFiltersOpen((value) => !value)}
@@ -438,7 +438,7 @@ if (appliedFilters.sizes.length > 0) {
                 <Grid3X3 className="h-4 w-4" />
               </button>
             </div>
-            <div className="relative z-[130]">
+            <div className="relative z-10">
               <button
                 type="button"
                 onClick={() => setSortOpen((value) => !value)}
@@ -450,7 +450,7 @@ if (appliedFilters.sizes.length > 0) {
               </button>
 
               {sortOpen && (
-                <div className="absolute right-0 top-full z-[140] mt-2 w-56 border border-border bg-background shadow-[0_20px_55px_rgba(0,0,0,0.16)]">
+                <div className="absolute right-0 top-full z-20 mt-2 w-56 border border-border bg-background shadow-[0_20px_55px_rgba(0,0,0,0.16)]">
                   {sortOptions.map((option) => (
                     <button
                       key={option.value}
@@ -459,11 +459,10 @@ if (appliedFilters.sizes.length > 0) {
                         setSortBy(option.value);
                         setSortOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 text-xs font-semibold tracking-wider transition-colors ${
-                        sortBy === option.value
-                          ? "bg-accent text-foreground"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                      }`}
+                      className={`w-full text-left px-3 py-2 text-xs font-semibold tracking-wider transition-colors ${sortBy === option.value
+                        ? "bg-accent text-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                        }`}
                     >
                       {t(option.labelKey)}
                     </button>
@@ -516,7 +515,7 @@ if (appliedFilters.sizes.length > 0) {
                         className={`rounded-full border px-3 py-2 text-xs font-bold transition-colors ${draftFilters.brands.includes(brand)
                           ? "border-foreground bg-foreground text-background"
                           : "border-border bg-white hover:border-foreground"
-                        }`}
+                          }`}
                         onClick={() => toggleArrayValue("brands", brand)}
                       >
                         {brand}
@@ -570,7 +569,7 @@ if (appliedFilters.sizes.length > 0) {
                           className={`rounded-full border px-3 py-2 text-xs font-bold transition-colors ${draftFilters.sizes.includes(size)
                             ? "border-foreground bg-foreground text-background"
                             : "border-border bg-white hover:border-foreground"
-                          }`}
+                            }`}
                           onClick={() => toggleArrayValue("sizes", size)}
                         >
                           {size}
@@ -640,8 +639,8 @@ if (appliedFilters.sizes.length > 0) {
                         type="button"
                         title={color.name}
                         className={`h-9 w-9 rounded-full border-2 shadow-sm transition-transform hover:scale-105 ${draftFilters.colors.includes(color.name)
-                            ? "border-foreground ring-2 ring-foreground/20"
-                            : "border-border"
+                          ? "border-foreground ring-2 ring-foreground/20"
+                          : "border-border"
                           }`}
                         style={{ backgroundColor: color.hex }}
                         onClick={() => toggleArrayValue("colors", color.name)}

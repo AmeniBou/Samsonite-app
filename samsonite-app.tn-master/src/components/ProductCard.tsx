@@ -25,13 +25,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
   return (
     <Link to={productUrl} className="group flex h-full flex-col">
       <div className="relative aspect-square overflow-hidden bg-white transition-all duration-300 group-hover:shadow-[0_14px_40px_rgba(0,0,0,0.06)]">
-        <span
-          className={`absolute left-3 top-3 z-10 rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white ${
-            isOutOfStock ? "bg-neutral-900" : "bg-emerald-600"
-          }`}
-        >
-          {isOutOfStock ? t("badge.out") : t("badge.available")}
-        </span>
+        {isOutOfStock && (
+          <span className="absolute left-3 top-3 z-10 rounded-full bg-neutral-900 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white">
+            {t("badge.out")}
+          </span>
+        )}
         {product.badge && !isOutOfStock && (
           <span className="absolute right-3 top-3 z-10 rounded-full bg-cyan-600 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white">
             {product.badge}

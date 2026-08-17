@@ -6,7 +6,7 @@ const TopBar = () => {
   const { t } = useLanguage();
 
   return (
-    <div className="bg-[#d5eafd] text-black text-xs">
+    <div className="hidden bg-[#d5eafd] text-black text-xs sm:block">
       <div className="samsonite-container flex items-center justify-between h-9">
         <Link to="/livraison" className="flex items-center gap-1.5 hover:underline">
           <Truck className="h-3.5 w-3.5" />

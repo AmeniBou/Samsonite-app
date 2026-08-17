@@ -148,12 +148,12 @@ const Shipping = () => {
         </div>
 
         <div className="overflow-hidden border border-border bg-white">
-          <div className="grid grid-cols-[1fr_180px] border-b border-border bg-black px-5 py-4 text-sm font-black uppercase text-white">
+          <div className="grid grid-cols-[minmax(0,1fr)_120px] border-b border-border bg-black px-3 py-3 text-xs font-black uppercase text-white sm:grid-cols-[1fr_180px] sm:px-5 sm:py-4 sm:text-sm">
             <span>{isEn ? "Order day" : "Jour de commande"}</span>
             <span>{isEn ? "Delivery day" : "Jour de livraison"}</span>
           </div>
           {schedule.map((row) => (
-            <div key={row.order} className="grid grid-cols-[1fr_180px] border-b border-border px-5 py-4 text-sm last:border-b-0">
+            <div key={row.order} className="grid grid-cols-[minmax(0,1fr)_120px] border-b border-border px-3 py-3 text-xs last:border-b-0 sm:grid-cols-[1fr_180px] sm:px-5 sm:py-4 sm:text-sm">
               <span className="font-semibold text-foreground">{row.order}</span>
               <span className="font-black text-foreground">{row.delivery}</span>
             </div>

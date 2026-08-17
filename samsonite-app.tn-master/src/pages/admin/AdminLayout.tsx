@@ -28,9 +28,9 @@ const AdminLayout = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-100 flex">
+        <div className="flex min-h-screen flex-col bg-gray-100 md:flex-row">
             {/* Sidebar */}
-            <aside className="w-64 bg-gray-900 text-white flex flex-col shrink-0">
+            <aside className="flex w-full shrink-0 flex-col bg-gray-900 text-white md:w-64">
                 <div className="p-4 border-b border-gray-700">
                     <h2 className="text-lg font-bold">Samsonite Admin</h2>
                     <p className="text-xs text-gray-400 mt-0.5">Admin : {username}</p>
@@ -53,7 +53,7 @@ const AdminLayout = () => {
                     </button>
                 </div>
 
-                <nav className="flex-1 py-4 space-y-1 px-2">
+                <nav className="flex flex-1 gap-1 overflow-x-auto px-2 py-3 md:block md:space-y-1 md:px-2 md:py-4">
                     {navItems.map((item) => {
                         const active = item.exact
                             ? location.pathname === item.to
@@ -63,7 +63,7 @@ const AdminLayout = () => {
                             <Link
                                 key={item.to}
                                 to={item.to}
-                                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${active
+                                className={`flex shrink-0 items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${active
                                     ? "bg-white/10 text-white"
                                     : "text-gray-300 hover:bg-white/5 hover:text-white"
                                     }`}
@@ -77,7 +77,7 @@ const AdminLayout = () => {
             </aside>
 
             {/* Main content */}
-            <main className="flex-1 flex flex-col min-h-screen overflow-hidden">
+            <main className="flex min-h-0 min-w-0 flex-1 flex-col md:min-h-screen">
                 <div className="flex-1 overflow-auto bg-gray-50">
                     <Outlet />
                 </div>
