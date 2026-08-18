@@ -120,7 +120,7 @@ const AdminMessages = () => {
       });
       setSubjects((previous) => [...previous, created].sort((a, b) => a.position - b.position));
       setSubjectForm({ labelFr: "" });
-      toast.success(`Sujet de message "${created.labelFr}" ajout\u00e9 avec succ\u00e8s.`);
+      toast.success(`Sujet de message "${created.labelFr}" ajouté avec succès.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Impossible d'ajouter le sujet");
     } finally {
@@ -152,7 +152,7 @@ const AdminMessages = () => {
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Messages contact</h1>
-          <p className="mt-1 text-sm text-gray-500">Demandes envoyees depuis la page Nous contacter.</p>
+          <p className="mt-1 text-sm text-gray-500">Demandes envoyées depuis la page Nous contacter.</p>
         </div>
         <button
           type="button"
@@ -161,7 +161,7 @@ const AdminMessages = () => {
           className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          Rafraichir
+          Rafraîchir
         </button>
       </div>
 

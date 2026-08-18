@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Save, Loader2, Upload, ImageOff, Copy, X, GripVertical, ShoppingBag } from "lucide-react";
 import {
     fetchAdminProduct,
@@ -141,8 +141,17 @@ const createEmptyVariant = (overrides: Partial<ProductVariantForm> = {}): Produc
     ...overrides,
 });
 
-const getVariantUniqueKey = (variant: Pick<ProductVariantForm, "colorName" | "size">): string =>
-    [variant.colorName.trim().toLowerCase(), variant.size.trim().toLowerCase()].join("::");
+const getVariantUniqueKey = (
+    variant: Pick<ProductVariantForm, "colorName" | "size" | "height" | "width" | "depth" | "volume">
+): string =>
+    [
+        variant.colorName.trim().toLowerCase(),
+        variant.size.trim().toLowerCase(),
+        variant.height.trim().toLowerCase(),
+        variant.width.trim().toLowerCase(),
+        variant.depth.trim().toLowerCase(),
+        variant.volume.trim().toLowerCase(),
+    ].join("::");
 
 const AdminProductForm = () => {
     const navigate = useNavigate();
@@ -597,25 +606,21 @@ const AdminProductForm = () => {
             return;
         }
         if (!form.parentCategoryId) {
-            setError("La categorie parent est requise.");
+            setError("La catégorie parent est requise.");
             return;
         }
         if (!form.categoryId) {
-            setError("La sous-categorie est requise.");
+            setError("La sous-catégorie est requise.");
             return;
         }
         if (form.variants.length === 0) {
-            setError("Ajoute au moins une variante avec couleur, taille, prix, stock et images.");
+            setError("Ajoute au moins une variante avec couleur, prix, stock et images.");
             return;
         }
 
         for (const [index, variant] of form.variants.entries()) {
             if (!variant.colorName.trim()) {
                 setError(`La couleur de la variante #${index + 1} est requise.`);
-                return;
-            }
-            if (!variant.size.trim()) {
-                setError(`La taille de la variante #${index + 1} est requise.`);
                 return;
             }
             if (!isValidPositiveNumber(variant.price)) {
@@ -644,7 +649,7 @@ const AdminProductForm = () => {
             );
             if (duplicateIndex !== -1) {
                 setError(
-                    `La variante #${index + 1} existe déjà en variante #${duplicateIndex + 1}. Change la couleur ou la taille.`
+                    `La variante #${index + 1} existe déjà en variante #${duplicateIndex + 1}. Change la couleur, la taille ou les dimensions.`
                 );
                 return;
             }
@@ -805,7 +810,7 @@ const AdminProductForm = () => {
     const imagePreviewItems = allVariantImages.slice(0, 12);
     const allProductImages = allVariantImages;
     const selectedBrandName = brands.find((brand) => String(brand.id) === form.brandId)?.name || "Samsonite";
-    const selectedCategoryName = categories.find((category) => String(category.id) === form.categoryId)?.name || selectedParent?.name || "Categorie";
+    const selectedCategoryName = categories.find((category) => String(category.id) === form.categoryId)?.name || selectedParent?.name || "Catégorie";
     const previewDescription = form.descriptionShort || form.description || "Description courte du produit.";
     const previewVariants = form.variants.map((variant, index) => ({
         ...variant,
@@ -843,7 +848,7 @@ const AdminProductForm = () => {
         ).values()
     );
     const previewSpecRows = [
-        { label: "Reference", value: form.reference },
+        { label: "Référence", value: form.reference },
         { label: "Modele", value: form.model },
         { label: "Matiere", value: form.matiere },
         { label: "Poignees", value: form.poignees },
@@ -859,7 +864,7 @@ const AdminProductForm = () => {
     ].filter((row) => String(row.value || "").trim());
     const steps: Array<{ id: ProductFormStep; label: string; helper: string }> = [
         { id: 1, label: "Informations", helper: "Produit" },
-        { id: 2, label: "Variantes", helper: "Couleurs, tailles, stock" },
+        { id: 2, label: "Variantes", helper: "Couleurs, dimensions, stock" },
         { id: 3, label: "Aperçu", helper: "Validation finale" },
     ];
 
@@ -887,7 +892,6 @@ const AdminProductForm = () => {
             const images = parseLines(variant.imagesText);
 
             if (!colorName) errors.push(`${label}: couleur obligatoire.`);
-            if (!size) errors.push(`${label}: taille obligatoire.`);
             if (!isValidPositiveNumber(variant.price)) {
                 errors.push(`${label}: prix obligatoire, numérique et supérieur à 0.`);
             }
@@ -911,7 +915,7 @@ const AdminProductForm = () => {
             }
 
             const key = getVariantUniqueKey(variant);
-            if (colorName && size) {
+            if (colorName) {
                 const firstIndex = seen.get(key);
                 if (firstIndex !== undefined) {
                     errors.push(`${label}: doublon avec la variante #${firstIndex + 1}.`);
@@ -1083,6 +1087,12 @@ const AdminProductForm = () => {
                                 </option>
                             ))}
                         </select>
+                        <p className="mt-1 text-xs text-gray-500">
+                            Marque absente ?{" "}
+                            <Link to="/admin/marques" className="font-bold text-black underline">
+                                Gerer les marques
+                            </Link>
+                        </p>
                     </div>
                     <div>
                         <label htmlFor="product-parent-category" className="block text-sm font-medium text-gray-700 mb-1">
@@ -1323,7 +1333,7 @@ const AdminProductForm = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <span className="text-sm font-bold text-gray-900">Variantes des valises</span>
-                            <p className="mt-1 text-xs text-gray-500">Chaque variante combine une couleur, une taille, ses dimensions, son prix, son stock et ses images.</p>
+                            <p className="mt-1 text-xs text-gray-500">Chaque variante combine une couleur, des dimensions, son prix, son stock et ses images. La taille est optionnelle.</p>
                         </div>
                         <button
                             type="button"

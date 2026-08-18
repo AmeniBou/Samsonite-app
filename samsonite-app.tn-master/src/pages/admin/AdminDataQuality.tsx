@@ -23,7 +23,7 @@ import {
 const severityLabels: Record<DataQualitySeverity | "all", string> = {
     all: "Tous",
     critical: "Critique",
-    warning: "A verifier",
+    warning: "À vérifier",
     info: "Info",
 };
 
@@ -31,7 +31,7 @@ const entityLabels: Record<DataQualityEntityType | "all", string> = {
     all: "Tous les types",
     product: "Produits",
     variant: "Variantes",
-    category: "Categories",
+    category: "Catégories",
     brand: "Marques",
     order: "Commandes",
     contact: "Messages",
@@ -67,7 +67,7 @@ const AdminDataQuality = () => {
             const data = await fetchDataQualityReport();
             setReport(data);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Erreur chargement rapport");
+            setError(err instanceof Error ? err.message : "Erreur de chargement du rapport");
         } finally {
             setLoading(false);
         }
@@ -114,75 +114,74 @@ const AdminDataQuality = () => {
     }, [report?.issues]);
 
     return (
-        <div className="p-6 lg:p-8">
-            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="p-4 sm:p-5 lg:p-6">
+            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Backoffice</p>
-                    <h1 className="mt-2 text-3xl font-black text-gray-950">Qualite des donnees</h1>
-                    <p className="mt-2 max-w-3xl text-sm text-gray-600">
-                        Repere les produits, variantes, categories et messages qui risquent de casser l'affichage ou de
-                        rendre le catalogue incoherent.
+                    <h1 className="text-2xl font-black text-gray-950">Qualité des données</h1>
+                    <p className="mt-1 max-w-3xl text-xs text-gray-600">
+                        Repère les produits, variantes, catégories et messages qui risquent de casser l'affichage ou de
+                        rendre le catalogue incohérent.
                     </p>
                 </div>
 
                 <button
                     onClick={loadReport}
                     disabled={loading}
-                    className="inline-flex items-center justify-center gap-2 border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-900 transition-colors hover:bg-gray-50 disabled:opacity-60"
+                    className="inline-flex h-9 items-center justify-center gap-2 border border-gray-300 bg-white px-3 text-xs font-bold text-gray-900 transition-colors hover:bg-gray-50 disabled:opacity-60"
                 >
-                    <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                    <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
                     Actualiser
                 </button>
             </div>
 
             {error && (
-                <div className="mb-6 border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                <div className="mb-4 border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
                     {error}
                 </div>
             )}
 
             {loading && !report ? (
-                <div className="border border-gray-200 bg-white p-8 text-center text-gray-500">
+                <div className="border border-gray-200 bg-white p-6 text-center text-sm text-gray-500">
                     Analyse de la base en cours...
                 </div>
             ) : report ? (
                 <>
-                    <div className="mb-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                         <SummaryCard
-                            icon={<ShieldAlert className="h-5 w-5" />}
-                            label="Problemes critiques"
+                            icon={<ShieldAlert className="h-4 w-4" />}
+                            label="Problèmes critiques"
                             value={report.summary.criticalIssues}
                             tone="red"
                         />
                         <SummaryCard
-                            icon={<AlertTriangle className="h-5 w-5" />}
-                            label="Points a verifier"
+                            icon={<AlertTriangle className="h-4 w-4" />}
+                            label="Points à vérifier"
                             value={report.summary.warningIssues}
                             tone="amber"
                         />
                         <SummaryCard
-                            icon={<Boxes className="h-5 w-5" />}
+                            icon={<Boxes className="h-4 w-4" />}
                             label="Produits / variantes"
                             value={`${report.summary.products} / ${report.summary.variants}`}
                             tone="gray"
                         />
                         <SummaryCard
-                            icon={<FolderTree className="h-5 w-5" />}
-                            label="Categories menu"
+                            icon={<FolderTree className="h-4 w-4" />}
+                            label="Catégories menu"
                             value={`${report.summary.mainMenuCategories}/7`}
                             tone="blue"
                         />
                     </div>
 
-                    <div className="mb-6 border border-gray-200 bg-white p-4">
-                        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                    <div className="mb-4 border border-gray-200 bg-white p-3">
+                        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                             <div className="relative min-w-0 flex-1">
-                                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
                                 <input
                                     value={search}
                                     onChange={(event) => setSearch(event.target.value)}
-                                    placeholder="Rechercher un produit, une categorie, un ID..."
-                                    className="w-full border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm outline-none transition-colors focus:border-gray-900"
+                                    placeholder="Rechercher un produit, une catégorie, un ID..."
+                                    className="h-9 w-full border border-gray-300 bg-white pl-9 pr-3 text-xs outline-none transition-colors focus:border-gray-900"
                                 />
                             </div>
 
@@ -191,7 +190,7 @@ const AdminDataQuality = () => {
                                     <button
                                         key={severity}
                                         onClick={() => setSeverityFilter(severity)}
-                                        className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition-colors ${
+                                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide transition-colors ${
                                             severityFilter === severity
                                                 ? "bg-gray-950 text-white"
                                                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -203,10 +202,10 @@ const AdminDataQuality = () => {
                             </div>
                         </div>
 
-                        <div className="mt-4 flex flex-wrap gap-2">
+                        <div className="mt-3 flex flex-wrap gap-2">
                             <button
                                 onClick={() => setEntityFilter("all")}
-                                className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+                                className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
                                     entityFilter === "all" ? "bg-gray-950 text-white" : "bg-gray-100 text-gray-600"
                                 }`}
                             >
@@ -216,7 +215,7 @@ const AdminDataQuality = () => {
                                 <button
                                     key={item.key}
                                     onClick={() => setEntityFilter(item.key)}
-                                    className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+                                    className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
                                         entityFilter === item.key ? "bg-gray-950 text-white" : entityStyles[item.key]
                                     }`}
                                 >
@@ -227,27 +226,27 @@ const AdminDataQuality = () => {
                     </div>
 
                     <div className="overflow-hidden border border-gray-200 bg-white">
-                        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                        <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2.5">
                             <div>
-                                <h2 className="text-sm font-black uppercase tracking-wide text-gray-950">
-                                    Issues detectees
+                                <h2 className="text-xs font-black uppercase tracking-wide text-gray-950">
+                                    Problèmes détectés
                                 </h2>
-                                <p className="text-xs text-gray-500">
-                                    Derniere analyse : {new Date(report.generatedAt).toLocaleString("fr-FR")}
+                                <p className="text-[11px] text-gray-500">
+                                    Dernière analyse : {new Date(report.generatedAt).toLocaleString("fr-FR")}
                                 </p>
                             </div>
-                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600">
-                                {filteredIssues.length} resultat(s)
+                            <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold text-gray-600">
+                                {filteredIssues.length} résultat(s)
                             </span>
                         </div>
 
                         {filteredIssues.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
-                                <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+                            <div className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center">
+                                <CheckCircle2 className="h-8 w-8 text-emerald-500" />
                                 <div>
-                                    <p className="font-bold text-gray-950">Aucun probleme pour ces filtres</p>
-                                    <p className="mt-1 text-sm text-gray-500">
-                                        Change les filtres ou relance l'analyse pour verifier la base.
+                                    <p className="text-sm font-bold text-gray-950">Aucun problème pour ces filtres</p>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Change les filtres ou relance l'analyse pour vérifier la base.
                                     </p>
                                 </div>
                             </div>
@@ -284,54 +283,54 @@ const SummaryCard = ({
     };
 
     return (
-        <div className="border border-gray-200 bg-white p-4">
-            <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full ring-1 ${tones[tone]}`}>
+        <div className="border border-gray-200 bg-white p-3">
+            <div className={`mb-3 inline-flex h-8 w-8 items-center justify-center rounded-full ring-1 ${tones[tone]}`}>
                 {icon}
             </div>
-            <p className="text-2xl font-black text-gray-950">{value}</p>
-            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-gray-500">{label}</p>
+            <p className="text-xl font-black text-gray-950">{value}</p>
+            <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</p>
         </div>
     );
 };
 
 const IssueRow = ({ issue }: { issue: DataQualityIssue }) => {
     return (
-        <div className="grid gap-3 px-4 py-4 lg:grid-cols-[180px_1fr_auto] lg:items-center">
+        <div className="grid gap-3 px-3 py-3 lg:grid-cols-[165px_1fr_auto] lg:items-center">
             <div className="flex flex-wrap items-center gap-2">
-                <span className={`rounded-full px-2.5 py-1 text-[11px] font-black uppercase ring-1 ${severityStyles[issue.severity]}`}>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ring-1 ${severityStyles[issue.severity]}`}>
                     {severityLabels[issue.severity]}
                 </span>
-                <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase ${entityStyles[issue.entityType]}`}>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${entityStyles[issue.entityType]}`}>
                     {entityLabels[issue.entityType]}
                 </span>
             </div>
 
             <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-black text-gray-950">{issue.title}</h3>
+                    <h3 className="text-sm font-black text-gray-950">{issue.title}</h3>
                     {issue.entityId && (
-                        <span className="text-xs font-semibold text-gray-400">ID {issue.entityId}</span>
+                        <span className="text-[11px] font-semibold text-gray-400">ID {issue.entityId}</span>
                     )}
                 </div>
                 {issue.entityName && (
-                    <p className="mt-1 flex items-center gap-1 text-sm font-bold text-gray-700">
-                        <Tag className="h-3.5 w-3.5" />
+                    <p className="mt-1 flex items-center gap-1 text-xs font-bold text-gray-700">
+                        <Tag className="h-3 w-3" />
                         {issue.entityName}
                     </p>
                 )}
-                <p className="mt-1 text-sm text-gray-600">{issue.description}</p>
+                <p className="mt-1 text-xs text-gray-600">{issue.description}</p>
             </div>
 
             {issue.fixUrl ? (
                 <Link
                     to={issue.fixUrl}
-                    className="inline-flex items-center justify-center gap-2 border border-gray-300 bg-white px-3 py-2 text-sm font-bold text-gray-900 transition-colors hover:border-gray-950"
+                    className="inline-flex h-9 items-center justify-center gap-2 border border-gray-300 bg-white px-3 text-xs font-bold text-gray-900 transition-colors hover:border-gray-950"
                 >
                     Corriger
                 </Link>
             ) : (
-                <span className="inline-flex items-center gap-2 text-sm font-semibold text-gray-400">
-                    <Database className="h-4 w-4" />
+                <span className="inline-flex items-center gap-2 text-xs font-semibold text-gray-400">
+                    <Database className="h-3.5 w-3.5" />
                     Base
                 </span>
             )}

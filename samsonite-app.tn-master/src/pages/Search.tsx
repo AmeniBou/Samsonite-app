@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { Search as SearchIcon, SlidersHorizontal } from "lucide-react";
 
@@ -22,7 +22,7 @@ const sortOptions = [
 ];
 
 const Search = () => {
-  const { t } = useLanguage();
+  const { t, td } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
@@ -85,17 +85,25 @@ const Search = () => {
   }, [categories, normalizedQuery]);
 
   const liveSuggestions = useMemo(
-    () =>
-      getSearchSuggestions({
+    () => {
+      if (normalizeSearchText(searchInput).length < 2) return [];
+      return getSearchSuggestions({
         query: searchInput,
         products,
         categories,
         limit: 8,
-      }),
+      });
+    },
     [categories, products, searchInput]
   );
 
   const scoredResults = useMemo(() => {
+    if (!normalizedQuery) {
+      return products
+        .filter((product) => !inStockOnly || (product.stock || 0) > 0)
+        .map((product) => ({ product, score: 1 }));
+    }
+
     return products
       .map((product) => {
         return { product, score: scoreProduct(product, normalizedQuery, categoryNameBySlug) };
@@ -236,7 +244,7 @@ const Search = () => {
                 to={`/categorie/${category.slug}`}
                 className="border border-border px-4 py-2 text-xs font-bold uppercase tracking-wide hover:border-black"
               >
-                {category.name}
+                {td(category.name)}
               </Link>
             ))}
           </div>

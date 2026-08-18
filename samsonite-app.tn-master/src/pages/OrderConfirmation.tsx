@@ -41,8 +41,8 @@ const statusLabels: Record<StoredOrder["status"], string> = {
   cancelled: "Annulée",
 };
 
-const formatOrderDate = (date: string) =>
-  new Intl.DateTimeFormat("fr-TN", {
+const formatOrderDate = (date: string, language: "fr" | "en" = "fr") =>
+  new Intl.DateTimeFormat(language === "en" ? "en-US" : "fr-TN", {
     dateStyle: "long",
     timeStyle: "short",
   }).format(new Date(date));
@@ -55,14 +55,43 @@ const htmlEscape = (value: unknown) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
-const buildOrderDetailsHtml = (order: StoredOrder, customerName: string) => {
+const buildOrderDetailsHtml = (
+  order: StoredOrder,
+  customerName: string,
+  translate: (key: string) => string,
+  translateDynamic: (value?: string | null) => string,
+  language: "fr" | "en"
+) => {
+  const printShippingLabels: Record<ShippingMethod, string> = {
+    standard: translate("checkout.shipping.standard"),
+    express: translate("checkout.shipping.express"),
+    pickup: translate("checkout.shipping.pickup"),
+  };
+  const printShippingDelays: Record<ShippingMethod, string> = {
+    standard: translate("checkout.shipping.standardDesc"),
+    express: translate("checkout.shipping.expressDesc"),
+    pickup: translate("checkout.shipping.pickupDesc"),
+  };
+  const printPaymentLabels: Record<PaymentMethod, string> = {
+    cash_on_delivery: translate("checkout.payment.cash"),
+    bank_transfer: translate("checkout.payment.transfer"),
+  };
+  const printStatusLabels: Record<StoredOrder["status"], string> = {
+    new: translate("order.status.new"),
+    confirmed: translate("order.status.confirmed"),
+    preparing: translate("order.status.preparing"),
+    shipped: translate("order.status.shipped"),
+    fulfilled: translate("order.status.fulfilled"),
+    delivery_failed: translate("order.status.delivery_failed"),
+    cancelled: translate("order.status.cancelled"),
+  };
   const rows = order.items
     .map(
       (item) => `
         <tr>
           <td>
-            <strong>${htmlEscape(item.name)}</strong>
-            <small>${htmlEscape([item.selectedColor, item.selectedSize, item.sku ? `Réf: ${item.sku}` : ""].filter(Boolean).join(" · "))}</small>
+            <strong>${htmlEscape(translateDynamic(item.name))}</strong>
+            <small>${htmlEscape([translateDynamic(item.selectedColor), translateDynamic(item.selectedSize), item.sku ? `${translate("order.reference")}: ${item.sku}` : ""].filter(Boolean).join(" · "))}</small>
           </td>
           <td class="center">${item.quantity}</td>
           <td class="right">${htmlEscape(formatTnd(item.unitPrice))}</td>
@@ -72,10 +101,10 @@ const buildOrderDetailsHtml = (order: StoredOrder, customerName: string) => {
     .join("");
 
   return `<!doctype html>
-<html lang="fr">
+<html lang="${language}">
 <head>
   <meta charset="utf-8" />
-  <title>Détails de commande ${htmlEscape(order.id)}</title>
+  <title>${htmlEscape(translate("order.detailsTitle"))} ${htmlEscape(order.id)}</title>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; color: #111; font-family: Arial, Helvetica, sans-serif; background: #fff; }
@@ -109,8 +138,8 @@ const buildOrderDetailsHtml = (order: StoredOrder, customerName: string) => {
 </head>
 <body>
   <div class="actions">
-    <button onclick="window.print()">Imprimer / PDF</button>
-    <button onclick="window.close()">Fermer</button>
+    <button onclick="window.print()">${htmlEscape(translate("order.printPdf"))}</button>
+    <button onclick="window.close()">${htmlEscape(translate("order.close"))}</button>
   </div>
   <main class="invoice">
     <header class="top">
@@ -119,25 +148,25 @@ const buildOrderDetailsHtml = (order: StoredOrder, customerName: string) => {
         <p class="muted">9, Rue 8601 Zone Industrielle<br />Charguia 1, 2035 Ariana, Tunisie</p>
       </div>
       <div class="meta">
-        <strong>Détails de commande</strong><br />
-        Référence: ${htmlEscape(order.id)}<br />
-        Date: ${htmlEscape(formatOrderDate(order.createdAt))}<br />
-        Statut: ${htmlEscape(statusLabels[order.status] || order.status)}
+        <strong>${htmlEscape(translate("order.detailsTitle"))}</strong><br />
+        ${htmlEscape(translate("order.reference"))}: ${htmlEscape(order.id)}<br />
+        ${htmlEscape(translate("order.date"))}: ${htmlEscape(formatOrderDate(order.createdAt, language))}<br />
+        ${htmlEscape(translate("order.status"))}: ${htmlEscape(printStatusLabels[order.status] || order.status)}
       </div>
     </header>
 
-    <h1>Récapitulatif de commande</h1>
-    <p class="muted">Document généré pour la commande ${htmlEscape(order.id)}.</p>
+    <h1>${htmlEscape(translate("order.recapTitle"))}</h1>
+    <p class="muted">${htmlEscape(translate("order.generatedFor"))} ${htmlEscape(order.id)}.</p>
 
     <section class="grid">
       <div class="box">
-        <h2>Client</h2>
-        <strong>${htmlEscape(customerName || "Client")}</strong><br />
+        <h2>${htmlEscape(translate("order.customer"))}</h2>
+        <strong>${htmlEscape(customerName || translate("order.customer"))}</strong><br />
         ${htmlEscape(order.customer.email)}<br />
         ${htmlEscape(order.customer.phone)}
       </div>
       <div class="box">
-        <h2>Adresse de livraison</h2>
+        <h2>${htmlEscape(translate("order.shippingAddress"))}</h2>
         ${htmlEscape(order.customer.address)}<br />
         ${htmlEscape([order.customer.postalCode, order.customer.city].filter(Boolean).join(" "))}<br />
         Tunisie
@@ -146,37 +175,37 @@ const buildOrderDetailsHtml = (order: StoredOrder, customerName: string) => {
 
     <section class="grid">
       <div class="box">
-        <h2>Livraison</h2>
-        ${htmlEscape(shippingLabels[order.shippingMethod])}<br />
-        ${htmlEscape(shippingDelays[order.shippingMethod])}
+        <h2>${htmlEscape(translate("cart.shipping"))}</h2>
+        ${htmlEscape(printShippingLabels[order.shippingMethod])}<br />
+        ${htmlEscape(printShippingDelays[order.shippingMethod])}
       </div>
       <div class="box">
-        <h2>Paiement</h2>
-        ${htmlEscape(paymentLabels[order.paymentMethod] || order.paymentMethod)}
+        <h2>${htmlEscape(translate("checkout.payment"))}</h2>
+        ${htmlEscape(printPaymentLabels[order.paymentMethod] || order.paymentMethod)}
       </div>
     </section>
 
     <table>
       <thead>
         <tr>
-          <th>Article</th>
-          <th class="center">Qté</th>
-          <th class="right">Prix unitaire</th>
-          <th class="right">Total</th>
+          <th>${htmlEscape(translate("order.items"))}</th>
+          <th class="center">${htmlEscape(translate("order.quantityShort"))}</th>
+          <th class="right">${htmlEscape(translate("order.unitPrice"))}</th>
+          <th class="right">${htmlEscape(translate("cart.total"))}</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
 
     <section class="totals">
-      <div><span>Sous-total</span><strong>${htmlEscape(formatTnd(order.totals.subtotal))}</strong></div>
-      <div><span>Livraison</span><strong>${order.totals.shipping === 0 ? "Gratuite" : htmlEscape(formatTnd(order.totals.shipping))}</strong></div>
-      <div class="grand"><span>Total</span><span>${htmlEscape(formatTnd(order.totals.total))}</span></div>
+      <div><span>${htmlEscape(translate("cart.subtotal"))}</span><strong>${htmlEscape(formatTnd(order.totals.subtotal))}</strong></div>
+      <div><span>${htmlEscape(translate("cart.shipping"))}</span><strong>${order.totals.shipping === 0 ? htmlEscape(translate("cart.free")) : htmlEscape(formatTnd(order.totals.shipping))}</strong></div>
+      <div class="grand"><span>${htmlEscape(translate("cart.total"))}</span><span>${htmlEscape(formatTnd(order.totals.total))}</span></div>
     </section>
 
     <footer class="footer">
       Samsonite Tunisie · Appelez-nous: 26 528 103 / 71 809 209 · commercial@samsonite.com.tn<br />
-      Ce document présente les détails de votre commande. Notre équipe vous contactera si une confirmation complémentaire est nécessaire.
+      ${htmlEscape(translate("order.footerNote"))}
     </footer>
   </main>
   <script>window.onload = () => window.print();</script>
@@ -186,14 +215,53 @@ const buildOrderDetailsHtml = (order: StoredOrder, customerName: string) => {
 
 const OrderConfirmation = () => {
   const { id } = useParams<{ id: string }>();
-  const { t } = useLanguage();
+  const { t, td, language } = useLanguage();
   const navigate = useNavigate();
   const [order, setOrder] = useState<StoredOrder | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = "Commande reçue | Samsonite Tunisie";
-  }, []);
+    document.title = `${t("order.received")} | Samsonite Tunisie`;
+  }, [t]);
+
+  const localizedShippingLabels = useMemo<Record<ShippingMethod, string>>(
+    () => ({
+      standard: t("checkout.shipping.standard"),
+      express: t("checkout.shipping.express"),
+      pickup: t("checkout.shipping.pickup"),
+    }),
+    [t]
+  );
+
+  const localizedShippingDelays = useMemo<Record<ShippingMethod, string>>(
+    () => ({
+      standard: t("checkout.shipping.standardDesc"),
+      express: t("checkout.shipping.expressDesc"),
+      pickup: t("checkout.shipping.pickupDesc"),
+    }),
+    [t]
+  );
+
+  const localizedPaymentLabels = useMemo<Record<PaymentMethod, string>>(
+    () => ({
+      cash_on_delivery: t("checkout.payment.cash"),
+      bank_transfer: t("checkout.payment.transfer"),
+    }),
+    [t]
+  );
+
+  const localizedStatusLabels = useMemo<Record<StoredOrder["status"], string>>(
+    () => ({
+      new: t("order.status.new"),
+      confirmed: t("order.status.confirmed"),
+      preparing: t("order.status.preparing"),
+      shipped: t("order.status.shipped"),
+      fulfilled: t("order.status.fulfilled"),
+      delivery_failed: t("order.status.delivery_failed"),
+      cancelled: t("order.status.cancelled"),
+    }),
+    [t]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -235,7 +303,7 @@ const OrderConfirmation = () => {
       return;
     }
     printWindow.document.open();
-    printWindow.document.write(buildOrderDetailsHtml(order, customerName));
+    printWindow.document.write(buildOrderDetailsHtml(order, customerName, t, td, language));
     printWindow.document.close();
   };
 
@@ -262,14 +330,13 @@ const OrderConfirmation = () => {
               </div>
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-700">
-                  Commande enregistrée
+                  {t("order.saved")}
                 </p>
                 <h1 className="mt-2 text-2xl font-black uppercase tracking-tight md:text-3xl">
-                  Merci, {order.customer.firstName || "votre commande est reçue"}
+                  {t("order.thanksName")}, {order.customer.firstName || t("order.receivedFallback")}
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  Nous avons bien reçu votre commande. Notre équipe va vérifier les informations et vous contacter si
-                  nécessaire avant l'expédition.
+                  {t("order.receivedText")}
                 </p>
               </div>
             </div>
@@ -281,61 +348,61 @@ const OrderConfirmation = () => {
                 className="premium-control inline-flex items-center justify-center gap-2 border border-foreground bg-white px-5 py-3 text-xs font-black uppercase tracking-wide hover:bg-foreground hover:text-background"
               >
                 <Printer className="h-4 w-4" />
-                Imprimer
+                {t("order.print")}
               </button>
               <button
                 onClick={() => navigate(-1)}
                 className="premium-control inline-flex justify-center bg-foreground px-5 py-3 text-xs font-black uppercase tracking-wide text-background"
               >
-                Continuer mes achats
+                {t("order.continueShopping")}
               </button>
             </div>
           </div>
 
           <div className="mt-8 grid gap-3 border-y border-border py-5 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">Numéro commande</p>
+              <p className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">{t("order.number")}</p>
               <p className="mt-1 text-lg font-black">{order.id}</p>
             </div>
             <div>
-              <p className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">Date</p>
-              <p className="mt-1 text-sm font-semibold">{formatOrderDate(order.createdAt)}</p>
+              <p className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">{t("order.date")}</p>
+              <p className="mt-1 text-sm font-semibold">{formatOrderDate(order.createdAt, language)}</p>
             </div>
             <div>
-              <p className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">Statut</p>
+              <p className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">{t("order.status")}</p>
               <p className="mt-1 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-black uppercase text-emerald-700">
-                {statusLabels[order.status] || order.status}
+                {localizedStatusLabels[order.status] || order.status}
               </p>
             </div>
             <div>
-              <p className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">Total</p>
+              <p className="text-[11px] font-black uppercase tracking-wide text-muted-foreground">{t("cart.total")}</p>
               <p className="mt-1 text-lg font-black">{formatTnd(order.totals.total)}</p>
             </div>
           </div>
 
           <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
             <section>
-              <h2 className="mb-4 text-sm font-black uppercase tracking-wide">Résumé de la commande</h2>
+              <h2 className="mb-4 text-sm font-black uppercase tracking-wide">{t("order.summary")}</h2>
               <div className="divide-y divide-border border-y border-border">
                 {order.items.map((item) => (
                   <div key={`${item.productId}-${item.variantId || item.selectedColor || item.name}`} className="flex gap-4 py-4">
                     <img
                       src={item.image || "/placeholder.svg"}
-                      alt={item.name}
+                      alt={td(item.name)}
                       className="h-20 w-20 shrink-0 bg-white object-contain"
                       onError={(event) => {
                         event.currentTarget.src = "/placeholder.svg";
                       }}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="font-black uppercase leading-5">{item.name}</p>
+                      <p className="font-black uppercase leading-5">{td(item.name)}</p>
                       <div className="mt-1 space-y-0.5 text-sm text-muted-foreground">
-                        {item.selectedColor && <p>{item.selectedColor}</p>}
-                        {item.selectedSize && <p>Taille: {item.selectedSize}</p>}
-                        {item.sku && <p>Référence: {item.sku}</p>}
+                        {item.selectedColor && <p>{td(item.selectedColor)}</p>}
+                        {item.selectedSize && <p>{t("product.size")}: {td(item.selectedSize)}</p>}
+                        {item.sku && <p>{t("order.reference")}: {item.sku}</p>}
                       </div>
                       <p className="mt-2 text-sm text-muted-foreground">
-                        Quantité {item.quantity} x {formatTnd(item.unitPrice)}
+                        {t("product.quantity")} {item.quantity} x {formatTnd(item.unitPrice)}
                       </p>
                     </div>
                     <p className="text-right font-black">{formatTnd(item.total)}</p>
@@ -346,25 +413,25 @@ const OrderConfirmation = () => {
 
             <aside className="space-y-4">
               <div className="border border-border bg-[#fafafa] p-5">
-                <h2 className="mb-4 text-sm font-black uppercase tracking-wide">Total commande</h2>
+                <h2 className="mb-4 text-sm font-black uppercase tracking-wide">{t("order.totalOrder")}</h2>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Sous-total</span>
+                    <span className="text-muted-foreground">{t("cart.subtotal")}</span>
                     <span>{formatTnd(order.totals.subtotal)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Livraison</span>
-                    <span>{order.totals.shipping === 0 ? "Gratuite" : formatTnd(order.totals.shipping)}</span>
+                    <span className="text-muted-foreground">{t("cart.shipping")}</span>
+                    <span>{order.totals.shipping === 0 ? t("cart.free") : formatTnd(order.totals.shipping)}</span>
                   </div>
                   <div className="flex justify-between border-t border-border pt-3 text-base font-black">
-                    <span>Total</span>
+                    <span>{t("cart.total")}</span>
                     <span>{formatTnd(order.totals.total)}</span>
                   </div>
                 </div>
               </div>
 
               <div className="border border-border bg-white p-5">
-                <h2 className="mb-4 text-sm font-black uppercase tracking-wide">Informations client</h2>
+                <h2 className="mb-4 text-sm font-black uppercase tracking-wide">{t("order.customerInfo")}</h2>
                 <div className="space-y-2 text-sm leading-6">
                   <p className="font-bold">{customerName}</p>
                   <p className="text-muted-foreground">{order.customer.address}</p>
@@ -382,36 +449,36 @@ const OrderConfirmation = () => {
             <div className="border border-border bg-white p-5">
               <div className="mb-3 flex items-center gap-3">
                 <Truck className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-sm font-black uppercase tracking-wide">Livraison</h3>
+                <h3 className="text-sm font-black uppercase tracking-wide">{t("cart.shipping")}</h3>
               </div>
-              <p className="font-bold">{shippingLabels[order.shippingMethod]}</p>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{shippingDelays[order.shippingMethod]}</p>
+              <p className="font-bold">{localizedShippingLabels[order.shippingMethod]}</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{localizedShippingDelays[order.shippingMethod]}</p>
             </div>
 
             <div className="border border-border bg-white p-5">
               <div className="mb-3 flex items-center gap-3">
                 <ShieldCheck className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-sm font-black uppercase tracking-wide">Paiement</h3>
+                <h3 className="text-sm font-black uppercase tracking-wide">{t("checkout.payment")}</h3>
               </div>
-              <p className="font-bold">{paymentLabels[order.paymentMethod]}</p>
+              <p className="font-bold">{localizedPaymentLabels[order.paymentMethod]}</p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Votre commande sera traitée selon le mode de paiement sélectionné.
+                {t("order.paymentInfo")}
               </p>
             </div>
 
             <div className="border border-border bg-white p-5">
               <div className="mb-3 flex items-center gap-3">
                 <Clock3 className="h-5 w-5 text-muted-foreground" />
-                <h3 className="text-sm font-black uppercase tracking-wide">Prochaine étape</h3>
+                <h3 className="text-sm font-black uppercase tracking-wide">{t("order.nextStep")}</h3>
               </div>
               <p className="text-sm leading-6 text-muted-foreground">
-                Conservez votre numéro de commande. Il permet à notre service client de retrouver rapidement votre dossier.
+                {t("order.keepReference")}
               </p>
             </div>
           </div>
 
           <div className="mt-8 border border-border bg-[#f7f7f5] p-5">
-            <h2 className="mb-4 text-sm font-black uppercase tracking-wide">Besoin d'aide ?</h2>
+            <h2 className="mb-4 text-sm font-black uppercase tracking-wide">{t("order.needHelp")}</h2>
             <div className="grid gap-4 text-sm md:grid-cols-3">
               <a href="tel:+21626528103" className="flex items-center gap-3 font-semibold hover:underline">
                 <Phone className="h-4 w-4" />

@@ -15,7 +15,7 @@ const formatPrice = (price: number) =>
   }).format(price);
 
 const ProductCard = ({ product }: ProductCardProps) => {
-  const { t } = useLanguage();
+  const { t, td } = useLanguage();
   const image = product.images[0] || "/placeholder.svg";
   const productUrl = `/produit/${product.id}-${product.slug}`;
   const isOutOfStock = !product.stock || product.stock <= 0;
@@ -51,15 +51,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
       <div className="mt-4 flex min-h-[190px] flex-1 flex-col">
         {product.brandName && (
           <span className="inline-flex h-7 w-fit items-center rounded-full border border-border bg-white px-2.5 text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground">
-            {product.brandName}
+            {td(product.brandName)}
           </span>
         )}
         <p className="mt-2 line-clamp-2 min-h-[34px] text-sm font-black uppercase leading-tight tracking-wide text-foreground">
-          {product.name}
+          {td(product.name)}
         </p>
         {product.shortDescription && (
           <p className="mt-2 line-clamp-2 min-h-8 text-xs leading-4 text-muted-foreground">
-            {product.shortDescription}
+            {td(product.shortDescription)}
           </p>
         )}
         <div className="mt-3 flex h-5 items-center gap-1.5">
@@ -68,13 +68,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
               key={`${product.id}-${color.name}`}
               className="h-3.5 w-3.5 rounded-full border border-black/15"
               style={{ backgroundColor: color.hex }}
-              title={color.name}
+              title={td(color.name)}
             />
           ))}
           {hiddenColorsCount > 0 && (
             <span
               className="inline-flex h-5 items-center rounded-full bg-neutral-100 px-2 text-[10px] font-black text-muted-foreground"
-              title={product.colors.slice(4).map((color) => color.name).join(", ")}
+              title={product.colors.slice(4).map((color) => td(color.name)).join(", ")}
             >
               +{hiddenColorsCount}
             </span>

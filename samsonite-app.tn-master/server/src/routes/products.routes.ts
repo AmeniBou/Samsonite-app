@@ -15,6 +15,9 @@ import {
     createCategory,
     updateCategory,
     deleteCategory,
+    createBrand,
+    updateBrand,
+    deleteBrand,
 } from "../services/catalog.service.js";
 import { invalidateCatalogCache } from "./catalog.routes.js";
 
@@ -524,11 +527,73 @@ router.delete("/categories/:id", async (req: Request, res: Response): Promise<vo
 router.get("/brands", async (_req: Request, res: Response): Promise<void> => {
     try {
         const brands = await getBrands();
-        res.json({ brands: brands.map((brand) => ({ id: brand.id, name: brand.name })) });
+        res.json({ brands: brands.map((brand) => ({ id: brand.id, name: brand.name, productCount: brand._count?.products ?? 0 })) });
     } catch (err) {
         console.error("Erreur marques admin:", err);
         const detail = err instanceof Error ? err.message : "Erreur inconnue";
         res.status(502).json({ error: "Impossible de charger les marques", detail });
+    }
+});
+
+router.post("/brands", async (req: Request, res: Response): Promise<void> => {
+    const { name } = req.body as { name?: string };
+
+    try {
+        const result = await createBrand({ name });
+        if (!result.success) {
+            res.status(400).json({ error: result.error });
+            return;
+        }
+
+        invalidateCatalogCache();
+        res.status(201).json(result);
+    } catch (err) {
+        console.error("Erreur creation marque:", err);
+        res.status(500).json({ error: "Erreur creation marque" });
+    }
+});
+
+router.put("/brands/:id", async (req: Request, res: Response): Promise<void> => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+        res.status(400).json({ error: "ID marque invalide" });
+        return;
+    }
+
+    try {
+        const result = await updateBrand(id, { name: req.body?.name });
+        if (!result.success) {
+            res.status(400).json({ error: result.error });
+            return;
+        }
+
+        invalidateCatalogCache();
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Erreur modification marque:", err);
+        res.status(500).json({ error: "Erreur modification marque" });
+    }
+});
+
+router.delete("/brands/:id", async (req: Request, res: Response): Promise<void> => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+        res.status(400).json({ error: "ID marque invalide" });
+        return;
+    }
+
+    try {
+        const result = await deleteBrand(id);
+        if (!result.success) {
+            res.status(400).json({ error: result.error });
+            return;
+        }
+
+        invalidateCatalogCache();
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Erreur suppression marque:", err);
+        res.status(500).json({ error: "Erreur suppression marque" });
     }
 });
 // ---------------------------------------------------------------------------

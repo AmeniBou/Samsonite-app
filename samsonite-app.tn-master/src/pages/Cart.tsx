@@ -27,7 +27,7 @@ const getVariantDimensions = (variant: ProductVariant | undefined, item: CartIte
 };
 
 const Cart = () => {
-  const { t } = useLanguage();
+  const { t, td } = useLanguage();
   const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
   const shippingFee = totalPrice >= 300 ? 0 : 7;
 
@@ -67,7 +67,7 @@ const Cart = () => {
               <Link to={`/produit/${item.product.slug}`} className="h-28 w-28 flex-shrink-0 bg-white">
                 <img
                   src={item.product.images[0]}
-                  alt={item.product.name}
+                  alt={td(item.product.name)}
                   className="w-full h-full object-contain"
                 />
               </Link>
@@ -75,28 +75,28 @@ const Cart = () => {
                 <div className="flex justify-between">
                   <div>
                     <Link to={`/produit/${item.product.slug}`} className="font-bold text-xs hover:underline">
-                      {item.product.name}
+                      {td(item.product.name)}
                     </Link>
                     <div className="mt-1 space-y-0.5">
                       {item.selectedColor && (
                         <p className="text-[11px] text-muted-foreground">
-                          {t("cart.color")}: {item.selectedColor}
+                          {t("product.color")}: {td(item.selectedColor)}
                         </p>
                       )}
                       {item.selectedSize && (
-                        <p className="text-[11px] text-muted-foreground">Taille: {item.selectedSize}</p>
+                        <p className="text-[11px] text-muted-foreground">{t("product.size")}: {td(item.selectedSize)}</p>
                       )}
-                      {dimensions && <p className="text-[11px] text-muted-foreground">Dimension: {dimensions}</p>}
-                      {volume && <p className="text-[11px] text-muted-foreground">Volume: {volume}</p>}
-                      {weight && <p className="text-[11px] text-muted-foreground">Poids: {weight}</p>}
+                      {dimensions && <p className="text-[11px] text-muted-foreground">{t("product.dimension")}: {dimensions}</p>}
+                      {volume && <p className="text-[11px] text-muted-foreground">{td("Volume")}: {volume}</p>}
+                      {weight && <p className="text-[11px] text-muted-foreground">{td("Poids")}: {weight}</p>}
                       {item.sku && (
                         <p className="text-[11px] text-muted-foreground">SKU: {item.sku}</p>
                       )}
                     </div>
                   </div>
                   <ConfirmDeleteDialog
-                    title="Supprimer cet article ?"
-                    description={`"${item.product.name}" sera retire de votre panier.`}
+                    title={t("cart.removeTitle")}
+                    description={t("cart.removeText").replace("{name}", td(item.product.name))}
                     onConfirm={() => removeItem(item.product.id, item.selectedColor, item.variantId)}
                   >
                     {(openDialog) => (
@@ -104,10 +104,10 @@ const Cart = () => {
                         type="button"
                         onClick={openDialog}
                         className="inline-flex items-center gap-2 self-start border border-red-100 bg-red-50 px-3 py-2 text-[11px] font-black uppercase tracking-wide text-red-600 transition-colors hover:border-red-200 hover:bg-red-100"
-                        aria-label="Supprimer cet article du panier"
+                        aria-label={t("cart.removeTitle")}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                        Supprimer
+                        {t("cart.remove")}
                       </button>
                     )}
                   </ConfirmDeleteDialog>

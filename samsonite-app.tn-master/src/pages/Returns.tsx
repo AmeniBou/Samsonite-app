@@ -18,7 +18,7 @@ const Returns = () => {
         "Refund or exchange is processed after inspection.",
       ]
     : [
-        "Contactez le service client avec votre reference de commande.",
+        "Contactez le service client avec votre référence de commande.",
         "L'equipe verifie la demande et les conditions du produit.",
         "Vous recevez les instructions de retour ou d'echange.",
         "Le remboursement ou l'echange est traite apres controle.",
@@ -101,7 +101,7 @@ const Returns = () => {
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             {isEn
               ? "Do not send a product back before receiving instructions from customer care."
-              : "Ne renvoyez pas un produit avant d'avoir recu les instructions du service client."}
+              : "Ne renvoyez pas un produit avant d'avoir reçu les instructions du service client."}
           </p>
         </div>
       </section>

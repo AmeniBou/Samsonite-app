@@ -63,7 +63,7 @@ const Brand = () => {
     : [
         {
           icon: Building2,
-          title: "Societe",
+          title: "Société",
           lines: ["Samsonite Tunisie", "Bagages, sacs et accessoires de voyage"],
         },
         {
@@ -73,7 +73,7 @@ const Brand = () => {
         },
         {
           icon: Phone,
-          title: "Telephone",
+          title: "Téléphone",
           lines: ["26 528 103", "71 809 209"],
         },
         {
@@ -142,7 +142,7 @@ const Brand = () => {
           <p className="mt-4 leading-7 text-muted-foreground">
             {isEn
               ? "From hard suitcases to soft luggage, business bags, backpacks and accessories, the selection brings together products designed for mobility, protection and comfort."
-              : "Des valises rigides aux bagages souples, sacs business, sacs a dos et accessoires, la selection rassemble des produits concus pour la mobilite, la protection et le confort."}
+              : "Des valises rigides aux bagages souples, sacs business, sacs à dos et accessoires, la sélection rassemble des produits conçus pour la mobilité, la protection et le confort."}
           </p>
         </div>
 

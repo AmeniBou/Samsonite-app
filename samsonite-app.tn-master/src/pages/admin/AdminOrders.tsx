@@ -77,6 +77,16 @@ const statusActionLabels: Record<OrderStatus, string> = {
   cancelled: "Annuler",
 };
 
+const statusConfirmLabels: Record<OrderStatus, string> = {
+  new: "Oui, marquer comme nouvelle",
+  confirmed: "Oui, confirmer la commande",
+  preparing: "Oui, passer en préparation",
+  shipped: "Oui, marquer comme expédiée",
+  fulfilled: "Oui, marquer comme livrée",
+  delivery_failed: "Oui, déclarer l'échec de livraison",
+  cancelled: "Oui, annuler définitivement",
+};
+
 const statusTransitionDescriptions: Record<string, string> = {
   "new:confirmed": "La commande a été vérifiée. Elle pourra ensuite passer en préparation ou être annulée.",
   "new:cancelled": "La commande sera arrêtée avant confirmation. Elle deviendra finale et ne pourra plus être réactivée.",
@@ -749,7 +759,7 @@ const AdminOrders = () => {
             <table className="w-full text-left text-sm">
               <thead className="border-b bg-gray-50 text-gray-700">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Reference</th>
+                  <th className="px-4 py-3 font-medium">Référence</th>
                   <th className="px-4 py-3 font-medium">Client</th>
                   <th className="px-4 py-3 font-medium">Livraison</th>
                   <th className="px-4 py-3 font-medium">Articles</th>
@@ -903,7 +913,7 @@ const OrderStatusControl = ({
                 key={nextStatus}
                 title={`Passer la commande en ${statusLabels[nextStatus].toLowerCase()} ?`}
                 description={`${statusLabels[order.status]} -> ${statusLabels[nextStatus]}. ${description}`}
-                confirmLabel={statusActionLabels[nextStatus]}
+                confirmLabel={statusConfirmLabels[nextStatus]}
                 pendingLabel="Mise à jour..."
                 tone={isDanger ? "warning" : "info"}
                 disabled={updating}
@@ -1092,7 +1102,7 @@ const OrderDetailPanel = ({
           <h3 className="mb-4 font-bold text-gray-900">Client</h3>
           <div className="space-y-3 text-sm">
             <p className="text-base font-semibold text-gray-900">{order.customer.firstName} {order.customer.lastName}</p>
-            <InfoLine icon={Phone} label="Telephone" value={order.customer.phone} />
+            <InfoLine icon={Phone} label="Téléphone" value={order.customer.phone} />
             <InfoLine icon={Mail} label="Email" value={order.customer.email} />
             <InfoLine icon={MapPin} label="Adresse" value={`${order.customer.address}, ${order.customer.city}${order.customer.postalCode ? ` ${order.customer.postalCode}` : ""}`} />
             {order.customer.notes && (

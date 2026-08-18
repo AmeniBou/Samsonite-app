@@ -13,7 +13,7 @@ import { useCart } from "@/hooks/useCart";
 import { useLanguage } from "@/lib/i18n";
 import { fetchDisplayCategories, fetchDisplayProducts } from "@/lib/prestashop/catalog";
 import type { CategoryDisplay, ProductDisplay } from "@/lib/prestashop/types";
-import { getSearchSuggestions } from "@/lib/search";
+import { getSearchSuggestions, normalizeSearchText } from "@/lib/search";
 
 interface NavItem {
   name: string;
@@ -95,7 +95,7 @@ const Header = () => {
   const [categories, setCategories] = useState<CategoryDisplay[]>([]);
   const [products, setProducts] = useState<ProductDisplay[]>([]);
   const { totalItems } = useCart();
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage, t, td } = useLanguage();
   const navigate = useNavigate();
 
   const labelBySlug: Record<string, string> = {
@@ -251,13 +251,15 @@ const Header = () => {
   );
 
   const searchSuggestions = useMemo(
-    () =>
-      getSearchSuggestions({
+    () => {
+      if (normalizeSearchText(searchQuery).length < 2) return [];
+      return getSearchSuggestions({
         query: searchQuery,
         products,
         categories: visibleCategories,
         limit: 6,
-      }),
+      });
+    },
     [products, searchQuery, visibleCategories]
   );
 
@@ -490,7 +492,7 @@ const Header = () => {
               className="relative whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-0 after:bg-black after:transition-all hover:text-neutral-500 hover:after:w-full"
               onClick={closeMenus}
             >
-              {category.name}
+              {td(category.name)}
             </Link>
           ))}
           <button
@@ -534,7 +536,7 @@ const Header = () => {
                         onClick={() => chooseSearchSuggestion(suggestion.value, suggestion.href)}
                         className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm hover:bg-neutral-50"
                       >
-                        <span className="font-semibold">{suggestion.label}</span>
+                        <span className="font-semibold">{td(suggestion.label)}</span>
                         <span className="text-[10px] font-bold uppercase tracking-wide text-neutral-500">
                           {t(`search.type.${suggestion.type}`)}
                         </span>
@@ -583,7 +585,7 @@ const Header = () => {
                     onClick={closeMenus}
                     className="block text-lg font-black uppercase leading-tight hover:text-[#ff263d]"
                   >
-                    {group.title}
+                    {td(group.title)}
                   </Link>
                   <div className="space-y-3 border-t border-neutral-200 pt-4">
                     {group.links.map((item) => (
@@ -593,7 +595,7 @@ const Header = () => {
                         onClick={closeMenus}
                         className="block text-sm font-semibold text-neutral-600 hover:text-black"
                       >
-                        {item.name}
+                        {td(item.name)}
                       </Link>
                     ))}
                   </div>
@@ -624,7 +626,7 @@ const Header = () => {
                   onClick={() => chooseSearchSuggestion(suggestion.value, suggestion.href)}
                   className="flex w-full items-center justify-between py-2 text-left text-sm"
                 >
-                  <span className="font-semibold">{suggestion.label}</span>
+                  <span className="font-semibold">{td(suggestion.label)}</span>
                   <span className="text-[10px] font-bold uppercase tracking-wide text-neutral-500">
                     {t(`search.type.${suggestion.type}`)}
                   </span>

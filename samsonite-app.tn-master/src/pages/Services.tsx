@@ -39,7 +39,7 @@ const Services = () => {
       href: "/services",
       details: isEn
         ? ["Manufacturing defect support", "Repair or replacement guidance", "Proof of purchase required"]
-        : ["Prise en charge des defauts de fabrication", "Orientation reparation ou remplacement", "Preuve d'achat demandee"],
+        : ["Prise en charge des défauts de fabrication", "Orientation réparation ou remplacement", "Preuve d'achat demandée"],
     },
     {
       icon: Wrench,
@@ -66,7 +66,7 @@ const Services = () => {
       title: isEn ? "Customer care" : "Service client",
       desc: isEn
         ? "Need help before ordering? Contact us with the product name, size or order reference."
-        : "Besoin d'aide avant de commander ? Contactez-nous avec le nom du produit, la taille ou la reference.",
+        : "Besoin d'aide avant de commander ? Contactez-nous avec le nom du produit, la taille ou la référence.",
       href: "/contact-faq",
       details: isEn
         ? ["Product advice", "Order follow-up", "After-sales support"]

@@ -135,7 +135,7 @@ const AdminDashboard = () => {
     ).sort((first, second) => first.localeCompare(second, "fr", { sensitivity: "base" }));
 
     const categoryOptions = Array.from(
-        new Set(products.map((product) => decodeAdminText(product.categoryName || "Sans categorie")).filter(Boolean))
+        new Set(products.map((product) => decodeAdminText(product.categoryName || "Sans catégorie")).filter(Boolean))
     ).sort((first, second) => first.localeCompare(second, "fr", { sensitivity: "base" }));
 
     const minPriceValue = minPrice.trim() ? Number(minPrice) : null;
@@ -155,7 +155,7 @@ const AdminDashboard = () => {
 
     const filtered = filteredBySearch.filter((p) => {
         const productBrand = decodeAdminText(p.brandName || "Sans marque");
-        const productCategory = decodeAdminText(p.categoryName || "Sans categorie");
+        const productCategory = decodeAdminText(p.categoryName || "Sans catégorie");
         const hasImage = Boolean(getAdminProductImageSrc(p));
 
         if (statusFilter === "active" && !p.active) return false;
@@ -282,7 +282,7 @@ const AdminDashboard = () => {
                         className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
                     >
                         <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-                        Rafraichir
+                        Rafraîchir
                     </button>
                     <Link
                         to="/admin/produits/nouveau"
@@ -303,7 +303,7 @@ const AdminDashboard = () => {
                         <div>
                             <h2 className="text-sm font-bold uppercase tracking-wide text-gray-950">Filtres catalogue</h2>
                             <p className="text-xs text-gray-500">
-                                {sorted.length} resultat{sorted.length > 1 ? "s" : ""} sur {products.length} produits
+                                {sorted.length} résultat{sorted.length > 1 ? "s" : ""} sur {products.length} produits
                             </p>
                         </div>
                     </div>
@@ -328,7 +328,7 @@ const AdminDashboard = () => {
                             disabled={!hasActiveFilters}
                             className="inline-flex h-9 items-center justify-center rounded-full border border-gray-200 px-4 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                            Reinitialiser
+                            Réinitialiser
                         </button>
                     </div>
                 </div>
@@ -338,7 +338,7 @@ const AdminDashboard = () => {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Nom, reference, marque, categorie ou ID..."
+                            placeholder="Nom, référence, marque, catégorie ou ID..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="h-11 w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm font-medium text-gray-900 transition-colors placeholder:text-gray-400 hover:bg-white focus:border-black focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
@@ -363,13 +363,13 @@ const AdminDashboard = () => {
                         </label>
 
                         <label className={filterLabelClass}>
-                            Categorie
+                            Catégorie
                             <select
                                 value={categoryFilter}
                                 onChange={(e) => setCategoryFilter(e.target.value)}
                                 className={filterControlClass}
                             >
-                                <option value="all">Toutes les categories</option>
+                                <option value="all">Toutes les catégories</option>
                                 {categoryOptions.map((category) => (
                                     <option key={category} value={category}>{category}</option>
                                 ))}
@@ -385,7 +385,7 @@ const AdminDashboard = () => {
                             >
                                 <option value="all">Tous les stocks</option>
                                 <option value="available">Disponible</option>
-                                <option value="low">Stock faible (1 a 5)</option>
+                                <option value="low">Stock faible (1 à 5)</option>
                                 <option value="out">Rupture de stock</option>
                             </select>
                         </label>
@@ -457,7 +457,7 @@ const AdminDashboard = () => {
                             )}
                             {categoryFilter !== "all" && (
                                 <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
-                                    Categorie: {categoryFilter}
+                                    Catégorie : {categoryFilter}
                                 </span>
                             )}
                             {stockFilter !== "all" && (
@@ -499,7 +499,7 @@ const AdminDashboard = () => {
                                 </th>
                                 <th className="px-4 py-3 font-medium text-gray-700">
                                     <button onClick={() => toggleSort("reference")} className="inline-flex items-center gap-1 hover:text-black">
-                                        Ref. {sortIcon("reference")}
+                                        Réf. {sortIcon("reference")}
                                     </button>
                                 </th>
                                 <th className="px-4 py-3 font-medium text-gray-700 text-right">
@@ -514,7 +514,7 @@ const AdminDashboard = () => {
                                 </th>
                                 <th className="px-4 py-3 font-medium text-gray-700">
                                     <button onClick={() => toggleSort("categoryName")} className="inline-flex items-center gap-1 hover:text-black">
-                                        Categorie {sortIcon("categoryName")}
+                                        Catégorie {sortIcon("categoryName")}
                                     </button>
                                 </th>
                                 <th className="px-4 py-3 font-medium text-gray-700 relative">
@@ -645,11 +645,11 @@ const AdminDashboard = () => {
                                         </td>
                                         <td className="px-4 py-3">
                                             <ConfirmDeleteDialog
-                                                title={product.active ? "Desactiver ce produit ?" : "Activer ce produit ?"}
+                                                title={product.active ? "Désactiver ce produit ?" : "Activer ce produit ?"}
                                                 description={product.active
                                                     ? `Le produit "${decodeAdminText(product.name)}" ne sera plus affiche sur le site public ni dans le catalogue client. Il restera conserve dans le backoffice.`
-                                                    : `Le produit "${decodeAdminText(product.name)}" sera de nouveau visible sur le site public, si sa categorie est active.`}
-                                                confirmLabel={product.active ? "Desactiver" : "Activer"}
+                                                    : `Le produit "${decodeAdminText(product.name)}" sera de nouveau visible sur le site public, si sa catégorie est active.`}
+                                                confirmLabel={product.active ? "Désactiver" : "Activer"}
                                                 pendingLabel="Modification..."
                                                 tone={product.active ? "warning" : "info"}
                                                 disabled={togglingId === product.id}
@@ -664,7 +664,7 @@ const AdminDashboard = () => {
                                                             ? "bg-green-50 text-green-700 hover:bg-green-100"
                                                             : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                                                             }`}
-                                                        title={product.active ? "Cliquer pour desactiver" : "Cliquer pour activer"}
+                                                        title={product.active ? "Cliquer pour désactiver" : "Cliquer pour activer"}
                                                     >
                                                         {product.active ? (
                                                             <>

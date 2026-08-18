@@ -32,6 +32,7 @@ import AdminProductForm from "./pages/admin/AdminProductForm";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminCategories from "./pages/admin/AdminCategories";
+import AdminBrands from "./pages/admin/AdminBrands";
 import AdminDataQuality from "./pages/admin/AdminDataQuality";
 import OrderConfirmation from "./pages/OrderConfirmation";
 
@@ -58,6 +59,7 @@ const App = () => {
                 <Route path="commandes" element={<AdminOrders />} />
                 <Route path="messages" element={<AdminMessages />} />
                 <Route path="categories" element={<AdminCategories />} />
+                <Route path="marques" element={<AdminBrands />} />
                 <Route path="qualite-donnees" element={<AdminDataQuality />} />
                 <Route path="produits/nouveau" element={<AdminProductForm />} />
                 <Route path="produits/modifier/:id" element={<AdminProductForm />} />

@@ -40,7 +40,7 @@ const Product = () => {
     Array<{ key: string; name: string; hex: string; images: string[] }>
   >([]);
   const { addItem } = useCart();
-  const { t } = useLanguage();
+  const { t, td } = useLanguage();
 
   const variantUrlMatch = slug?.match(/^(\d+)-v-(\d+)$/);
   const productId = variantUrlMatch ? Number(variantUrlMatch[1]) : Number(slug);
@@ -229,9 +229,9 @@ const Product = () => {
   const isOutOfStock = selectedStock <= 0;
   const isLowStock = selectedStock > 0 && selectedStock <= lowStockThreshold;
   const availabilityText = isOutOfStock
-    ? "Temporairement indisponible"
+    ? t("product.temporarilyUnavailable")
     : isLowStock
-      ? "Plus que quelques pièces disponibles"
+      ? t("product.lowStock")
       : "";
 
 
@@ -489,7 +489,7 @@ const Product = () => {
     if (!selectedVariant) return;
     const targetVariant = findBestVariantForColor(colorKey);
     if (!targetVariant) {
-      setVariantMessage("Cette couleur n'est pas proposée dans la taille sélectionnée.");
+      setVariantMessage(t("product.colorUnavailableForSize"));
       return;
     }
     setVariantMessage("");
@@ -502,7 +502,7 @@ const Product = () => {
     if (!selectedVariant) return;
     const targetVariant = findVariantBySelection(sizeLabel, selectedColorKey);
     if (!targetVariant) {
-      setVariantMessage("Cette taille n'est pas proposée dans la couleur sélectionnée.");
+      setVariantMessage(t("product.sizeUnavailableForColor"));
       return;
     }
     setVariantMessage("");
@@ -515,7 +515,7 @@ const Product = () => {
     if (!selectedVariant) return;
     const targetVariant = findBestVariantForDimension(dimensionLabel);
     if (!targetVariant) {
-      setVariantMessage("Cette dimension n'est pas proposée dans la couleur sélectionnée.");
+      setVariantMessage(t("product.dimensionUnavailableForColor"));
       return;
     }
     setVariantMessage("");
@@ -742,7 +742,7 @@ const Product = () => {
           {rootCategory ? (
             <>
               <Link to={`/categorie/${rootCategory.slug}`} className="hover:text-foreground">
-                {rootCategory.name}
+                {td(rootCategory.name)}
               </Link>
               <span>/</span>
             </>
@@ -754,7 +754,7 @@ const Product = () => {
               <span>/</span>
             </>
           )}
-          <span className="text-foreground font-medium">{product.name}</span>
+          <span className="text-foreground font-medium">{td(product.name)}</span>
         </nav>
       </div>
 
@@ -764,7 +764,7 @@ const Product = () => {
             <div className="premium-surface relative mx-auto mb-4 flex aspect-square max-w-[470px] items-center justify-center overflow-hidden bg-white">
               <img
                 src={galleryImages[selectedImageIdx] || "/placeholder.svg"}
-                alt={product.name}
+                alt={td(product.name)}
                 className="h-full w-full object-contain p-6 transition-transform duration-500"
                 onError={(event) => {
                   event.currentTarget.src = "/placeholder.svg";
@@ -825,7 +825,7 @@ const Product = () => {
                 {product.brandName || "Samsonite"}
               </p>
               <h1 className="text-xl font-black uppercase leading-tight tracking-tight md:text-3xl">
-                {product.name}
+                {td(product.name)}
               </h1>
               {product.shortDescription && (
                 <p className="text-sm leading-6 text-foreground/85">{product.shortDescription}</p>
@@ -857,7 +857,7 @@ const Product = () => {
                   {selectedPhysicalDimensions ? (
                     <span className="mt-1 block text-xs font-semibold normal-case text-muted-foreground">
                       {selectedPhysicalDimensions} <span className="text-muted-foreground/70">-</span>{" "}
-                      <span className="border-b border-muted-foreground/40">Guide des tailles</span>
+                      <span className="border-b border-muted-foreground/40">{t("product.sizeGuide")}</span>
                     </span>
                   ) : null}
                 </p>
@@ -873,7 +873,7 @@ const Product = () => {
                         type="button"
                         aria-pressed={isSelected}
                         disabled={doesNotExist}
-                        title={doesNotExist ? "Cette taille n'est pas proposée dans la couleur sélectionnée." : size.label}
+                        title={doesNotExist ? t("product.sizeUnavailableForColor") : td(size.label)}
                         onClick={() => handleSizeSelect(size.label)}
                         className={`premium-control relative min-h-12 min-w-[82px] border px-4 py-3 text-sm font-semibold leading-none ${isSelected
                           ? "border-black bg-black text-white"
@@ -887,7 +887,7 @@ const Product = () => {
                         <span className={doesNotExist ? "line-through" : ""}>{size.label}</span>
                         {isUnavailable && (
                           <span className="absolute -right-2 -top-2 rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-black uppercase text-white">
-                            Rupture
+                            {t("badge.out")}
                           </span>
                         )}
                       </button>
@@ -919,7 +919,7 @@ const Product = () => {
                         type="button"
                         aria-pressed={isSelected}
                         disabled={doesNotExist}
-                        title={doesNotExist ? "Cette dimension n'est pas proposée dans la couleur sélectionnée." : dimension.label}
+                        title={doesNotExist ? t("product.dimensionUnavailableForColor") : td(dimension.label)}
                         onClick={() => handleDimensionSelect(dimension.label)}
                         className={`premium-control relative min-h-9 min-w-[118px] border px-3 py-2 text-sm font-semibold leading-none ${isSelected
                           ? "border-black bg-black text-white"
@@ -933,7 +933,7 @@ const Product = () => {
                         <span className={doesNotExist ? "line-through" : ""}>{dimension.label}</span>
                         {isUnavailable && (
                           <span className="absolute -right-2 -top-2 rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-black uppercase text-white">
-                            Rupture
+                            {t("badge.out")}
                           </span>
                         )}
                       </button>
@@ -978,7 +978,7 @@ const Product = () => {
                   {t("product.color")}
                   {selectedColorName ? (
                     <span className="mt-1 block text-xs font-semibold normal-case text-muted-foreground">
-                      {selectedColorName}
+                      {td(selectedColorName)}
                     </span>
                   ) : null}
                 </p>
@@ -994,7 +994,7 @@ const Product = () => {
                         type="button"
                         aria-pressed={isSelected}
                         disabled={doesNotExist}
-                        title={doesNotExist ? "Cette couleur n'est pas proposée dans la taille sélectionnée." : color.name}
+                        title={doesNotExist ? t("product.colorUnavailableForSize") : td(color.name)}
                         onClick={() => {
                           if (doesNotExist) return;
                           if (color.inferred) {
@@ -1104,7 +1104,7 @@ const Product = () => {
                   className="flex w-full items-center justify-between py-2 text-left"
                   aria-expanded={detailsOpen}
                 >
-                  <span className="text-base font-black uppercase tracking-tight">D&eacute;tails du produit</span>
+                  <span className="text-base font-black uppercase tracking-tight">{t("product.productDetails")}</span>
                   {detailsOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                 </button>
 
@@ -1113,13 +1113,13 @@ const Product = () => {
                     {product.description && (
                       <div className="border-b border-neutral-200 px-5 py-5">
                         <p className="max-w-[36rem] text-sm leading-7 text-muted-foreground">
-                          {product.description}
+                          {td(product.description)}
                         </p>
                       </div>
                     )}
 
                     <div className="bg-neutral-100 px-5 py-4 text-sm font-black uppercase tracking-wide text-muted-foreground">
-                      Specifications
+                      {t("product.specifications")}
                     </div>
                     <dl className="divide-y divide-neutral-200 px-5">
                       {specificationRows.map((item, index) => (
@@ -1127,8 +1127,8 @@ const Product = () => {
                           key={`${item.label}-${item.value}-${index}`}
                           className="grid gap-3 py-3.5 text-sm sm:grid-cols-[175px_minmax(0,1fr)]"
                         >
-                          <dt className="font-semibold text-muted-foreground">{item.label}</dt>
-                          <dd className="leading-6 text-muted-foreground">{item.value}</dd>
+                          <dt className="font-semibold text-muted-foreground">{td(item.label)}</dt>
+                          <dd className="leading-6 text-muted-foreground">{td(item.value)}</dd>
                         </div>
                       ))}
                     </dl>
@@ -1144,23 +1144,23 @@ const Product = () => {
       <Dialog open={cartConfirmOpen} onOpenChange={setCartConfirmOpen}>
         <DialogContent className="max-w-md rounded-none border-0 p-0 sm:rounded-none">
           <div className="border-b border-border px-6 py-5">
-            <DialogTitle className="text-xl font-black uppercase tracking-tight">Article ajouté au panier</DialogTitle>
+            <DialogTitle className="text-xl font-black uppercase tracking-tight">{t("cart.addedTitle")}</DialogTitle>
             <DialogDescription className="mt-1 text-sm text-muted-foreground">
-              Votre sélection a bien été ajoutée!
+              {t("cart.addedText")}
             </DialogDescription>
           </div>
           <div className="flex gap-4 px-6 py-5">
             <div className="h-24 w-24 flex-shrink-0 bg-white">
               <img
                 src={galleryImages[selectedImageIdx] || product.images[0] || "/placeholder.svg"}
-                alt={product.name}
+                alt={td(product.name)}
                 className="h-full w-full object-contain"
               />
             </div>
 
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold leading-5">
-                {product.name}
+                {td(product.name)}
               </p>
 
               <p className="text-lg font-black text-samsonite-teal">
@@ -1170,16 +1170,16 @@ const Product = () => {
               <div className="mt-1 space-y-0.5">
                 {selectedVariant?.size && (
                   <p className="text-[11px] text-muted-foreground">
-                    Taille: {selectedVariant.size}
+                    {t("product.size")}: {td(selectedVariant.size)}
                   </p>
                 )}
                 {selectedVariant?.color?.name && (
                   <p className="text-[11px] text-muted-foreground">
-                    Couleur: {selectedVariant.color.name}
+                    {t("product.color")}: {td(selectedVariant.color.name)}
                   </p>
                 )}
                 <p className="text-[11px] text-muted-foreground">
-                  Quantité: {quantity}
+                  {t("product.quantity")}: {quantity}
                 </p>
               </div>
             </div>
@@ -1190,14 +1190,14 @@ const Product = () => {
               onClick={() => setCartConfirmOpen(false)}
               className="border border-border px-4 py-3 text-xs font-black uppercase tracking-wide transition-colors hover:bg-neutral-50"
             >
-              Continuer mes achats
+              {t("cart.continue")}
             </button>
             <Link
               to="/panier"
               onClick={() => setCartConfirmOpen(false)}
               className="flex items-center justify-center bg-black px-4 py-3 text-xs font-black uppercase tracking-wide text-white transition-colors hover:bg-black/85"
             >
-              Voir mon panier
+              {t("cart.viewCart")}
             </Link>
           </div>
         </DialogContent>

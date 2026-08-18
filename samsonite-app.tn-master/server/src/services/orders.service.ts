@@ -46,10 +46,13 @@ const SHIPPING_METHODS = new Set(["standard", "express", "pickup"]);
 
 export interface CreateOrderItemInput {
   productId?: number;
+  variantId?: number;
   slug?: string;
   name?: string;
   image?: string;
   selectedColor?: string;
+  selectedSize?: string;
+  sku?: string;
   quantity?: number;
   unitPrice?: number;
 }
@@ -303,6 +306,7 @@ export const mapOrder = (order: any) => ({
   },
   items: (order.items || []).map((item: any) => ({
     productId: item.productId,
+    variantId: item.variantId,
     slug: item.productSlug || "",
     name: item.productName,
     image: item.productImage || "/placeholder.svg",
@@ -364,6 +368,7 @@ export const createOrder = async (input: CreateOrderInput) => {
     }
     return {
       productId: item.productId ? Number(item.productId) : null,
+      variantId: item.variantId ? Number(item.variantId) : null,
       productName: String(item.name),
       productSlug: item.slug || null,
       productImage: item.image || null,
@@ -374,10 +379,6 @@ export const createOrder = async (input: CreateOrderInput) => {
     };
   });
 
-  const subtotal = normalizedItems.reduce((sum, item) => sum + item.lineTotal, 0);
-  const shippingFee = getShippingFee(shippingMethod, subtotal);
-  const total = subtotal + shippingFee;
-
   let reference = generateReference();
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const exists = await prisma.order.findUnique({ where: { reference } });
@@ -385,44 +386,113 @@ export const createOrder = async (input: CreateOrderInput) => {
     reference = generateReference();
   }
 
-  const order = await prisma.order.create({
-    data: {
-      reference,
-      status: "new",
-      customerFirstName: String(customer.firstName).trim(),
-      customerLastName: String(customer.lastName).trim(),
-      customerPhone: String(customer.phone).trim(),
-      customerEmail: String(customer.email).trim(),
-      shippingAddress: String(customer.address).trim(),
-      shippingCity: String(customer.city).trim(),
-      shippingPostalCode: customer.postalCode?.trim() || null,
-      customerNotes: customer.notes?.trim() || null,
-      shippingMethod,
-      paymentMethod,
-      subtotal,
-      shippingFee,
-      total,
-      items: {
-        create: normalizedItems.map((item) => ({
-          productId: item.productId,
-          productName: item.productName,
-          productSlug: item.productSlug,
-          productImage: item.productImage,
-          selectedColor: item.selectedColor,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          lineTotal: item.lineTotal,
-        })),
-      },
-      statusHistory: {
-        create: {
-          previousStatus: null,
-          newStatus: "new",
-          note: "Commande créée depuis le checkout",
+  const order = await prisma.$transaction(async (tx) => {
+    const affectedProductIds = new Set<number>();
+
+    const reservedItems = await Promise.all(
+      normalizedItems.map(async (item) => {
+        if (!item.variantId) {
+          return item;
+        }
+
+        const variant = await tx.productVariant.findUnique({
+          where: { id: item.variantId },
+          select: {
+            id: true,
+            productId: true,
+            price: true,
+            stock: true,
+          },
+        });
+
+        if (!variant) {
+          throw new Error(`Variante introuvable pour l'article ${item.productName}`);
+        }
+
+        if (item.productId && item.productId !== variant.productId) {
+          throw new Error(`La variante selectionnee ne correspond pas au produit ${item.productName}`);
+        }
+
+        const availableStock = Math.max(0, variant.stock ?? 0);
+        if (availableStock < item.quantity) {
+          throw new Error(
+            `Stock insuffisant pour ${item.productName}. Disponible: ${availableStock}, demande: ${item.quantity}.`
+          );
+        }
+
+        await tx.productVariant.update({
+          where: { id: variant.id },
+          data: { stock: { decrement: item.quantity } },
+        });
+
+        affectedProductIds.add(variant.productId);
+
+        const unitPrice = variant.price !== null && variant.price !== undefined ? Number(variant.price) : item.unitPrice;
+        return {
+          ...item,
+          productId: variant.productId,
+          unitPrice,
+          lineTotal: unitPrice * item.quantity,
+        };
+      })
+    );
+
+    for (const productId of affectedProductIds) {
+      const result = await tx.productVariant.aggregate({
+        where: { productId },
+        _sum: { stock: true },
+      });
+
+      await tx.product.update({
+        where: { id: productId },
+        data: { quantity: Math.max(0, result._sum.stock ?? 0) },
+      });
+    }
+
+    const reservedSubtotal = reservedItems.reduce((sum, item) => sum + item.lineTotal, 0);
+    const reservedShippingFee = getShippingFee(shippingMethod, reservedSubtotal);
+    const reservedTotal = reservedSubtotal + reservedShippingFee;
+
+    return tx.order.create({
+      data: {
+        reference,
+        status: "new",
+        customerFirstName: String(customer.firstName).trim(),
+        customerLastName: String(customer.lastName).trim(),
+        customerPhone: String(customer.phone).trim(),
+        customerEmail: String(customer.email).trim(),
+        shippingAddress: String(customer.address).trim(),
+        shippingCity: String(customer.city).trim(),
+        shippingPostalCode: customer.postalCode?.trim() || null,
+        customerNotes: customer.notes?.trim() || null,
+        shippingMethod,
+        paymentMethod,
+        subtotal: reservedSubtotal,
+        shippingFee: reservedShippingFee,
+        total: reservedTotal,
+        items: {
+          create: reservedItems.map((item) => ({
+            productId: item.productId,
+            variantId: item.variantId,
+            productName: item.productName,
+            productSlug: item.productSlug,
+            productImage: item.productImage,
+            selectedColor: item.selectedColor,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            lineTotal: item.lineTotal,
+          })),
+        },
+        statusHistory: {
+          create: {
+            previousStatus: null,
+            newStatus: "new",
+            note: "Commande créée depuis le checkout",
+          },
         },
       },
-    },
-    include: { items: true, statusHistory: { orderBy: { createdAt: "desc" } } },
+      include: { items: true, statusHistory: { orderBy: { createdAt: "desc" } } },
+    });
   });
 
   const mappedOrder = mapOrder(order);
@@ -464,7 +534,16 @@ export const updateOrderStatus = async (reference: string, status: string, note?
   }
   const existingOrder = await prisma.order.findUnique({
     where: { reference },
-    select: { id: true, status: true },
+    select: {
+      id: true,
+      status: true,
+      items: {
+        select: {
+          variantId: true,
+          quantity: true,
+        },
+      },
+    },
   });
 
   if (!existingOrder) {
@@ -484,24 +563,57 @@ export const updateOrderStatus = async (reference: string, status: string, note?
   }
 
   const transitionKey = `${existingOrder.status}:${status}`;
-  const order = await prisma.order.update({
-    where: { reference },
-    data: {
-      status,
-      ...(existingOrder.status !== status
-        ? {
-            statusHistory: {
-              create: {
-                previousStatus: existingOrder.status,
-                newStatus: status,
-                note: String(note || ORDER_STATUS_TRANSITION_NOTES[transitionKey] || "Statut modifie depuis le backoffice").trim(),
+  const shouldRestoreStock = existingOrder.status !== "cancelled" && status === "cancelled";
+
+  const order = await prisma.$transaction(async (tx) => {
+    if (shouldRestoreStock) {
+      const affectedProductIds = new Set<number>();
+
+      for (const item of existingOrder.items) {
+        if (!item.variantId || item.quantity <= 0) continue;
+
+        const variant = await tx.productVariant.update({
+          where: { id: item.variantId },
+          data: { stock: { increment: item.quantity } },
+          select: { productId: true },
+        });
+
+        affectedProductIds.add(variant.productId);
+      }
+
+      for (const productId of affectedProductIds) {
+        const result = await tx.productVariant.aggregate({
+          where: { productId },
+          _sum: { stock: true },
+        });
+
+        await tx.product.update({
+          where: { id: productId },
+          data: { quantity: Math.max(0, result._sum.stock ?? 0) },
+        });
+      }
+    }
+
+    return tx.order.update({
+      where: { reference },
+      data: {
+        status,
+        ...(existingOrder.status !== status
+          ? {
+              statusHistory: {
+                create: {
+                  previousStatus: existingOrder.status,
+                  newStatus: status,
+                  note: String(note || ORDER_STATUS_TRANSITION_NOTES[transitionKey] || "Statut modifie depuis le backoffice").trim(),
+                },
               },
-            },
-          }
-        : {}),
-    },
-    include: { items: true, statusHistory: { orderBy: { createdAt: "desc" } } },
+            }
+          : {}),
+      },
+      include: { items: true, statusHistory: { orderBy: { createdAt: "desc" } } },
+    });
   });
+
   const mappedOrder = mapOrder(order);
 
   try {

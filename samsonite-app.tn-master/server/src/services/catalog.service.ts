@@ -357,7 +357,83 @@ export const getPublicCatalog = async () => {
 };
 
 export const getBrands = async () => {
-  return prisma.brand.findMany({ orderBy: { name: "asc" } });
+  return prisma.brand.findMany({
+    orderBy: { name: "asc" },
+    include: { _count: { select: { products: true } } },
+  });
+};
+
+const ensureUniqueBrandName = async (name: string, excludeId?: number) => {
+  const existing = await prisma.brand.findFirst({
+    where: {
+      name: { equals: name, mode: "insensitive" },
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+    select: { id: true, name: true },
+  });
+
+  if (existing) {
+    throw new Error(`La marque "${name}" existe deja. Choisis un autre nom.`);
+  }
+};
+
+export const createBrand = async (fields: { name?: string }) => {
+  try {
+    const name = fields.name?.trim();
+    if (!name) return { success: false, error: "Le nom de la marque est requis" };
+
+    await ensureUniqueBrandName(name);
+    const brand = await prisma.brand.create({ data: { name } });
+    return { success: true, id: brand.id };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erreur inconnue",
+    };
+  }
+};
+
+export const updateBrand = async (id: number, fields: { name?: string }) => {
+  try {
+    const existing = await prisma.brand.findUnique({ where: { id } });
+    if (!existing) return { success: false, error: "Marque introuvable" };
+
+    const name = fields.name?.trim();
+    if (!name) return { success: false, error: "Le nom de la marque est requis" };
+
+    await ensureUniqueBrandName(name, id);
+    await prisma.brand.update({ where: { id }, data: { name } });
+    return { success: true };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erreur inconnue",
+    };
+  }
+};
+
+export const deleteBrand = async (id: number) => {
+  try {
+    const brand = await prisma.brand.findUnique({
+      where: { id },
+      include: { _count: { select: { products: true } } },
+    });
+    if (!brand) return { success: false, error: "Marque introuvable" };
+    if (brand._count.products > 0) {
+      return {
+        success: false,
+        error: `Impossible de supprimer "${brand.name}" car ${brand._count.products} produit(s) utilisent cette marque.`,
+      };
+    }
+
+    await prisma.brand.delete({ where: { id } });
+    return { success: true };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erreur inconnue",
+    };
+  }
 };
 
 export const getCategories = async () => {
@@ -382,6 +458,33 @@ export const getAdminCategories = async () => {
     },
   });
 
+  const childrenByParentId = new Map<number, typeof categories>();
+  for (const category of categories) {
+    if (!category.parentId) continue;
+    const children = childrenByParentId.get(category.parentId) || [];
+    children.push(category);
+    childrenByParentId.set(category.parentId, children);
+  }
+
+  const totalProductCountCache = new Map<number, number>();
+  const getTotalProductCount = (categoryId: number): number => {
+    const cached = totalProductCountCache.get(categoryId);
+    if (cached !== undefined) return cached;
+
+    const category = categories.find((item) => item.id === categoryId);
+    if (!category) return 0;
+
+    const total =
+      category._count.products +
+      (childrenByParentId.get(categoryId) || []).reduce(
+        (sum, child) => sum + getTotalProductCount(child.id),
+        0
+      );
+
+    totalProductCountCache.set(categoryId, total);
+    return total;
+  };
+
   return categories.map((category) => ({
     id: category.id,
     name: category.name,
@@ -389,6 +492,7 @@ export const getAdminCategories = async () => {
     parentId: category.parentId ?? 0,
     parentName: category.parent?.name || "",
     productCount: category._count.products,
+    totalProductCount: getTotalProductCount(category.id),
     childCount: category._count.children,
     isActive: category.isActive,
     showInMainMenu: category.showInMainMenu,
@@ -817,9 +921,6 @@ const createOrUpdateVariants = async (
     if (!colorName) {
       throw new Error(`La couleur de la variante #${index + 1} est requise.`);
     }
-    if (!size) {
-      throw new Error(`La taille de la variante #${index + 1} est requise.`);
-    }
     if (!Number.isFinite(price) || price <= 0) {
       throw new Error(`Le prix de la variante #${index + 1} est requis et doit être supérieur à 0.`);
     }
@@ -837,9 +938,16 @@ const createOrUpdateVariants = async (
       throw new Error(`Image invalide dans la variante #${index + 1}: ${invalidImage}`);
     }
 
-    const key = `${colorName}::${size}`;
+    const key = [
+      colorName,
+      size,
+      String(variant.height || "").trim().toLowerCase(),
+      String(variant.width || "").trim().toLowerCase(),
+      String(variant.depth || "").trim().toLowerCase(),
+      String(variant.volume || "").trim().toLowerCase(),
+    ].join("::");
     if (seenVariantKeys.has(key)) {
-      throw new Error(`La variante #${index + 1} est dupliquée pour ce produit. Change la couleur ou la taille.`);
+      throw new Error(`La variante #${index + 1} est dupliquée pour ce produit. Change la couleur, la taille ou les dimensions.`);
     }
     seenVariantKeys.add(key);
   }

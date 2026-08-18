@@ -48,7 +48,7 @@ const PrestashopConfig = () => {
               <li>Connectez-vous au back-office Prestashop</li>
               <li>Allez dans Parametres avances -{">"} Webservice</li>
               <li>Cliquez sur Ajouter une cle</li>
-              <li>Activez les permissions necessaires (products, categories, images, carts)</li>
+              <li>Activez les permissions nécessaires (products, categories, images, carts)</li>
               <li>Copiez la cle generee dans votre fichier .env</li>
             </ol>
           </div>

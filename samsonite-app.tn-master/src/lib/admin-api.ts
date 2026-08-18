@@ -74,14 +74,14 @@ export interface AdminVariant {
 
 export const fetchAdminProducts = async (): Promise<AdminProduct[]> => {
     const res = await fetch(`${API_BASE}/admin/products`, { headers: authHeaders() });
-    if (!res.ok) throw new Error("Erreur chargement produits");
+    if (!res.ok) throw new Error("Erreur de chargement des produits");
     const data = await res.json();
     return data.products;
 };
 
 export const fetchAdminProduct = async (id: number): Promise<AdminProduct> => {
     const res = await fetch(`${API_BASE}/admin/products/${id}`, { headers: authHeaders() });
-    if (!res.ok) throw new Error("Erreur chargement produit");
+    if (!res.ok) throw new Error("Erreur de chargement du produit");
     const data = await res.json();
     return data.product;
 };
@@ -197,6 +197,7 @@ export interface AdminCategory {
     parentId: number;
     parentName?: string;
     productCount?: number;
+    totalProductCount?: number;
     childCount?: number;
     isActive: boolean;
     showInMainMenu: boolean;
@@ -205,18 +206,54 @@ export interface AdminCategory {
 export interface AdminBrand {
     id: number;
     name: string;
+    productCount?: number;
 }
 
 export const fetchAdminBrands = async (): Promise<AdminBrand[]> => {
     const res = await fetch(`${API_BASE}/admin/brands`, { headers: authHeaders() });
-    if (!res.ok) throw new Error("Erreur chargement marques");
+    if (!res.ok) throw new Error("Erreur de chargement des marques");
     const data = await res.json();
     return data.brands;
 };
 
+export const createBrand = async (brand: { name: string }): Promise<{ success: boolean; id?: number; error?: string }> => {
+    const res = await fetch(`${API_BASE}/admin/brands`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(brand),
+    });
+    const result = await res.json();
+    if (result.success) notifyCatalogUpdated();
+    return result;
+};
+
+export const updateBrand = async (
+    id: number,
+    fields: Partial<{ name: string }>
+): Promise<{ success: boolean; error?: string }> => {
+    const res = await fetch(`${API_BASE}/admin/brands/${id}`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify(fields),
+    });
+    const result = await res.json();
+    if (result.success) notifyCatalogUpdated();
+    return result;
+};
+
+export const deleteBrand = async (id: number): Promise<{ success: boolean; error?: string }> => {
+    const res = await fetch(`${API_BASE}/admin/brands/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+    });
+    const result = await res.json();
+    if (result.success) notifyCatalogUpdated();
+    return result;
+};
+
 export const fetchAdminCategories = async (): Promise<AdminCategory[]> => {
     const res = await fetch(`${API_BASE}/admin/categories`, { headers: authHeaders() });
-    if (!res.ok) throw new Error("Erreur chargement catégories");
+    if (!res.ok) throw new Error("Erreur de chargement des catégories");
     const data = await res.json();
     return data.categories;
 };
@@ -301,6 +338,6 @@ export interface DataQualityReport {
 
 export const fetchDataQualityReport = async (): Promise<DataQualityReport> => {
     const res = await fetch(`${API_BASE}/admin/data-quality`, { headers: authHeaders() });
-    if (!res.ok) throw new Error("Erreur chargement qualite des donnees");
+    if (!res.ok) throw new Error("Erreur de chargement de la qualité des données");
     return res.json();
 };

@@ -1,10 +1,29 @@
+import { useState } from "react";
 import { Navigate, Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, PlusCircle, LogOut, ArrowLeft, PackageCheck, Mail, FolderTree, ShieldAlert } from "lucide-react";
+import {
+    LayoutDashboard,
+    PlusCircle,
+    LogOut,
+    ArrowLeft,
+    PackageCheck,
+    Mail,
+    FolderTree,
+    ShieldAlert,
+    BadgeCheck,
+    PanelLeftClose,
+    PanelLeftOpen,
+} from "lucide-react";
+
+const sidebarTitleStyle = { fontSize: "15px", color: "#ffffff" };
+const sidebarMetaStyle = { fontSize: "12px", color: "#c7d7f2" };
+const sidebarSectionStyle = { fontSize: "10px", color: "#9fb2d1" };
+const sidebarTextStyle = { fontSize: "13px", color: "#d7e5ff" };
 
 const AdminLayout = () => {
     const { isAuthenticated, username, loading, logout } = useAuth();
     const location = useLocation();
+    const [collapsed, setCollapsed] = useState(false);
 
     if (loading) {
         return (
@@ -22,38 +41,69 @@ const AdminLayout = () => {
         { to: "/admin", icon: LayoutDashboard, label: "Tableau de bord", exact: true },
         { to: "/admin/commandes", icon: PackageCheck, label: "Commandes" },
         { to: "/admin/messages", icon: Mail, label: "Messages" },
-        { to: "/admin/categories", icon: FolderTree, label: "Categories" },
-        { to: "/admin/qualite-donnees", icon: ShieldAlert, label: "Qualite donnees" },
+        { to: "/admin/categories", icon: FolderTree, label: "Catégories" },
+        { to: "/admin/marques", icon: BadgeCheck, label: "Marques" },
+        { to: "/admin/qualite-donnees", icon: ShieldAlert, label: "Qualité données" },
         { to: "/admin/produits/nouveau", icon: PlusCircle, label: "Ajouter produit" },
     ];
 
     return (
-        <div className="flex min-h-screen flex-col bg-gray-100 md:flex-row">
-            {/* Sidebar */}
-            <aside className="flex w-full shrink-0 flex-col bg-gray-900 text-white md:w-64">
-                <div className="p-4 border-b border-gray-700">
-                    <h2 className="text-lg font-bold">Samsonite Admin</h2>
-                    <p className="text-xs text-gray-400 mt-0.5">Admin : {username}</p>
+        <div className="flex min-h-screen bg-gray-100">
+            <aside
+                className={`relative flex min-h-screen shrink-0 flex-col border-r border-blue-900 bg-blue-950 text-white shadow-xl transition-[width] duration-200 ${
+                    collapsed ? "w-[68px]" : "w-64"
+                }`}
+                style={{
+                    backgroundColor: "#07162f",
+                    borderColor: "#14294a",
+                    color: "#ffffff",
+                }}
+            >
+                <div className={`border-b border-blue-900/70 ${collapsed ? "px-2 py-4" : "px-4 py-4"}`}>
+                    <div className={`flex items-center ${collapsed ? "justify-center" : "justify-between gap-3"}`}>
+                        <div className={`flex min-w-0 items-center ${collapsed ? "justify-center" : "gap-3"}`}>
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#7357ff] text-sm font-black tracking-tight text-white shadow-sm shadow-black/20">
+                                S
+                            </div>
+                            {!collapsed && (
+                                <div className="min-w-0">
+                                    <h2 className="truncate font-black tracking-tight" style={sidebarTitleStyle}>Samsonite Admin</h2>
+                                    <p className="mt-0.5 font-bold" style={sidebarMetaStyle}>Connecté : {username}</p>
+                                </div>
+
+                            )}
+                        </div>
+                        {!collapsed && (
+                            <button
+                                type="button"
+                                onClick={() => setCollapsed(true)}
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-900/60 text-white transition-colors hover:bg-blue-800"
+                                aria-label="Replier la sidebar"
+                                title="Replier"
+                            >
+                                <PanelLeftClose className="h-4 w-4" />
+                            </button>
+                        )}
+                    </div>
+                    {collapsed && (
+                        <button
+                            type="button"
+                            onClick={() => setCollapsed(false)}
+                            className="absolute -right-3 top-9 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-blue-900 text-white shadow-lg shadow-black/30 ring-1 ring-white/20 transition-colors hover:bg-blue-800"
+                            aria-label="Ouvrir la sidebar"
+                            title="Ouvrir"
+                        >
+                            <PanelLeftOpen className="h-3.5 w-3.5" />
+                        </button>
+                    )}
                 </div>
 
-                <div className="p-2 border-b border-gray-700 space-y-1">
-                    <Link
-                        to="/"
-                        className="flex items-center gap-3 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white rounded-md transition-colors"
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                        Retour au site
-                    </Link>
-                    <button
-                        onClick={logout}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-md transition-colors"
-                    >
-                        <LogOut className="h-4 w-4" />
-                        Déconnexion
-                    </button>
-                </div>
-
-                <nav className="flex flex-1 gap-1 overflow-x-auto px-2 py-3 md:block md:space-y-1 md:px-2 md:py-4">
+                <nav className={`block space-y-2 overflow-y-visible px-3 py-3 ${collapsed ? "px-2 pt-5" : ""}`}>
+                    {!collapsed && (
+                        <p className="px-3 pb-2 pt-1 font-black uppercase tracking-[0.22em]" style={sidebarSectionStyle}>
+                            Navigation
+                        </p>
+                    )}
                     {navItems.map((item) => {
                         const active = item.exact
                             ? location.pathname === item.to
@@ -63,20 +113,58 @@ const AdminLayout = () => {
                             <Link
                                 key={item.to}
                                 to={item.to}
-                                className={`flex shrink-0 items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${active
-                                    ? "bg-white/10 text-white"
-                                    : "text-gray-300 hover:bg-white/5 hover:text-white"
-                                    }`}
+                                title={collapsed ? item.label : undefined}
+                                className={`group relative flex shrink-0 items-center rounded-xl font-bold transition-colors ${
+                                    collapsed ? "mx-auto h-11 w-11 justify-center p-0" : "gap-3 px-3 py-2.5"
+                                }`}
+                                style={{
+                                    backgroundColor: active ? "#15396b" : "transparent",
+                                    color: active ? "#ffffff" : "#d7e5ff",
+                                    fontSize: sidebarTextStyle.fontSize,
+                                }}
                             >
-                                <item.icon className="h-4 w-4" />
-                                {item.label}
+                                <span
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+                                    style={{ color: active ? "#ffffff" : "#d7e5ff" }}
+                                >
+                                    <item.icon className="h-4 w-4" />
+                                </span>
+                                {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
                             </Link>
                         );
                     })}
                 </nav>
+
+                <div className={`space-y-2 border-t border-blue-900/70 px-3 py-3 ${collapsed ? "mt-auto md:px-2" : ""}`}>
+                    <Link
+                        to="/"
+                        title={collapsed ? "Retour au site" : undefined}
+                        className={`group flex items-center rounded-xl font-bold transition-colors hover:text-white ${
+                            collapsed ? "mx-auto h-11 w-11 justify-center p-0" : "gap-3 px-3 py-2.5"
+                        }`}
+                        style={sidebarTextStyle}
+                    >
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors group-hover:text-white" style={{ color: "#d7e5ff" }}>
+                            <ArrowLeft className="h-4 w-4" />
+                        </span>
+                        {!collapsed && "Retour au site"}
+                    </Link>
+                    <button
+                        onClick={logout}
+                        title={collapsed ? "Déconnexion" : undefined}
+                        className={`group flex w-full items-center rounded-xl font-bold transition-colors hover:text-white ${
+                            collapsed ? "mx-auto h-11 w-11 justify-center p-0" : "gap-3 px-3 py-2.5"
+                        }`}
+                        style={sidebarTextStyle}
+                    >
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors group-hover:text-white" style={{ color: "#d7e5ff" }}>
+                            <LogOut className="h-4 w-4" />
+                        </span>
+                        {!collapsed && "Déconnexion"}
+                    </button>
+                </div>
             </aside>
 
-            {/* Main content */}
             <main className="flex min-h-0 min-w-0 flex-1 flex-col md:min-h-screen">
                 <div className="flex-1 overflow-auto bg-gray-50">
                     <Outlet />

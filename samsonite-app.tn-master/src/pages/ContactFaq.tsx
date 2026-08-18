@@ -57,7 +57,7 @@ const ContactFaq = () => {
         {
           icon: Mail,
           title: "Envoyez-nous un e-mail",
-          lines: ["Utilisez le formulaire de contact et indiquez votre reference de commande si disponible."],
+          lines: ["Utilisez le formulaire de contact et indiquez votre référence de commande si disponible."],
         },
       ];
 
@@ -69,7 +69,7 @@ const ContactFaq = () => {
       ]
     : [
         { q: "Quel sujet choisir ?", a: "Choisissez Service client pour les commandes, disponibilites, livraisons, retours ou demandes apres-vente." },
-        { q: "Que faut-il indiquer dans le message ?", a: "Ajoutez le nom du produit, la couleur, la taille, la reference de commande et votre telephone pour une reponse plus rapide." },
+        { q: "Que faut-il indiquer dans le message ?", a: "Ajoutez le nom du produit, la couleur, la taille, la référence de commande et votre téléphone pour une réponse plus rapide." },
         { q: "Puis-je joindre un document ?", a: "Oui, ajoutez une photo, une preuve d'achat ou tout document utile pour expliquer votre demande." },
       ];
 
@@ -182,7 +182,7 @@ const ContactFaq = () => {
             <div role="status" className="mb-5 border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
               {isEn
                 ? "Your message has been sent. Our team will get back to you."
-                : "Votre message a ete envoye. Notre equipe vous repondra prochainement."}
+                : "Votre message a été envoyé. Notre équipe vous répondra prochainement."}
             </div>
           )}
           {error && (
@@ -250,7 +250,7 @@ const ContactFaq = () => {
                 placeholder={
                   isEn
                     ? "Describe your request. Add product name, order reference or phone number if needed."
-                    : "Decrivez votre demande. Ajoutez le nom du produit, la reference de commande ou votre telephone si besoin."
+                    : "Décrivez votre demande. Ajoutez le nom du produit, la référence de commande ou votre téléphone si besoin."
                 }
               />
             </div>

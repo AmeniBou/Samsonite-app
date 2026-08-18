@@ -69,7 +69,7 @@ const AdminCatégories = () => {
             const data = await fetchAdminCatégories();
             setCatégories(data);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Erreur chargement catégories");
+            setError(err instanceof Error ? err.message : "Erreur de chargement des catégories");
         } finally {
             setLoading(false);
         }
@@ -157,8 +157,9 @@ const AdminCatégories = () => {
             if (menuFilter === "inMenu" && !category.showInMainMenu) return false;
             if (menuFilter === "notInMenu" && category.showInMainMenu) return false;
             if (parentFilter !== "all" && String(category.parentId) !== parentFilter) return false;
-            if (productsFilter === "with" && !(category.productCount > 0)) return false;
-            if (productsFilter === "without" && (category.productCount > 0)) return false;
+            const totalProductCount = category.totalProductCount ?? category.productCount ?? 0;
+            if (productsFilter === "with" && !(totalProductCount > 0)) return false;
+            if (productsFilter === "without" && (totalProductCount > 0)) return false;
             if (childrenFilter === "with" && !(category.childCount > 0)) return false;
             if (childrenFilter === "without" && (category.childCount > 0)) return false;
             return true;
@@ -337,7 +338,7 @@ const AdminCatégories = () => {
             setShowForm(false);
             await loadCatégories();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Erreur enregistrement catégorie");
+            setError(err instanceof Error ? err.message : "Erreur d'enregistrement de la catégorie");
         } finally {
             setSaving(false);
         }
@@ -364,7 +365,7 @@ const AdminCatégories = () => {
             toast.success("Catégorie supprimée.");
             await loadCatégories();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Erreur suppression catégorie");
+            setError(err instanceof Error ? err.message : "Erreur de suppression de la catégorie");
         } finally {
             setDeletingId(null);
         }
@@ -641,7 +642,7 @@ const AdminCatégories = () => {
                             disabled={!hasActiveFilters}
                             className="inline-flex h-9 items-center justify-center rounded-full border border-gray-200 px-4 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                            Reinitialiser
+                            Réinitialiser
                         </button>
                     </div>
                 </div>
@@ -828,12 +829,12 @@ const AdminCatégories = () => {
                     <table className="w-full text-sm">
                         <thead className="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500">
                             <tr>
-                                <th className="text-left px-4 py-3 font-bold">Categorie</th>
+                                <th className="text-left px-4 py-3 font-bold">Catégorie</th>
                                 <th className="text-left px-4 py-3 font-bold">Parent</th>
                                 <th className="text-left px-4 py-3 font-bold">Slug</th>
                                 <th className="text-center px-4 py-3 font-bold">Actif</th>
                                 <th className="text-center px-4 py-3 font-bold">Menu</th>
-                                <th className="text-center px-4 py-3 font-bold">Produits</th>
+                                <th className="text-center px-4 py-3 font-bold">Produits total</th>
                                 <th className="text-center px-4 py-3 font-bold">Sous-cat.</th>
                                 <th className="text-right px-4 py-3 font-bold">Actions</th>
                             </tr>
@@ -848,12 +849,14 @@ const AdminCatégories = () => {
                             ) : displayedCatégories.length === 0 ? (
                                 <tr>
                                     <td colSpan={8} className="px-4 py-10 text-center text-gray-500">
-                                        Aucune categorie trouvee.
+                                        Aucune catégorie trouvée.
                                     </td>
                                 </tr>
                             ) : (
                                 paginatedCatégories.map((category) => {
-                                    const canDelete = !(category.productCount || category.childCount);
+                                    const directProductCount = category.productCount || 0;
+                                    const totalProductCount = category.totalProductCount ?? directProductCount;
+                                    const canDelete = !(directProductCount || category.childCount);
                                     const depth = getCategoryDepth(category);
                                     const isRoot = depth === 0;
                                     const hasChildren = Boolean(category.childCount);
@@ -870,7 +873,7 @@ const AdminCatégories = () => {
                                                             type="button"
                                                             onClick={() => toggleRoot(category.id)}
                                                             className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-50 text-sky-700 ring-1 ring-sky-200 transition-colors hover:bg-sky-100"
-                                                            aria-label={isExpanded ? "Fermer la categorie" : "Ouvrir la categorie"}
+                                                            aria-label={isExpanded ? "Fermer la catégorie" : "Ouvrir la catégorie"}
                                                         >
                                                             {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                                         </button>
@@ -981,7 +984,14 @@ const AdminCatégories = () => {
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3 text-center text-gray-700">{category.productCount || 0}</td>
+                                            <td className="px-4 py-3 text-center text-gray-700">
+                                                <div className="font-semibold text-gray-900">{totalProductCount}</div>
+                                                {totalProductCount !== directProductCount && (
+                                                    <div className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-400">
+                                                        {directProductCount} direct
+                                                    </div>
+                                                )}
+                                            </td>
                                             <td className="px-4 py-3 text-center text-gray-700">{category.childCount || 0}</td>
                                             <td className="px-4 py-3">
                                                 <div className="flex justify-end gap-2">
@@ -990,7 +1000,7 @@ const AdminCatégories = () => {
                                                         onClick={() => startEdit(category)}
                                                         className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
                                                         title="Modifier"
-                                                        aria-label="Modifier cette categorie"
+                                                        aria-label="Modifier cette catégorie"
                                                     >
                                                         <Pencil className="h-3.5 w-3.5" />
                                                     </button>

@@ -73,7 +73,7 @@ const sortOptions = [
 ];
 
 const Category = () => {
-  const { t } = useLanguage();
+  const { t, td } = useLanguage();
   const { slug } = useParams<{ slug: string }>();
   const [sortBy, setSortBy] = useState("relevance");
   const [sortOpen, setSortOpen] = useState(false);
@@ -362,13 +362,13 @@ const Category = () => {
           {isChildCategory && (
             <>
               <span>/</span>
-              <span className="text-foreground font-medium">{currentCategoryName}</span>
+              <span className="text-foreground font-medium">{td(currentCategoryName)}</span>
             </>
           )}
           {!isChildCategory && (
             <>
               <span>/</span>
-              <span className="text-foreground font-medium">{currentCategoryName || slug}</span>
+              <span className="text-foreground font-medium">{td(currentCategoryName || slug)}</span>
             </>
           )}
         </nav>
@@ -376,7 +376,7 @@ const Category = () => {
 
       <div className="samsonite-container pb-6">
         <h1 className="text-3xl font-bold tracking-wider uppercase">
-          {currentCategoryName || slug}
+          {td(currentCategoryName || slug)}
         </h1>
         {rootCategory?.description && !isChildCategory && (
           <p className="font-medium mt-4 text-sm leading-snug">
@@ -536,7 +536,7 @@ const Category = () => {
                           checked={draftFilters.collections.includes(collection)}
                           onChange={() => toggleArrayValue("collections", collection)}
                         />
-                        <span className="leading-snug">{collection}</span>
+                        <span className="leading-snug">{td(collection)}</span>
                       </label>
                     ))}
                   </div>
@@ -560,7 +560,7 @@ const Category = () => {
                 </div>
                 {sizeOptions.length > 0 && (
                   <div>
-                    <h3 className="mb-3 text-xs font-bold tracking-wider">Taille</h3>
+                    <h3 className="mb-3 text-xs font-bold tracking-wider">{td("Taille")}</h3>
                     <div className="flex flex-wrap gap-2">
                       {sizeOptions.map((size) => (
                         <button
@@ -580,7 +580,7 @@ const Category = () => {
                 )}
 
                 <div>
-                  <h3 className="mb-3 text-xs font-bold tracking-wider">Type de valise</h3>
+                  <h3 className="mb-3 text-xs font-bold tracking-wider">{td("Type de valise")}</h3>
                   <div className="space-y-2">
                     {luggageTypeOptions.map((option) => (
                       <label key={option.key} className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent">
@@ -590,14 +590,14 @@ const Category = () => {
                           checked={draftFilters.luggageTypes.includes(option.key)}
                           onChange={() => toggleArrayValue("luggageTypes", option.key)}
                         />
-                        {option.label}
+                        {td(option.label)}
                       </label>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="mb-3 text-xs font-bold tracking-wider">Volume</h3>
+                  <h3 className="mb-3 text-xs font-bold tracking-wider">{td("Volume")}</h3>
                   <div className="space-y-2">
                     {volumeRanges.map((range) => (
                       <label key={range.key} className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent">
@@ -607,14 +607,14 @@ const Category = () => {
                           checked={draftFilters.volumeRanges.includes(range.key)}
                           onChange={() => toggleArrayValue("volumeRanges", range.key)}
                         />
-                        {range.label}
+                        {td(range.label)}
                       </label>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="mb-3 text-xs font-bold tracking-wider">Poids</h3>
+                  <h3 className="mb-3 text-xs font-bold tracking-wider">{td("Poids")}</h3>
                   <div className="space-y-2">
                     {weightRanges.map((range) => (
                       <label key={range.key} className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent">
@@ -624,7 +624,7 @@ const Category = () => {
                           checked={draftFilters.weightRanges.includes(range.key)}
                           onChange={() => toggleArrayValue("weightRanges", range.key)}
                         />
-                        {range.label}
+                        {td(range.label)}
                       </label>
                     ))}
                   </div>
@@ -637,7 +637,7 @@ const Category = () => {
                       <button
                         key={color.name}
                         type="button"
-                        title={color.name}
+                        title={td(color.name)}
                         className={`h-9 w-9 rounded-full border-2 shadow-sm transition-transform hover:scale-105 ${draftFilters.colors.includes(color.name)
                           ? "border-foreground ring-2 ring-foreground/20"
                           : "border-border"
@@ -689,7 +689,7 @@ const Category = () => {
                       Selection de marque
                     </p>
                     <p className="mt-1 text-sm font-semibold text-muted-foreground">
-                      Produits American Tourister disponibles dans cette categorie
+                      Produits American Tourister disponibles dans cette catégorie
                     </p>
                   </div>
                   <div className="rounded-full border border-[#d7dfe8] bg-white px-5 py-3 shadow-sm">
