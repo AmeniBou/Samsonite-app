@@ -1,6 +1,7 @@
 import { prisma } from "../db/prisma.js";
 import fs from "fs";
 import path from "path";
+import { getBestPromotionForProduct, getPromotionPrice, listActivePromotions, PromotionWithTargets } from "./promotions.service.js";
 
 const normalizeSlug = (value: string): string =>
   value
@@ -183,6 +184,7 @@ const mapProductToRaw = (product: {
   price: { toString(): string };
   sku?: string | null;
   availability?: string | null;
+  brandId?: number | null;
   brand?: { id: number; name: string } | null;
   url?: string | null;
   weight?: string | null;
@@ -194,10 +196,13 @@ const mapProductToRaw = (product: {
   categories: Array<{ category: { id: number; slug?: string | null } }>;
   variants: CatalogVariantRow[];
   features: Array<{ id: number; featureName: string; featureValue: string }>;
-}) => {
+}, activePromotions: PromotionWithTargets[] = []) => {
   const imageIds = product.images.map((image) => image.id).filter(Boolean);
   const catalogVariants = getCatalogProductVariants(product.variants, product.images);
   const quantity = getCatalogQuantity(product.availability, product.quantity);
+  const promotion = getBestPromotionForProduct(product, activePromotions);
+  const originalPrice = Number(product.price);
+  const promotionPrice = getPromotionPrice(originalPrice, promotion);
   const categoryAssociations = product.categories
     .map((relation) => ({ id: relation.category.id }))
     .filter(Boolean);
@@ -210,7 +215,12 @@ const mapProductToRaw = (product: {
     link_rewrite: buildLangField(
       product.url ? normalizeSlug(new URL(product.url, "https://example.com").pathname.split("/").pop() || product.name) : normalizeSlug(product.name)
     ),
-    price: product.price.toString(),
+    price: promotionPrice.toString(),
+    original_price: originalPrice.toString(),
+    promotion_price: promotion ? promotionPrice.toString() : "",
+    discount_percent: promotion ? promotion.percentage.toString() : "",
+    has_promotion: promotion ? "1" : "0",
+    promotion_name: promotion?.name || "",
     reference: product.sku || "",
     active: isAvailabilityInactive(product.availability) ? "0" : "1",
     manufacturer_name: product.brand?.name || "Samsonite",
@@ -235,7 +245,7 @@ const mapProductToRaw = (product: {
 
 export const getPublicCatalog = async () => {
   try {
-    const [categories, products] = await Promise.all([
+    const [categories, products, activePromotions] = await Promise.all([
       prisma.category.findMany({ orderBy: { name: "asc" } }),
       prisma.product.findMany({
         orderBy: { id: "asc" },
@@ -247,6 +257,7 @@ export const getPublicCatalog = async () => {
           features: { orderBy: { id: "asc" } },
         },
       }),
+      listActivePromotions(),
     ]);
 
     const groupNameById = new Map<string, number>();
@@ -274,33 +285,43 @@ export const getPublicCatalog = async () => {
     );
 
     return {
-      products: products.map(mapProductToRaw),
+      products: products.map((product) => mapProductToRaw(product, activePromotions)),
       categories: categories.map(mapCategoryToRaw),
-      combinations: variants.map(({ product, variant }) => ({
-        id: variant.id,
-        id_product: product.id,
-        price: variant.price?.toString() || "0",
-        default_on: "0",
-        colorName: variant.colorName || undefined,
-        colorHex: variant.colorHex || undefined,
-        size: variant.size || undefined,
-        weight: variant.weight || undefined,
-        width: variant.width || undefined,
-        height: variant.height || undefined,
-        depth: variant.depth || undefined,
-        isExpandable: variant.isExpandable || undefined,
-        expandedWidth: variant.expandedWidth || undefined,
-        expandedHeight: variant.expandedHeight || undefined,
-        expandedDepth: variant.expandedDepth || undefined,
-        volume: variant.volume || undefined,
-        stockInitial: variant.stockInitial ?? undefined,
-        stock: variant.stock ?? undefined,
-        images: variant.images || [],
-        associations: {
-          product_option_values: [{ id: variant.id }],
-          images: (variant.images || []).map((imageUrl, index) => ({ id: variant.id * 1000 + index + 1, imageUrl })),
-        },
-      })),
+      combinations: variants.map(({ product, variant }) => {
+        const promotion = getBestPromotionForProduct(product, activePromotions);
+        const originalPrice = Number(variant.price ?? product.price);
+        const promotionPrice = getPromotionPrice(originalPrice, promotion);
+        return {
+          id: variant.id,
+          id_product: product.id,
+          price: promotionPrice.toString(),
+          original_price: originalPrice.toString(),
+          promotion_price: promotion ? promotionPrice.toString() : "",
+          discount_percent: promotion ? promotion.percentage.toString() : "",
+          has_promotion: promotion ? "1" : "0",
+          promotion_name: promotion?.name || "",
+          default_on: "0",
+          colorName: variant.colorName || undefined,
+          colorHex: variant.colorHex || undefined,
+          size: variant.size || undefined,
+          weight: variant.weight || undefined,
+          width: variant.width || undefined,
+          height: variant.height || undefined,
+          depth: variant.depth || undefined,
+          isExpandable: variant.isExpandable || undefined,
+          expandedWidth: variant.expandedWidth || undefined,
+          expandedHeight: variant.expandedHeight || undefined,
+          expandedDepth: variant.expandedDepth || undefined,
+          volume: variant.volume || undefined,
+          stockInitial: variant.stockInitial ?? undefined,
+          stock: variant.stock ?? undefined,
+          images: variant.images || [],
+          associations: {
+            product_option_values: [{ id: variant.id }],
+            images: (variant.images || []).map((imageUrl, index) => ({ id: variant.id * 1000 + index + 1, imageUrl })),
+          },
+        };
+      }),
       productOptions: Array.from(groupNameById.entries()).map(([groupName, id]) => ({
         id,
         name: buildLangField(groupName),
@@ -1121,7 +1142,10 @@ export const updateProduct = async (
   }>
 ) => {
   try {
-    const existing = await prisma.product.findUnique({ where: { id } });
+    const existing = await prisma.product.findUnique({
+      where: { id },
+      include: { categories: true },
+    });
     if (!existing) {
       return { success: false, error: "Produit introuvable" };
     }
@@ -1152,6 +1176,7 @@ export const updateProduct = async (
     await prisma.product.update({ where: { id }, data });
 
     if (fields.categoryId !== undefined) {
+      await ensureCategory(fields.categoryId);
       await prisma.productCategory.deleteMany({ where: { productId: id } });
       await prisma.productCategory.create({ data: { productId: id, categoryId: fields.categoryId } });
     }

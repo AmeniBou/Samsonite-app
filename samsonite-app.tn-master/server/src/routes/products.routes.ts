@@ -19,6 +19,14 @@ import {
     updateBrand,
     deleteBrand,
 } from "../services/catalog.service.js";
+import {
+    createPromotion,
+    deletePromotion,
+    getPromotion,
+    listPromotions,
+    previewPromotion,
+    updatePromotion,
+} from "../services/promotions.service.js";
 import { invalidateCatalogCache } from "./catalog.routes.js";
 
 const router = Router();
@@ -416,6 +424,93 @@ router.get("/products", async (_req: Request, res: Response): Promise<void> => {
         console.error("Erreur liste produits admin:", err);
         const detail = err instanceof Error ? err.message : "Erreur inconnue";
         res.status(502).json({ error: "Impossible de charger les produits", detail });
+    }
+});
+
+router.get("/promotions", async (_req: Request, res: Response): Promise<void> => {
+    try {
+        const promotions = await listPromotions();
+        res.json({ promotions });
+    } catch (err) {
+        console.error("Erreur promotions admin:", err);
+        const detail = err instanceof Error ? err.message : "Erreur inconnue";
+        res.status(502).json({ error: "Impossible de charger les promotions", detail });
+    }
+});
+
+router.get("/promotions/:id", async (req: Request, res: Response): Promise<void> => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+        res.status(400).json({ error: "ID promotion invalide" });
+        return;
+    }
+
+    try {
+        const promotion = await getPromotion(id);
+        if (!promotion) {
+            res.status(404).json({ error: "Promotion introuvable" });
+            return;
+        }
+        res.json({ promotion });
+    } catch (err) {
+        console.error("Erreur promotion admin:", err);
+        const detail = err instanceof Error ? err.message : "Erreur inconnue";
+        res.status(502).json({ error: "Impossible de charger la promotion", detail });
+    }
+});
+
+router.post("/promotions/preview", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const preview = await previewPromotion(req.body);
+        res.json({ preview });
+    } catch (err) {
+        const detail = err instanceof Error ? err.message : "Erreur inconnue";
+        res.status(400).json({ error: detail });
+    }
+});
+
+router.post("/promotions", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const promotion = await createPromotion(req.body);
+        invalidateCatalogCache();
+        res.status(201).json({ success: true, promotion });
+    } catch (err) {
+        const detail = err instanceof Error ? err.message : "Erreur inconnue";
+        res.status(400).json({ error: detail });
+    }
+});
+
+router.put("/promotions/:id", async (req: Request, res: Response): Promise<void> => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+        res.status(400).json({ error: "ID promotion invalide" });
+        return;
+    }
+
+    try {
+        const promotion = await updatePromotion(id, req.body);
+        invalidateCatalogCache();
+        res.json({ success: true, promotion });
+    } catch (err) {
+        const detail = err instanceof Error ? err.message : "Erreur inconnue";
+        res.status(400).json({ error: detail });
+    }
+});
+
+router.delete("/promotions/:id", async (req: Request, res: Response): Promise<void> => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+        res.status(400).json({ error: "ID promotion invalide" });
+        return;
+    }
+
+    try {
+        await deletePromotion(id);
+        invalidateCatalogCache();
+        res.json({ success: true });
+    } catch (err) {
+        const detail = err instanceof Error ? err.message : "Erreur inconnue";
+        res.status(400).json({ error: detail });
     }
 });
 

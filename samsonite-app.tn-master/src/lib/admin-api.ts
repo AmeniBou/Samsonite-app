@@ -187,6 +187,109 @@ export const deleteProduct = async (id: number): Promise<{ success: boolean; err
 };
 
 // ---------------------------------------------------------------------------
+// Promotions
+// ---------------------------------------------------------------------------
+
+export interface AdminPromotion {
+    id: number;
+    name: string;
+    percentage: number;
+    active: boolean;
+    startsAt?: string | null;
+    endsAt?: string | null;
+    priority: number;
+    brandIds: number[];
+    brandNames: string[];
+    categoryIds: number[];
+    categoryNames: string[];
+    productIds: number[];
+    productNames: string[];
+    productCount: number;
+    variantCount: number;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface AdminPromotionPayload {
+    name: string;
+    percentage: number;
+    active: boolean;
+    startsAt?: string | null;
+    endsAt?: string | null;
+    priority: number;
+    brandIds: number[];
+    categoryIds: number[];
+    productIds: number[];
+}
+
+export interface AdminPromotionPreview {
+    productCount: number;
+    variantCount: number;
+    products: Array<{
+        id: number;
+        name: string;
+        brandName: string;
+        categoryNames: string[];
+        originalPrice: number;
+        promotionPrice: number;
+        variantCount: number;
+    }>;
+}
+
+export const fetchAdminPromotions = async (): Promise<AdminPromotion[]> => {
+    const res = await fetch(`${API_BASE}/admin/promotions`, { headers: authHeaders() });
+    if (!res.ok) throw new Error("Erreur de chargement des promotions");
+    const data = await res.json();
+    return data.promotions;
+};
+
+export const previewAdminPromotion = async (payload: AdminPromotionPayload): Promise<AdminPromotionPreview> => {
+    const res = await fetch(`${API_BASE}/admin/promotions/preview`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Aperçu impossible");
+    return data.preview;
+};
+
+export const createAdminPromotion = async (payload: AdminPromotionPayload): Promise<{ success: boolean; promotion?: AdminPromotion; error?: string }> => {
+    const res = await fetch(`${API_BASE}/admin/promotions`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+    });
+    const result = await res.json();
+    if (result.success) notifyCatalogUpdated();
+    return result;
+};
+
+export const updateAdminPromotion = async (
+    id: number,
+    payload: AdminPromotionPayload
+): Promise<{ success: boolean; promotion?: AdminPromotion; error?: string }> => {
+    const res = await fetch(`${API_BASE}/admin/promotions/${id}`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+    });
+    const result = await res.json();
+    if (result.success) notifyCatalogUpdated();
+    return result;
+};
+
+export const deleteAdminPromotion = async (id: number): Promise<{ success: boolean; error?: string }> => {
+    const res = await fetch(`${API_BASE}/admin/promotions/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+    });
+    const result = await res.json();
+    if (result.success) notifyCatalogUpdated();
+    return result;
+};
+
+// ---------------------------------------------------------------------------
 // Categories
 // ---------------------------------------------------------------------------
 

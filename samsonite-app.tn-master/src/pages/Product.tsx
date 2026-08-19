@@ -223,6 +223,19 @@ const Product = () => {
   })();
   const selectedPrice =
     selectedVariant && selectedVariant.price > 0 ? selectedVariant.price : product?.price || 0;
+  const selectedOriginalPrice =
+    selectedVariant?.hasPromotion && selectedVariant.originalPrice
+      ? selectedVariant.originalPrice
+      : product?.hasPromotion && product.originalPrice
+        ? product.originalPrice
+        : undefined;
+  const selectedDiscountPercent =
+    selectedVariant?.hasPromotion && selectedVariant.discountPercent
+      ? selectedVariant.discountPercent
+      : product?.hasPromotion
+        ? product.discountPercent
+        : undefined;
+  const hasSelectedPromotion = Boolean(selectedOriginalPrice && selectedOriginalPrice > selectedPrice);
   const selectedStock =
     typeof selectedVariant?.stock === "number" ? selectedVariant.stock : product?.stock || 0;
   const lowStockThreshold = 3;
@@ -833,7 +846,17 @@ const Product = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 border-y border-border py-3">
-              <div className="min-w-[135px] text-xl font-black">{formatTnd(selectedPrice)}</div>
+              <div className="min-w-[135px]">
+                {hasSelectedPromotion && selectedOriginalPrice && (
+                  <p className="text-sm font-bold text-muted-foreground line-through">{formatTnd(selectedOriginalPrice)}</p>
+                )}
+                <p className={`text-xl font-black ${hasSelectedPromotion ? "text-red-600" : ""}`}>{formatTnd(selectedPrice)}</p>
+              </div>
+              {hasSelectedPromotion && selectedDiscountPercent && (
+                <p className="rounded-full bg-red-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-red-600">
+                  -{Math.round(selectedDiscountPercent)}%
+                </p>
+              )}
               <p className="text-xs font-semibold text-muted-foreground">TVA incl.</p>
               {availabilityText && (
                 <p

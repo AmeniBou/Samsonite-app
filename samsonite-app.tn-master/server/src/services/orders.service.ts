@@ -4,6 +4,7 @@ import path from "path";
 import tls from "tls";
 import { fileURLToPath } from "url";
 import { prisma } from "../db/prisma.js";
+import { getBestPromotionForProduct, getPromotionPrice, listActivePromotions } from "./promotions.service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -313,6 +314,9 @@ export const mapOrder = (order: any) => ({
     selectedColor: item.selectedColor || "",
     quantity: item.quantity,
     unitPrice: Number(item.unitPrice),
+    originalUnitPrice: item.originalUnitPrice ? Number(item.originalUnitPrice) : Number(item.unitPrice),
+    discountPercent: item.discountPercent ? Number(item.discountPercent) : null,
+    promotionName: item.promotionName || "",
     total: Number(item.lineTotal),
   })),
   totals: {
@@ -375,6 +379,9 @@ export const createOrder = async (input: CreateOrderInput) => {
       selectedColor: item.selectedColor || null,
       quantity,
       unitPrice,
+      originalUnitPrice: unitPrice,
+      discountPercent: null as number | null,
+      promotionName: null as string | null,
       lineTotal: unitPrice * quantity,
     };
   });
@@ -386,13 +393,40 @@ export const createOrder = async (input: CreateOrderInput) => {
     reference = generateReference();
   }
 
+  const activePromotions = await listActivePromotions();
+
   const order = await prisma.$transaction(async (tx) => {
     const affectedProductIds = new Set<number>();
 
     const reservedItems = await Promise.all(
       normalizedItems.map(async (item) => {
         if (!item.variantId) {
-          return item;
+          if (!item.productId) return item;
+
+          const product = await tx.product.findUnique({
+            where: { id: item.productId },
+            select: {
+              id: true,
+              price: true,
+              brandId: true,
+              categories: { select: { categoryId: true } },
+            },
+          });
+
+          if (!product) return item;
+
+          const promotion = getBestPromotionForProduct(product, activePromotions);
+          const originalUnitPrice = Number(product.price) || item.unitPrice;
+          const unitPrice = getPromotionPrice(originalUnitPrice, promotion);
+
+          return {
+            ...item,
+            originalUnitPrice,
+            discountPercent: promotion ? Number(promotion.percentage) : null,
+            promotionName: promotion?.name || null,
+            unitPrice,
+            lineTotal: unitPrice * item.quantity,
+          };
         }
 
         const variant = await tx.productVariant.findUnique({
@@ -402,6 +436,14 @@ export const createOrder = async (input: CreateOrderInput) => {
             productId: true,
             price: true,
             stock: true,
+            product: {
+              select: {
+                id: true,
+                price: true,
+                brandId: true,
+                categories: { select: { categoryId: true } },
+              },
+            },
           },
         });
 
@@ -427,10 +469,18 @@ export const createOrder = async (input: CreateOrderInput) => {
 
         affectedProductIds.add(variant.productId);
 
-        const unitPrice = variant.price !== null && variant.price !== undefined ? Number(variant.price) : item.unitPrice;
+        const originalUnitPrice = variant.price !== null && variant.price !== undefined ? Number(variant.price) : Number(variant.product.price) || item.unitPrice;
+        const promotion = getBestPromotionForProduct(
+          { id: variant.productId, brandId: variant.product.brandId, categories: variant.product.categories },
+          activePromotions
+        );
+        const unitPrice = getPromotionPrice(originalUnitPrice, promotion);
         return {
           ...item,
           productId: variant.productId,
+          originalUnitPrice,
+          discountPercent: promotion ? Number(promotion.percentage) : null,
+          promotionName: promotion?.name || null,
           unitPrice,
           lineTotal: unitPrice * item.quantity,
         };
@@ -480,6 +530,9 @@ export const createOrder = async (input: CreateOrderInput) => {
             selectedColor: item.selectedColor,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
+            originalUnitPrice: item.originalUnitPrice ?? item.unitPrice,
+            discountPercent: item.discountPercent,
+            promotionName: item.promotionName,
             lineTotal: item.lineTotal,
           })),
         },

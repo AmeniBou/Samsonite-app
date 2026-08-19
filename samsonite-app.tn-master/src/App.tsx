@@ -34,6 +34,7 @@ import AdminMessages from "./pages/admin/AdminMessages";
 import AdminCategories from "./pages/admin/AdminCategories";
 import AdminBrands from "./pages/admin/AdminBrands";
 import AdminDataQuality from "./pages/admin/AdminDataQuality";
+import AdminPromotions from "./pages/admin/AdminPromotions";
 import OrderConfirmation from "./pages/OrderConfirmation";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,7 @@ const App = () => {
                 <Route path="messages" element={<AdminMessages />} />
                 <Route path="categories" element={<AdminCategories />} />
                 <Route path="marques" element={<AdminBrands />} />
+                <Route path="promotions" element={<AdminPromotions />} />
                 <Route path="qualite-donnees" element={<AdminDataQuality />} />
                 <Route path="produits/nouveau" element={<AdminProductForm />} />
                 <Route path="produits/modifier/:id" element={<AdminProductForm />} />

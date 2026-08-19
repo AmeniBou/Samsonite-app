@@ -47,6 +47,13 @@ export const mapPSProductToDisplay = (
     return value % 1 === 0 ? value.toString() : value.toFixed(2).replace(/\.?0+$/, "");
   };
 
+  const parseNumber = (value: unknown) => {
+    const numberValue = Number(value || 0);
+    return Number.isFinite(numberValue) ? numberValue : 0;
+  };
+
+  const hasPromotionFlag = (value: unknown) => value === true || value === "1" || value === 1 || value === "true";
+
   const isWeightText = (value: string) =>
     /poids|weight|\bkg\b/i.test(value.trim());
   const isDimensionText = (value: string) =>
@@ -191,7 +198,15 @@ export const mapPSProductToDisplay = (
 
     const richColorHex = combination.colorHex ? normalizeHex(combination.colorHex) : null;
     const colorHex = richColorHex || (colorOption?.color ? normalizeHex(colorOption.color) : null);
-    const price = Number(combination.price || 0);
+    const price = parseNumber(combination.price);
+    const originalPrice = parseNumber(combination.original_price);
+    const promotionPrice = parseNumber(combination.promotion_price);
+    const discountPercent = parseNumber(combination.discount_percent);
+    const hasPromotion =
+      hasPromotionFlag(combination.has_promotion) &&
+      originalPrice > 0 &&
+      promotionPrice > 0 &&
+      promotionPrice < originalPrice;
     const stock =
       combination.stock !== undefined && combination.stock !== ""
         ? Number(combination.stock)
@@ -233,6 +248,11 @@ export const mapPSProductToDisplay = (
       combinationId,
       sku: combination.reference || String(combinationId),
       price,
+      originalPrice: hasPromotion ? originalPrice : undefined,
+      promotionPrice: hasPromotion ? promotionPrice : undefined,
+      discountPercent: hasPromotion ? discountPercent : undefined,
+      hasPromotion,
+      promotionName: hasPromotion ? combination.promotion_name : undefined,
       stock,
       stockInitial,
       isDefault:
@@ -331,7 +351,15 @@ export const mapPSProductToDisplay = (
     variants.find((variant) => variant.isDefault) ||
     variants.find((variant) => variant.price > 0) ||
     variants[0];
-  const productBasePrice = Number(product.price || 0);
+  const productBasePrice = parseNumber(product.price);
+  const productOriginalPrice = parseNumber(product.original_price);
+  const productPromotionPrice = parseNumber(product.promotion_price);
+  const productDiscountPercent = parseNumber(product.discount_percent);
+  const productHasPromotion =
+    hasPromotionFlag(product.has_promotion) &&
+    productOriginalPrice > 0 &&
+    productPromotionPrice > 0 &&
+    productPromotionPrice < productOriginalPrice;
   const price =
     productBasePrice > 0
       ? productBasePrice
@@ -428,6 +456,11 @@ export const mapPSProductToDisplay = (
     shortDescription: shortDesc,
     description: fullDesc,
     price,
+    originalPrice: productHasPromotion ? productOriginalPrice : undefined,
+    promotionPrice: productHasPromotion ? productPromotionPrice : undefined,
+    discountPercent: productHasPromotion ? productDiscountPercent : undefined,
+    hasPromotion: productHasPromotion,
+    promotionName: productHasPromotion ? product.promotion_name : undefined,
     images:
       finalImageUrls && finalImageUrls.length > 0
         ? finalImageUrls

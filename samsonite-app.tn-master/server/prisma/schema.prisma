@@ -49,6 +49,8 @@ model Product {
 
   orderItems OrderItem[]
 
+  promotionProducts PromotionProduct[]
+
   createdAt DateTime @default(now())
 
   updatedAt DateTime @updatedAt
@@ -60,6 +62,8 @@ model Brand {
   name String @unique
 
   products Product[]
+
+  promotionBrands PromotionBrand[]
 }
 
 model Category {
@@ -80,6 +84,8 @@ model Category {
   children Category[] @relation("CategoryChildren")
 
   products ProductCategory[]
+
+  promotionCategories PromotionCategory[]
 }
 
 model ProductCategory {
@@ -92,6 +98,74 @@ model ProductCategory {
   category Category @relation(fields: [categoryId], references: [id])
 
   @@id([productId, categoryId])
+}
+
+model PromotionRule {
+  id Int @id @default(autoincrement())
+
+  name String
+
+  percentage Decimal @db.Decimal(5, 2)
+
+  active Boolean @default(true)
+
+  startsAt DateTime?
+
+  endsAt DateTime?
+
+  priority Int @default(0)
+
+  brands PromotionBrand[]
+
+  categories PromotionCategory[]
+
+  products PromotionProduct[]
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([active, startsAt, endsAt])
+  @@index([priority, updatedAt])
+}
+
+model PromotionBrand {
+  promotionId Int
+
+  brandId Int
+
+  promotion PromotionRule @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@id([promotionId, brandId])
+  @@index([brandId])
+}
+
+model PromotionCategory {
+  promotionId Int
+
+  categoryId Int
+
+  promotion PromotionRule @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([promotionId, categoryId])
+  @@index([categoryId])
+}
+
+model PromotionProduct {
+  promotionId Int
+
+  productId Int
+
+  promotion PromotionRule @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([promotionId, productId])
+  @@index([productId])
 }
 
 model ProductImage {
@@ -226,6 +300,12 @@ model OrderItem {
   quantity Int
 
   unitPrice Decimal @db.Decimal(10, 2)
+
+  originalUnitPrice Decimal? @db.Decimal(10, 2)
+
+  discountPercent Decimal? @db.Decimal(5, 2)
+
+  promotionName String?
 
   lineTotal Decimal @db.Decimal(10, 2)
 

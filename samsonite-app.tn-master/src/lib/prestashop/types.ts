@@ -23,6 +23,11 @@ export interface PSCombination {
   id: number | string;
   id_product: number | string;
   price?: string;
+  original_price?: string;
+  promotion_price?: string;
+  discount_percent?: string;
+  has_promotion?: string;
+  promotion_name?: string;
   reference?: string;
   default_on?: string;
   colorName?: string;
@@ -94,6 +99,11 @@ export interface PSProduct {
   online_only: string,
 
   price: string;
+  original_price?: string;
+  promotion_price?: string;
+  discount_percent?: string;
+  has_promotion?: string;
+  promotion_name?: string;
   reference: string;
   id_category_default: number | string;
   active: string;
@@ -138,6 +148,11 @@ export interface ProductVariant {
   combinationId: number;
   sku?: string;
   price: number;
+  originalPrice?: number;
+  promotionPrice?: number;
+  discountPercent?: number;
+  hasPromotion?: boolean;
+  promotionName?: string;
   stock: number;
   stockInitial?: number;
   isDefault: boolean;
@@ -174,6 +189,10 @@ export interface ProductDisplay {
   description: string;
   price: number;
   originalPrice?: number;
+  promotionPrice?: number;
+  discountPercent?: number;
+  hasPromotion?: boolean;
+  promotionName?: string;
   badge?: string;
   images: string[];
   colors: ColorOption[];

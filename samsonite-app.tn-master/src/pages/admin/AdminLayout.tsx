@@ -11,6 +11,7 @@ import {
     FolderTree,
     ShieldAlert,
     BadgeCheck,
+    BadgePercent,
     PanelLeftClose,
     PanelLeftOpen,
 } from "lucide-react";
@@ -43,6 +44,7 @@ const AdminLayout = () => {
         { to: "/admin/messages", icon: Mail, label: "Messages" },
         { to: "/admin/categories", icon: FolderTree, label: "Catégories" },
         { to: "/admin/marques", icon: BadgeCheck, label: "Marques" },
+        { to: "/admin/promotions", icon: BadgePercent, label: "Promotions" },
         { to: "/admin/qualite-donnees", icon: ShieldAlert, label: "Qualité données" },
         { to: "/admin/produits/nouveau", icon: PlusCircle, label: "Ajouter produit" },
     ];

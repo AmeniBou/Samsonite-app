@@ -21,6 +21,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const isOutOfStock = !product.stock || product.stock <= 0;
   const visibleColors = product.colors.slice(0, 4);
   const hiddenColorsCount = Math.max(0, product.colors.length - visibleColors.length);
+  const hasPromotion = Boolean(product.hasPromotion && product.originalPrice && product.originalPrice > product.price);
 
   return (
     <Link to={productUrl} className="group flex h-full flex-col">
@@ -30,9 +31,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
             {t("badge.out")}
           </span>
         )}
-        {product.badge && !isOutOfStock && (
+        {product.badge && !isOutOfStock && !hasPromotion && (
           <span className="absolute right-3 top-3 z-10 rounded-full bg-cyan-600 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white">
             {product.badge}
+          </span>
+        )}
+        {hasPromotion && (
+          <span className="absolute right-3 top-3 z-10 rounded-full bg-red-600 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white">
+            -{Math.round(product.discountPercent || 0)}%
           </span>
         )}
         <span className="absolute bottom-3 right-3 z-10 flex h-9 w-9 translate-y-2 items-center justify-center bg-black text-white opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
@@ -81,7 +87,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
           )}
         </div>
         <div className="mt-auto flex min-h-8 items-end justify-between gap-3 pt-3">
-          <p className="text-base font-black text-cyan-600">{formatPrice(product.price)} TND</p>
+          <div>
+            {hasPromotion && product.originalPrice && (
+              <p className="text-xs font-bold text-muted-foreground line-through">{formatPrice(product.originalPrice)} TND</p>
+            )}
+            <p className={`text-base font-black ${hasPromotion ? "text-red-600" : "text-cyan-600"}`}>
+              {formatPrice(product.price)} TND
+            </p>
+          </div>
           <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
             {t("product.details")}
           </span>
