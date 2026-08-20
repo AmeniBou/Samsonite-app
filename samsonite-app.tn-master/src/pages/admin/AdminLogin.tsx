@@ -19,7 +19,7 @@ const AdminLogin = () => {
         setLoading(false);
 
         if (success) {
-            navigate("/admin");
+            navigate("/admin/produits");
         } else {
             setError("Identifiants incorrects");
         }

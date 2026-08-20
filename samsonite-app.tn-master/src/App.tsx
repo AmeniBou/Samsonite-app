@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import { CartProvider } from "@/hooks/useCart";
 import { LanguageProvider } from "@/lib/i18n";
@@ -56,7 +56,8 @@ const App = () => {
               {/* Admin routes - layout séparé sans header/footer public */}
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<AdminDashboard />} />
+                <Route index element={<Navigate to="produits" replace />} />
+                <Route path="produits" element={<AdminDashboard />} />
                 <Route path="commandes" element={<AdminOrders />} />
                 <Route path="messages" element={<AdminMessages />} />
                 <Route path="categories" element={<AdminCategories />} />

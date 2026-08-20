@@ -794,7 +794,7 @@ const AdminProductForm = () => {
                     ? "Produit mis à jour avec succès"
                     : `Produit créé avec succès (ID: ${(result as any).id})`;
                 setSuccess(msg);
-                setTimeout(() => navigate("/admin"), 1500);
+                setTimeout(() => navigate("/admin/produits"), 1500);
             } else {
                 setError(result.error || "Une erreur est survenue");
             }
@@ -972,7 +972,7 @@ const AdminProductForm = () => {
             {/* Header */}
             <div className="mb-6">
                 <button
-                    onClick={() => navigate("/admin")}
+                    onClick={() => navigate("/admin/produits")}
                     className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 transition-colors mb-2"
                 >
                     <ArrowLeft className="h-4 w-4" />

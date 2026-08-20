@@ -2,11 +2,10 @@ import { useState } from "react";
 import { Navigate, Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
-    LayoutDashboard,
-    PlusCircle,
     LogOut,
     ArrowLeft,
     PackageCheck,
+    Package,
     Mail,
     FolderTree,
     ShieldAlert,
@@ -39,14 +38,13 @@ const AdminLayout = () => {
     }
 
     const navItems = [
-        { to: "/admin", icon: LayoutDashboard, label: "Tableau de bord", exact: true },
+        { to: "/admin/produits", icon: Package, label: "Produits" },
         { to: "/admin/commandes", icon: PackageCheck, label: "Commandes" },
         { to: "/admin/messages", icon: Mail, label: "Messages" },
         { to: "/admin/categories", icon: FolderTree, label: "Catégories" },
         { to: "/admin/marques", icon: BadgeCheck, label: "Marques" },
         { to: "/admin/promotions", icon: BadgePercent, label: "Promotions" },
         { to: "/admin/qualite-donnees", icon: ShieldAlert, label: "Qualité données" },
-        { to: "/admin/produits/nouveau", icon: PlusCircle, label: "Ajouter produit" },
     ];
 
     return (
@@ -69,7 +67,7 @@ const AdminLayout = () => {
                             </div>
                             {!collapsed && (
                                 <div className="min-w-0">
-                                    <h2 className="truncate font-black tracking-tight" style={sidebarTitleStyle}>Samsonite Admin</h2>
+                                    <h2 className="font-black tracking-tight" style={sidebarTitleStyle}>Samsonite Administration</h2>
                                     <p className="mt-0.5 font-bold" style={sidebarMetaStyle}>Connecté : {username}</p>
                                 </div>
 
@@ -140,7 +138,9 @@ const AdminLayout = () => {
                 <div className={`space-y-2 border-t border-blue-900/70 px-3 py-3 ${collapsed ? "mt-auto md:px-2" : ""}`}>
                     <Link
                         to="/"
-                        title={collapsed ? "Retour au site" : undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={collapsed ? "Aller au site" : undefined}
                         className={`group flex items-center rounded-xl font-bold transition-colors hover:text-white ${
                             collapsed ? "mx-auto h-11 w-11 justify-center p-0" : "gap-3 px-3 py-2.5"
                         }`}
@@ -149,7 +149,7 @@ const AdminLayout = () => {
                         <span className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors group-hover:text-white" style={{ color: "#d7e5ff" }}>
                             <ArrowLeft className="h-4 w-4" />
                         </span>
-                        {!collapsed && "Retour au site"}
+                        {!collapsed && "Aller au site"}
                     </Link>
                     <button
                         onClick={logout}
