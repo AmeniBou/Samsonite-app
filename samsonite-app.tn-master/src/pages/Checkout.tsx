@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
+  BadgePercent,
   CheckCircle2,
   CreditCard,
   Lock,
@@ -111,11 +112,23 @@ const getVariantImage = (item: CartItem, variant?: ProductVariant) =>
 
 const getVariantVolume = (item: CartItem, variant?: ProductVariant) => variant?.volume || item.product.volume || "";
 const getVariantWeight = (item: CartItem, variant?: ProductVariant) => variant?.weight || item.product.weight || "";
+const getItemPricing = (item: CartItem, variant?: ProductVariant) => {
+  const unitPrice = variant?.price && variant.price > 0 ? variant.price : item.product.price;
+  const originalUnitPrice = variant?.hasPromotion && variant.originalPrice && variant.originalPrice > unitPrice
+    ? variant.originalPrice
+    : item.product.hasPromotion && item.product.originalPrice && item.product.originalPrice > unitPrice
+      ? item.product.originalPrice
+      : unitPrice;
+  const discountPercent = variant?.hasPromotion ? variant.discountPercent : item.product.discountPercent;
+  return { unitPrice, originalUnitPrice, discount: Math.max(0, originalUnitPrice - unitPrice), discountPercent };
+};
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { t, td } = useLanguage();
   const { items, totalPrice, totalItems, updateQuantity, removeItem, clearCart } = useCart();
+  const promotionSavings = items.reduce((sum, item) => sum + getItemPricing(item, getCartVariant(item)).discount * item.quantity, 0);
+  const totalBeforePromotion = totalPrice + promotionSavings;
   const [form, setForm] = useState<CheckoutFormState>(initialFormState);
   const [submitted, setSubmitted] = useState(false);
   const [step, setStep] = useState(0);
@@ -245,7 +258,8 @@ const Checkout = () => {
     const volume = getVariantVolume(item, variant);
     const weight = getVariantWeight(item, variant);
     const sku = item.sku || variant?.sku;
-    const lineTotal = item.product.price * item.quantity;
+    const pricing = getItemPricing(item, variant);
+    const lineTotal = pricing.unitPrice * item.quantity;
 
     return (
       <div key={`${item.product.id}-${item.variantId || item.selectedColor}`} className={`flex gap-4 border-b border-border transition-colors ${compact ? "py-4" : "pb-6 hover:bg-accent/35 sm:p-3"}`}>
@@ -265,6 +279,7 @@ const Checkout = () => {
                 {volume && <p className="text-[11px] text-muted-foreground">{t("product.volume")}: {volume}</p>}
                 {weight && <p className="text-[11px] text-muted-foreground">{t("product.weight")}: {weight}</p>}
                 {sku && <p className="text-[11px] text-muted-foreground">SKU: {sku}</p>}
+                {pricing.discount > 0 && <span className="inline-flex items-center gap-1 rounded bg-red-50 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-red-700"><BadgePercent className="h-3.5 w-3.5" />{t("cart.promotion")} -{Math.round(pricing.discountPercent || 0)}%</span>}
               </div>
             </div>
             {!compact && (
@@ -299,7 +314,10 @@ const Checkout = () => {
                   <Plus className="h-3 w-3" />
                 </button>
               </div>
-              <p className="text-sm font-bold">{formatTnd(lineTotal)}</p>
+              <div className="text-right">
+                {pricing.discount > 0 && <p className="text-xs text-muted-foreground line-through">{formatTnd(pricing.originalUnitPrice * item.quantity)}</p>}
+                <p className={`text-sm font-bold ${pricing.discount > 0 ? "text-red-600" : ""}`}>{formatTnd(lineTotal)}</p>
+              </div>
             </div>
           )}
         </div>
@@ -357,6 +375,26 @@ const Checkout = () => {
                 </button>
                 <div className="mt-8 space-y-2 border-t border-border pt-4 text-xs">
                   <div className="flex justify-between"><span className="text-muted-foreground">{t("cart.items")}</span><span>{totalItems}</span></div>
+                  {promotionSavings > 0 && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          {t("cart.beforePromotion")}
+                        </span>
+                        <span>{formatTnd(totalBeforePromotion)}</span>
+                      </div>
+
+                      <div className="flex justify-between text-red-600">
+                        <span className="inline-flex items-center gap-1">
+                          <BadgePercent className="h-3.5 w-3.5" />
+                          {t("cart.promotion")}
+                        </span>
+                        <span className="font-semibold">
+                          -{formatTnd(promotionSavings)}
+                        </span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("cart.shipping")}</span>
                     <span className="font-medium">
@@ -518,6 +556,27 @@ const Checkout = () => {
             <h2 className="text-sm font-bold tracking-wider">{t("cart.summary")}</h2>
             <div className="space-y-2 text-xs">
               <div className="flex justify-between"><span className="text-muted-foreground">{t("cart.items")}</span><span>{totalItems}</span></div>
+              {promotionSavings > 0 && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">
+                      {t("cart.beforePromotion")}
+                    </span>
+                    <span>{formatTnd(totalBeforePromotion)}</span>
+                  </div>
+
+                  <div className="flex justify-between text-red-600">
+                    <span className="inline-flex items-center gap-1">
+                      <BadgePercent className="h-3.5 w-3.5" />
+                      {t("cart.promotion")}
+                    </span>
+
+                    <span className="font-semibold">
+                      -{formatTnd(promotionSavings)}
+                    </span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between"><span className="text-muted-foreground">{t("cart.subtotal")}</span><span>{formatTnd(totalPrice)}</span></div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("cart.shipping")}</span>

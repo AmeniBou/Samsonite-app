@@ -16,6 +16,7 @@ interface ConfirmDeleteDialogProps {
   pendingLabel?: string;
   tone?: "danger" | "warning" | "info";
   disabled?: boolean;
+  hideConfirm?: boolean;
   onConfirm: () => void | Promise<void>;
   children: (openDialog: () => void) => ReactNode;
 }
@@ -43,6 +44,7 @@ const ConfirmDeleteDialog = ({
   pendingLabel = "Suppression...",
   tone = "danger",
   disabled = false,
+  hideConfirm = false,
   onConfirm,
   children,
 }: ConfirmDeleteDialogProps) => {
@@ -90,14 +92,16 @@ const ConfirmDeleteDialog = ({
             >
               {cancelLabel}
             </button>
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={busy}
-              className={`min-w-24 px-4 py-2.5 text-xs font-bold text-white transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${toneClasses.confirm}`}
-            >
-              {busy ? pendingLabel : confirmLabel}
-            </button>
+            {!hideConfirm && (
+              <button
+                type="button"
+                onClick={handleConfirm}
+                disabled={busy}
+                className={`min-w-24 px-4 py-2.5 text-xs font-bold text-white transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${toneClasses.confirm}`}
+              >
+                {busy ? pendingLabel : confirmLabel}
+              </button>
+            )}
           </div>
         </DialogContent>
       </Dialog>

@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Shield,
   ShoppingBag,
+  BadgePercent,
   Truck,
 } from "lucide-react";
 
@@ -223,21 +224,22 @@ const Product = () => {
   })();
   const selectedPrice =
     selectedVariant && selectedVariant.price > 0 ? selectedVariant.price : product?.price || 0;
+  const selectedStock =
+    typeof selectedVariant?.stock === "number" ? selectedVariant.stock : product?.stock || 0;
+  const isAvailableForPromotion = selectedStock > 0;
   const selectedOriginalPrice =
-    selectedVariant?.hasPromotion && selectedVariant.originalPrice
+    isAvailableForPromotion && selectedVariant?.hasPromotion && selectedVariant.originalPrice
       ? selectedVariant.originalPrice
-      : product?.hasPromotion && product.originalPrice
+      : isAvailableForPromotion && product?.hasPromotion && product.originalPrice
         ? product.originalPrice
         : undefined;
   const selectedDiscountPercent =
-    selectedVariant?.hasPromotion && selectedVariant.discountPercent
+    isAvailableForPromotion && selectedVariant?.hasPromotion && selectedVariant.discountPercent
       ? selectedVariant.discountPercent
-      : product?.hasPromotion
+      : isAvailableForPromotion && product?.hasPromotion
         ? product.discountPercent
         : undefined;
   const hasSelectedPromotion = Boolean(selectedOriginalPrice && selectedOriginalPrice > selectedPrice);
-  const selectedStock =
-    typeof selectedVariant?.stock === "number" ? selectedVariant.stock : product?.stock || 0;
   const lowStockThreshold = 3;
   const isOutOfStock = selectedStock <= 0;
   const isLowStock = selectedStock > 0 && selectedStock <= lowStockThreshold;
@@ -1189,6 +1191,24 @@ const Product = () => {
               <p className="text-lg font-black text-samsonite-teal">
                 {formatTnd(selectedPrice)}
               </p>
+
+              {hasSelectedPromotion && selectedOriginalPrice && (
+                <div className="mt-1.5 flex items-center gap-2 text-xs">
+                  <span className="inline-flex items-center gap-1 font-semibold text-red-600">
+                    <BadgePercent className="h-3.5 w-3.5" />
+                    -{Math.round(selectedDiscountPercent || 0)}%
+                  </span>
+
+                  <span className="h-3 w-px bg-gray-200" />
+
+                  <span className="text-muted-foreground">
+                    {t("cart.beforePromotion")}{" "}
+                    <span className="font-medium line-through">
+                      {formatTnd(selectedOriginalPrice)}
+                    </span>
+                  </span>
+                </div>
+              )}
 
               <div className="mt-1 space-y-0.5">
                 {selectedVariant?.size && (

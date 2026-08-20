@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BadgeCheck, Package, Pencil, Plus, RefreshCw, Search, Trash2, X } from "lucide-react";
+import { BadgeCheck, Package, Pencil, Plus, PlusCircle, RefreshCw, Search, Trash2, X } from "lucide-react";
 import {
     createBrand,
     deleteBrand,
@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin-api";
 import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
 import { toast } from "@/components/ui/sonner";
+import AdminTablePagination from "@/components/admin/AdminTablePagination";
 
 const normalizeText = (value?: string | null) => (value || "").trim();
 
@@ -17,9 +18,12 @@ const AdminBrands = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [showForm, setShowForm] = useState(false);
     const [name, setName] = useState("");
     const [search, setSearch] = useState("");
     const [error, setError] = useState("");
+    const [brandsPage, setBrandsPage] = useState(1);
+    const [brandsPageSize, setBrandsPageSize] = useState(10);
 
     const loadBrands = useCallback(async () => {
         try {
@@ -37,6 +41,10 @@ const AdminBrands = () => {
         loadBrands();
     }, [loadBrands]);
 
+    useEffect(() => {
+        if (error) toast.error(error);
+    }, [error]);
+
     const filteredBrands = useMemo(() => {
         const query = search.trim().toLowerCase();
         return [...brands]
@@ -44,15 +52,33 @@ const AdminBrands = () => {
             .filter((brand) => !query || normalizeText(brand.name).toLowerCase().includes(query));
     }, [brands, search]);
 
+    useEffect(() => setBrandsPage(1), [search, brandsPageSize]);
+    const safeBrandsPage = Math.min(brandsPage, Math.max(1, Math.ceil(filteredBrands.length / brandsPageSize)));
+    const paginatedBrands = filteredBrands.slice((safeBrandsPage - 1) * brandsPageSize, safeBrandsPage * brandsPageSize);
+
     const resetForm = () => {
         setEditingId(null);
         setName("");
     };
 
+    const startCreate = () => {
+        resetForm();
+        setError("");
+        setShowForm(true);
+        requestAnimationFrame(() => document.getElementById("brand-form")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    };
+
+    const closeForm = () => {
+        resetForm();
+        setError("");
+        setShowForm(false);
+    };
+
     const startEdit = (brand: AdminBrand) => {
         setEditingId(brand.id);
         setName(brand.name);
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        setShowForm(true);
+        requestAnimationFrame(() => document.getElementById("brand-form")?.scrollIntoView({ behavior: "smooth", block: "start" }));
     };
 
     const handleSubmit = async (event: React.FormEvent) => {
@@ -77,6 +103,7 @@ const AdminBrands = () => {
 
             toast.success(editingId ? "Marque modifiée avec succès." : "Marque ajoutée avec succès.");
             resetForm();
+            setShowForm(false);
             await loadBrands();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Impossible d'enregistrer la marque");
@@ -94,7 +121,7 @@ const AdminBrands = () => {
 
         toast.success("Marque supprimée avec succès.");
         await loadBrands();
-        if (editingId === brand.id) resetForm();
+        if (editingId === brand.id) closeForm();
     };
 
     return (
@@ -106,53 +133,45 @@ const AdminBrands = () => {
                         Les marques servent à classer les produits et à alimenter les filtres du catalogue.
                     </p>
                 </div>
-                <button
-                    type="button"
-                    onClick={loadBrands}
-                    className="inline-flex h-9 items-center justify-center gap-2 border border-gray-300 bg-white px-3 text-xs font-bold text-gray-900 hover:bg-gray-50"
-                >
-                    <RefreshCw className="h-3.5 w-3.5" />
-                    Actualiser
-                </button>
+                <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={loadBrands} className="inline-flex h-9 items-center justify-center gap-2 border border-gray-300 bg-white px-3 text-xs font-bold text-gray-900 hover:bg-gray-50">
+                        <RefreshCw className="h-3.5 w-3.5" /> Actualiser
+                    </button>
+                    <button type="button" onClick={startCreate} className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-black px-4 text-xs font-bold text-white transition-colors hover:bg-gray-800">
+                        <PlusCircle className="h-4 w-4" /> Nouvelle marque
+                    </button>
+                </div>
             </div>
 
-            {error && (
-                <div className="mb-4 border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
-                    {error}
-                </div>
-            )}
 
-            <form onSubmit={handleSubmit} className="mb-4 border border-gray-200 bg-white p-3 shadow-sm">
-                <div className="grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-end">
-                    <label className="space-y-1 text-xs font-bold text-gray-800">
-                        Nom de la marque
+            {showForm && <form id="brand-form" onSubmit={handleSubmit} className="mb-4 border border-gray-200 bg-white shadow-sm">
+                <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
+                    <div className="flex items-center gap-2">
+                        <BadgeCheck className="h-5 w-5 text-gray-700" />
+                        <h2 className="text-lg font-bold text-gray-900">{editingId ? "Modifier la marque" : "Ajouter une marque"}</h2>
+                    </div>
+                    <button type="button" onClick={closeForm} className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50" title="Fermer" aria-label="Fermer le formulaire"><X className="h-4 w-4" /> Fermer</button>
+                </div>
+                <div className="grid gap-3 p-5 md:grid-cols-[1fr_auto] md:items-end">
+                    <label className="space-y-1">
+                        <span className="text-xs font-bold uppercase tracking-wide text-gray-600">Nom de la marque</span>
                         <input
                             value={name}
                             onChange={(event) => setName(event.target.value)}
                             placeholder="Ex: Samsonite, American Tourister, Lipault, Disney"
-                            className="h-10 w-full border border-gray-300 px-3 text-sm font-medium text-gray-900 outline-none transition-colors focus:border-black focus:ring-2 focus:ring-black/10"
+                            className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black"
                         />
                     </label>
-                    {editingId && (
-                        <button
-                            type="button"
-                            onClick={resetForm}
-                            className="inline-flex h-10 items-center justify-center gap-2 border border-gray-300 bg-white px-3 text-xs font-bold text-gray-700 hover:bg-gray-50"
-                        >
-                            <X className="h-3.5 w-3.5" />
-                            Annuler
-                        </button>
-                    )}
                     <button
                         type="submit"
                         disabled={saving}
-                        className="inline-flex h-10 items-center justify-center gap-2 bg-black px-4 text-xs font-black uppercase tracking-wide text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-black px-4 text-xs font-bold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         <Plus className="h-3.5 w-3.5" />
                         {saving ? "Enregistrement..." : editingId ? "Mettre à jour" : "Ajouter"}
                     </button>
                 </div>
-            </form>
+            </form>}
 
             <div className="mb-4 border border-gray-200 bg-white p-2.5 shadow-sm">
                 <div className="relative">
@@ -178,7 +197,7 @@ const AdminBrands = () => {
                 ) : filteredBrands.length === 0 ? (
                     <div className="px-4 py-8 text-center text-sm text-gray-500">Aucune marque trouvée.</div>
                 ) : (
-                    filteredBrands.map((brand) => {
+                    paginatedBrands.map((brand) => {
                         const productCount = brand.productCount ?? 0;
                         return (
                             <div
@@ -209,15 +228,17 @@ const AdminBrands = () => {
                                         <Pencil className="h-3.5 w-3.5" />
                                     </button>
                                     <ConfirmDeleteDialog
-                                        title="Supprimer cette marque ?"
+                                        title={productCount > 0 ? "Suppression impossible" : "Supprimer cette marque ?"}
                                         description={
                                             productCount > 0
                                                 ? "Cette marque contient encore des produits. La suppression sera refusée pour protéger le catalogue."
                                                 : "Cette action supprimera la marque de la base de données."
                                         }
                                         confirmLabel="Supprimer"
+                                        cancelLabel={productCount > 0 ? "Fermer" : "Annuler"}
                                         pendingLabel="Suppression..."
                                         disabled={false}
+                                        hideConfirm={productCount > 0}
                                         onConfirm={() => handleDelete(brand)}
                                     >
                                         {(openDialog) => (
@@ -237,6 +258,7 @@ const AdminBrands = () => {
                         );
                     })
                 )}
+                {!loading && filteredBrands.length > 0 && <AdminTablePagination page={safeBrandsPage} pageSize={brandsPageSize} totalItems={filteredBrands.length} onPageChange={setBrandsPage} onPageSizeChange={(pageSize) => { setBrandsPageSize(pageSize); setBrandsPage(1); }} />}
             </div>
         </div>
     );

@@ -10,6 +10,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const orderEmailsDir = path.join(__dirname, "../../public/order-emails");
 
+const isProductAvailableForSale = (availability?: string | null, quantity?: number | null) =>
+  !/inactive|disabled|desactive|outofstock|out_of_stock|rupture|unavailable/i.test(availability || "") &&
+  (typeof quantity !== "number" || quantity > 0);
+
 const ORDER_STATUSES = new Set([
   "new",
   "confirmed",
@@ -408,12 +412,17 @@ export const createOrder = async (input: CreateOrderInput) => {
             select: {
               id: true,
               price: true,
+              availability: true,
+              quantity: true,
               brandId: true,
               categories: { select: { categoryId: true } },
             },
           });
 
           if (!product) return item;
+          if (!isProductAvailableForSale(product.availability, product.quantity)) {
+            throw new Error(`Produit indisponible: ${item.productName}`);
+          }
 
           const promotion = getBestPromotionForProduct(product, activePromotions);
           const originalUnitPrice = Number(product.price) || item.unitPrice;
@@ -438,8 +447,10 @@ export const createOrder = async (input: CreateOrderInput) => {
             stock: true,
             product: {
               select: {
-                id: true,
-                price: true,
+              id: true,
+              price: true,
+              availability: true,
+              quantity: true,
                 brandId: true,
                 categories: { select: { categoryId: true } },
               },
@@ -453,6 +464,10 @@ export const createOrder = async (input: CreateOrderInput) => {
 
         if (item.productId && item.productId !== variant.productId) {
           throw new Error(`La variante selectionnee ne correspond pas au produit ${item.productName}`);
+        }
+
+        if (!isProductAvailableForSale(variant.product.availability, variant.product.quantity)) {
+          throw new Error(`Produit indisponible: ${item.productName}`);
         }
 
         const availableStock = Math.max(0, variant.stock ?? 0);

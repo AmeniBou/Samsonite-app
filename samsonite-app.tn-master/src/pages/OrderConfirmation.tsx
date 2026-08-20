@@ -1,6 +1,7 @@
-﻿import { useNavigate, useParams } from "react-router-dom";
+﻿import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import {
+  BadgePercent,
   CheckCircle2,
   Clock3,
   Mail,
@@ -94,7 +95,10 @@ const buildOrderDetailsHtml = (
             <small>${htmlEscape([translateDynamic(item.selectedColor), translateDynamic(item.selectedSize), item.sku ? `${translate("order.reference")}: ${item.sku}` : ""].filter(Boolean).join(" · "))}</small>
           </td>
           <td class="center">${item.quantity}</td>
-          <td class="right">${htmlEscape(formatTnd(item.unitPrice))}</td>
+          <td class="right">
+            ${item.originalUnitPrice > item.unitPrice ? `<small>${htmlEscape(translate("cart.beforePromotion"))}: <s>${htmlEscape(formatTnd(item.originalUnitPrice))}</s></small><small>${htmlEscape(translate("cart.promotion"))}${item.promotionName ? ` (${htmlEscape(item.promotionName)})` : ""}: -${htmlEscape(formatTnd((item.originalUnitPrice - item.unitPrice)))}</small>` : ""}
+            ${htmlEscape(formatTnd(item.unitPrice))}
+          </td>
           <td class="right">${htmlEscape(formatTnd(item.total))}</td>
         </tr>`
     )
@@ -198,6 +202,10 @@ const buildOrderDetailsHtml = (
     </table>
 
     <section class="totals">
+      ${(() => {
+      const savings = order.items.reduce((sum, item) => sum + Math.max(0, item.originalUnitPrice - item.unitPrice) * item.quantity, 0);
+      return savings > 0 ? `<div><span>${htmlEscape(translate("cart.beforePromotion"))}</span><strong>${htmlEscape(formatTnd(order.totals.subtotal + savings))}</strong></div><div><span>${htmlEscape(translate("cart.promotion"))}</span><strong>-${htmlEscape(formatTnd(savings))}</strong></div>` : "";
+    })()}
       <div><span>${htmlEscape(translate("cart.subtotal"))}</span><strong>${htmlEscape(formatTnd(order.totals.subtotal))}</strong></div>
       <div><span>${htmlEscape(translate("cart.shipping"))}</span><strong>${order.totals.shipping === 0 ? htmlEscape(translate("cart.free")) : htmlEscape(formatTnd(order.totals.shipping))}</strong></div>
       <div class="grand"><span>${htmlEscape(translate("cart.total"))}</span><span>${htmlEscape(formatTnd(order.totals.total))}</span></div>
@@ -219,6 +227,7 @@ const OrderConfirmation = () => {
   const navigate = useNavigate();
   const [order, setOrder] = useState<StoredOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const promotionSavings = order?.items.reduce((sum, item) => sum + Math.max(0, item.originalUnitPrice - item.unitPrice) * item.quantity, 0) || 0;
 
   useEffect(() => {
     document.title = `${t("order.received")} | Samsonite Tunisie`;
@@ -401,9 +410,13 @@ const OrderConfirmation = () => {
                         {item.selectedSize && <p>{t("product.size")}: {td(item.selectedSize)}</p>}
                         {item.sku && <p>{t("order.reference")}: {item.sku}</p>}
                       </div>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {t("product.quantity")} {item.quantity} x {formatTnd(item.unitPrice)}
-                      </p>
+                      <div className="mt-2 text-sm text-muted-foreground">
+                        {item.originalUnitPrice > item.unitPrice && <>
+                          <p>{t("cart.beforePromotion")}: <span className="line-through">{formatTnd(item.originalUnitPrice)}</span></p>
+                          <p className="text-red-600">{t("cart.promotion")}{item.promotionName ? ` (${item.promotionName})` : ""}: -{formatTnd(item.originalUnitPrice - item.unitPrice)}</p>
+                        </>}
+                        <p>{t("product.quantity")} {item.quantity} x {formatTnd(item.unitPrice)}</p>
+                      </div>
                     </div>
                     <p className="text-right font-black">{formatTnd(item.total)}</p>
                   </div>
@@ -415,6 +428,27 @@ const OrderConfirmation = () => {
               <div className="border border-border bg-[#fafafa] p-5">
                 <h2 className="mb-4 text-sm font-black uppercase tracking-wide">{t("order.totalOrder")}</h2>
                 <div className="space-y-2 text-sm">
+                  {promotionSavings > 0 && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          {t("cart.beforePromotion")}
+                        </span>
+                        <span>{formatTnd(order.totals.subtotal + promotionSavings)}</span>
+                      </div>
+
+                      <div className="flex justify-between text-red-600">
+                        <span className="inline-flex items-center gap-1">
+                          <BadgePercent className="h-3.5 w-3.5" />
+                          {t("cart.promotion")}
+                        </span>
+
+                        <span className="font-semibold">
+                          -{formatTnd(promotionSavings)}
+                        </span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("cart.subtotal")}</span>
                     <span>{formatTnd(order.totals.subtotal)}</span>

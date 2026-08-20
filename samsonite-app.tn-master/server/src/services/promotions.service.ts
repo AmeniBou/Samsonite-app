@@ -64,6 +64,8 @@ const normalizePayload = (payload: PromotionPayload) => {
         throw new Error("La date de debut doit etre avant la date de fin");
     }
 
+    const productIds = uniqIds(payload.productIds);
+
     return {
         name,
         percentage,
@@ -71,9 +73,11 @@ const normalizePayload = (payload: PromotionPayload) => {
         startsAt,
         endsAt,
         priority: Number.isFinite(priority) ? priority : 0,
-        brandIds: uniqIds(payload.brandIds),
-        categoryIds: uniqIds(payload.categoryIds),
-        productIds: uniqIds(payload.productIds),
+        // A promotion targets either explicit products or a filtered product set.
+        // Explicit products intentionally take precedence to keep the two modes exclusive.
+        brandIds: productIds.length ? [] : uniqIds(payload.brandIds),
+        categoryIds: productIds.length ? [] : uniqIds(payload.categoryIds),
+        productIds,
     };
 };
 
@@ -98,16 +102,15 @@ export const promotionMatchesProduct = (promotion: PromotionWithTargets, product
     const brandIds = new Set(promotion.brands.map((item) => item.brandId));
     const categoryIds = new Set(promotion.categories.map((item) => item.categoryId));
     const productIds = new Set(promotion.products.map((item) => item.productId));
-    const hasTargets = brandIds.size > 0 || categoryIds.size > 0 || productIds.size > 0;
-
-    if (!hasTargets) return true;
-    if (product.brandId && brandIds.has(product.brandId)) return true;
     if (productIds.has(product.id)) return true;
+    if (productIds.size > 0) return false;
 
-    return (product.categories || []).some((relation) => {
+    const matchesBrand = brandIds.size === 0 || Boolean(product.brandId && brandIds.has(product.brandId));
+    const matchesCategory = categoryIds.size === 0 || (product.categories || []).some((relation) => {
         const categoryId = relation.categoryId || relation.category?.id;
         return Boolean(categoryId && categoryIds.has(categoryId));
     });
+    return matchesBrand && matchesCategory;
 };
 
 export const getBestPromotionForProduct = (
@@ -142,11 +145,12 @@ export const listActivePromotions = () =>
     });
 
 const promotionProductWhere = (payload: ReturnType<typeof normalizePayload>): Prisma.ProductWhereInput => {
-    const or: Prisma.ProductWhereInput[] = [];
-    if (payload.brandIds.length) or.push({ brandId: { in: payload.brandIds } });
-    if (payload.categoryIds.length) or.push({ categories: { some: { categoryId: { in: payload.categoryIds } } } });
-    if (payload.productIds.length) or.push({ id: { in: payload.productIds } });
-    return or.length ? { OR: or } : {};
+    if (payload.productIds.length) return { id: { in: payload.productIds } };
+
+    const and: Prisma.ProductWhereInput[] = [];
+    if (payload.brandIds.length) and.push({ brandId: { in: payload.brandIds } });
+    if (payload.categoryIds.length) and.push({ categories: { some: { categoryId: { in: payload.categoryIds } } } });
+    return and.length ? { AND: and } : {};
 };
 
 export const previewPromotion = async (payload: PromotionPayload) => {

@@ -202,15 +202,16 @@ export const mapPSProductToDisplay = (
     const originalPrice = parseNumber(combination.original_price);
     const promotionPrice = parseNumber(combination.promotion_price);
     const discountPercent = parseNumber(combination.discount_percent);
-    const hasPromotion =
-      hasPromotionFlag(combination.has_promotion) &&
-      originalPrice > 0 &&
-      promotionPrice > 0 &&
-      promotionPrice < originalPrice;
     const stock =
       combination.stock !== undefined && combination.stock !== ""
         ? Number(combination.stock)
         : stockByAttribute[`${productId}:${combinationId}`] || 0;
+    const hasPromotion =
+      hasPromotionFlag(combination.has_promotion) &&
+      originalPrice > 0 &&
+      promotionPrice > 0 &&
+      promotionPrice < originalPrice &&
+      stock > 0;
     const stockInitial =
       combination.stockInitial !== undefined && combination.stockInitial !== ""
         ? Number(combination.stockInitial)
@@ -359,7 +360,8 @@ export const mapPSProductToDisplay = (
     hasPromotionFlag(product.has_promotion) &&
     productOriginalPrice > 0 &&
     productPromotionPrice > 0 &&
-    productPromotionPrice < productOriginalPrice;
+    productPromotionPrice < productOriginalPrice &&
+    stock > 0;
   const price =
     productBasePrice > 0
       ? productBasePrice

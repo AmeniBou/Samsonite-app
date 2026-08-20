@@ -19,6 +19,8 @@ import {
     type DataQualityReport,
     type DataQualitySeverity,
 } from "@/lib/admin-api";
+import AdminTablePagination from "@/components/admin/AdminTablePagination";
+import { toast } from "@/components/ui/sonner";
 
 const severityLabels: Record<DataQualitySeverity | "all", string> = {
     all: "Tous",
@@ -59,6 +61,8 @@ const AdminDataQuality = () => {
     const [search, setSearch] = useState("");
     const [severityFilter, setSeverityFilter] = useState<DataQualitySeverity | "all">("all");
     const [entityFilter, setEntityFilter] = useState<DataQualityEntityType | "all">("all");
+    const [issuesPage, setIssuesPage] = useState(1);
+    const [issuesPageSize, setIssuesPageSize] = useState(10);
 
     const loadReport = async () => {
         try {
@@ -76,6 +80,10 @@ const AdminDataQuality = () => {
     useEffect(() => {
         loadReport();
     }, []);
+
+    useEffect(() => {
+        if (error) toast.error(error);
+    }, [error]);
 
     const filteredIssues = useMemo(() => {
         const query = search.trim().toLowerCase();
@@ -102,6 +110,10 @@ const AdminDataQuality = () => {
             info: issues.filter((issue) => issue.severity === "info").length,
         };
     }, [report?.issues]);
+
+    useEffect(() => setIssuesPage(1), [search, severityFilter, entityFilter, issuesPageSize]);
+    const safeIssuesPage = Math.min(issuesPage, Math.max(1, Math.ceil(filteredIssues.length / issuesPageSize)));
+    const paginatedIssues = filteredIssues.slice((safeIssuesPage - 1) * issuesPageSize, safeIssuesPage * issuesPageSize);
 
     const groupedByType = useMemo(() => {
         const issues = report?.issues || [];
@@ -134,11 +146,6 @@ const AdminDataQuality = () => {
                 </button>
             </div>
 
-            {error && (
-                <div className="mb-4 border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
-                    {error}
-                </div>
-            )}
 
             {loading && !report ? (
                 <div className="border border-gray-200 bg-white p-6 text-center text-sm text-gray-500">
@@ -252,11 +259,12 @@ const AdminDataQuality = () => {
                             </div>
                         ) : (
                             <div className="divide-y divide-gray-100">
-                                {filteredIssues.map((issue) => (
+                                {paginatedIssues.map((issue) => (
                                     <IssueRow key={issue.id} issue={issue} />
                                 ))}
                             </div>
                         )}
+                        {filteredIssues.length > 0 && <AdminTablePagination page={safeIssuesPage} pageSize={issuesPageSize} totalItems={filteredIssues.length} onPageChange={setIssuesPage} onPageSizeChange={(pageSize) => { setIssuesPageSize(pageSize); setIssuesPage(1); }} />}
                     </div>
                 </>
             ) : null}

@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import {
+  BadgePercent,
   CalendarDays,
   ChevronDown,
   ChevronUp,
@@ -20,6 +21,8 @@ import {
 } from "lucide-react";
 
 import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
+import AdminTablePagination from "@/components/admin/AdminTablePagination";
+import { toast } from "@/components/ui/sonner";
 import {
   Dialog,
   DialogContent,
@@ -139,6 +142,12 @@ const shippingLabels: Record<ShippingMethod, string> = {
   pickup: "Retrait boutique",
 };
 
+const shippingDelays: Record<ShippingMethod, string> = {
+  standard: "Livraison estimée sous 2 à 4 jours ouvrables après confirmation.",
+  express: "Livraison prioritaire sous 24 à 48h ouvrables après confirmation.",
+  pickup: "Retrait possible après confirmation de la disponibilité par notre équipe.",
+};
+
 const paymentLabels: Record<PaymentMethod, string> = {
   cash_on_delivery: "Paiement à la livraison",
   bank_transfer: "Virement bancaire",
@@ -185,6 +194,20 @@ const formatDisplayDate = (dateValue: string | null | undefined) => {
   }).format(parsed);
 };
 
+const getOriginalUnitPrice = (item: StoredOrder["items"][number]) => {
+  const originalUnitPrice = Number(item.originalUnitPrice);
+  return Number.isFinite(originalUnitPrice) && originalUnitPrice > item.unitPrice ? originalUnitPrice : item.unitPrice;
+};
+
+const hasItemPromotion = (item: StoredOrder["items"][number]) => getOriginalUnitPrice(item) > item.unitPrice;
+
+const getOrderPromotionSavings = (order: StoredOrder) =>
+  order.items.reduce((total, item) => total + (getOriginalUnitPrice(item) - item.unitPrice) * item.quantity, 0);
+
+const getOrderPromotionNames = (order: StoredOrder) =>
+  [...new Set(order.items.filter(hasItemPromotion).map((item) => item.promotionName || (item.discountPercent ? `-${item.discountPercent}%` : "Promotion")))]
+    .join(", ");
+
 const AdminOrders = () => {
   const [orders, setOrders] = useState<StoredOrder[]>([]);
   const [search, setSearch] = useState("");
@@ -217,6 +240,10 @@ const AdminOrders = () => {
   useEffect(() => {
     loadOrders();
   }, []);
+
+  useEffect(() => {
+    if (error) toast.error(error);
+  }, [error]);
 
   const stats = useMemo(() => {
     const activeOrders = orders.filter((order) => order.status !== "cancelled");
@@ -271,8 +298,6 @@ const AdminOrders = () => {
     const start = (safePage - 1) * pageSize;
     return filteredOrders.slice(start, start + pageSize);
   }, [filteredOrders, pageSize, safePage]);
-  const paginationStart = filteredOrders.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
-  const paginationEnd = Math.min(filteredOrders.length, safePage * pageSize);
 
   useEffect(() => {
     setPage(1);
@@ -284,8 +309,10 @@ const AdminOrders = () => {
       const updated = await updateOrderStatus(id, status, note);
       setOrders((previous) => previous.map((order) => (order.id === id ? updated : order)));
       setSelectedOrder((previous) => (previous?.id === id ? updated : previous));
+      toast.success(`Le statut de la commande ${id} a été mis à jour : ${statusLabels[status]}.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Impossible de modifier le statut");
+      const message = err instanceof Error ? err.message : "Impossible de modifier le statut";
+      setError(message);
     } finally {
       setUpdatingReference(null);
     }
@@ -319,14 +346,22 @@ const AdminOrders = () => {
 
 
   const buildOrderPrintHtml = (order: StoredOrder) => {
+    const promotionSavings = getOrderPromotionSavings(order);
+    const subtotalBeforePromotion = order.totals.subtotal + promotionSavings;
     const rows = order.items
       .map(
         (item) => `
           <tr>
-            <td>${htmlEscape(item.name)}${item.selectedColor ? `<br><small>Couleur: ${htmlEscape(item.selectedColor)}</small>` : ""}</td>
-            <td>${item.quantity}</td>
-            <td>${formatTnd(item.unitPrice)}</td>
-            <td>${formatTnd(item.total)}</td>
+            <td>
+              <strong>${htmlEscape(item.name)}</strong>
+              <small>${htmlEscape([item.selectedColor ? `Couleur: ${item.selectedColor}` : "", item.selectedSize ? `Taille: ${item.selectedSize}` : "", item.sku ? `Réf.: ${item.sku}` : ""].filter(Boolean).join(" · "))}</small>
+            </td>
+            <td class="center">${item.quantity}</td>
+            <td class="right">
+              ${hasItemPromotion(item) ? `<small>Prix avant promo : <s>${htmlEscape(formatTnd(getOriginalUnitPrice(item)))}</s></small><small>Promotion appliquée${item.promotionName ? ` (${htmlEscape(item.promotionName)})` : ""}${item.discountPercent ? ` : -${htmlEscape(item.discountPercent)}%` : ""}</small>` : ""}
+              ${htmlEscape(formatTnd(item.unitPrice))}
+            </td>
+            <td class="right">${htmlEscape(formatTnd(item.total))}</td>
           </tr>`
       )
       .join("");
@@ -337,52 +372,64 @@ const AdminOrders = () => {
   <meta charset="utf-8" />
   <title>Commande ${order.id}</title>
   <style>
-    body { font-family: Arial, sans-serif; color: #111; margin: 32px; }
-    header { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #111; padding-bottom: 18px; margin-bottom: 24px; }
-    h1 { margin: 0; font-size: 24px; letter-spacing: .04em; }
-    h2 { font-size: 14px; text-transform: uppercase; margin: 26px 0 10px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: top; }
-    th:nth-child(n+2), td:nth-child(n+2) { text-align: right; }
-    .muted { color: #666; font-size: 12px; }
-    .box { border: 1px solid #ddd; padding: 14px; margin-top: 12px; }
-    .totals { margin-left: auto; width: 280px; }
-    .totals div { display: flex; justify-content: space-between; padding: 6px 0; }
-    .total { border-top: 2px solid #111; margin-top: 6px; padding-top: 10px !important; font-weight: 700; font-size: 16px; }
-    @media print { button { display: none; } body { margin: 18mm; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #111; font-family: Arial, Helvetica, sans-serif; background: #fff; }
+    .invoice { width: 190mm; min-height: 270mm; margin: 0 auto; padding: 18mm 14mm; }
+    .top { display: flex; justify-content: space-between; gap: 24px; border-bottom: 3px solid #111; padding-bottom: 18px; }
+    .brand { font-size: 28px; font-weight: 900; letter-spacing: -1px; }
+    .muted { color: #666; }
+    .meta { text-align: right; font-size: 12px; line-height: 1.7; }
+    h1 { margin: 26px 0 8px; font-size: 24px; text-transform: uppercase; letter-spacing: 0.08em; }
+    h2 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 22px 0; }
+    .box { border: 1px solid #ddd; padding: 14px; min-height: 118px; font-size: 13px; line-height: 1.6; }
+    table { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 12px; }
+    th { background: #f4f4f4; text-align: left; padding: 10px; border-bottom: 1px solid #ccc; text-transform: uppercase; font-size: 11px; }
+    td { padding: 12px 10px; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+    small { display: block; margin-top: 4px; color: #666; line-height: 1.4; }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .totals { width: 78mm; margin-left: auto; margin-top: 18px; font-size: 13px; }
+    .totals div { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e5e5; }
+    .totals .grand { font-size: 17px; font-weight: 900; border-bottom: 3px solid #111; }
+    .footer { margin-top: 34px; border-top: 1px solid #ddd; padding-top: 14px; font-size: 11px; line-height: 1.6; color: #555; }
+    .actions { position: fixed; right: 18px; top: 18px; display: flex; gap: 8px; }
+    button { border: 1px solid #111; background: #111; color: #fff; padding: 10px 14px; font-weight: 700; cursor: pointer; }
+    @media print { @page { size: A4; margin: 0; } .actions { display: none; } .invoice { margin: 0; width: auto; min-height: auto; padding: 16mm 14mm; } }
   </style>
 </head>
 <body>
-  <header>
-    <div>
-      <h1>SAMSONITE TUNISIE</h1>
-      <p class="muted">9, Rue 8601 Zone Industrielle, Charguia 1, 2035 Ariana</p>
-    </div>
-    <div>
-      <strong>Commande ${htmlEscape(order.id)}</strong><br />
-      <span class="muted">${formatOrderDate(order.createdAt)}</span><br />
-      <span class="muted">Statut: ${htmlEscape(statusLabels[order.status])}</span>
-    </div>
+  <div class="actions"><button onclick="window.print()">Imprimer / PDF</button><button onclick="window.close()">Fermer</button></div>
+  <main class="invoice">
+  <header class="top">
+    <div><div class="brand">Samsonite</div><p class="muted">9, Rue 8601 Zone Industrielle<br />Charguia 1, 2035 Ariana, Tunisie</p></div>
+    <div class="meta"><strong>Détails de la commande</strong><br />Référence : ${htmlEscape(order.id)}<br />Date : ${htmlEscape(formatOrderDate(order.createdAt))}<br />Statut : ${htmlEscape(statusLabels[order.status])}</div>
   </header>
-  <section class="box">
-    <strong>${htmlEscape(order.customer.firstName)} ${htmlEscape(order.customer.lastName)}</strong><br />
-    ${htmlEscape(order.customer.phone)} - ${htmlEscape(order.customer.email)}<br />
-    ${htmlEscape(order.customer.address)}, ${htmlEscape(order.customer.city)}${order.customer.postalCode ? ` ${htmlEscape(order.customer.postalCode)}` : ""}
+  <h1>Récapitulatif de commande</h1>
+  <p class="muted">Document généré pour la commande ${htmlEscape(order.id)}.</p>
+  <section class="grid">
+    <div class="box"><h2>Client</h2><strong>${htmlEscape(order.customer.firstName)} ${htmlEscape(order.customer.lastName)}</strong><br />${htmlEscape(order.customer.email)}<br />${htmlEscape(order.customer.phone)}</div>
+    <div class="box"><h2>Adresse de livraison</h2>${htmlEscape(order.customer.address)}<br />${htmlEscape([order.customer.postalCode, order.customer.city].filter(Boolean).join(" "))}<br />Tunisie</div>
   </section>
-  <h2>Articles</h2>
+  <section class="grid">
+    <div class="box"><h2>Livraison</h2>${htmlEscape(shippingLabels[order.shippingMethod])}<br />${htmlEscape(shippingDelays[order.shippingMethod])}</div>
+    <div class="box"><h2>Paiement</h2>${htmlEscape(paymentLabels[order.paymentMethod])}</div>
+  </section>
   <table>
-    <thead><tr><th>Article</th><th>Qté</th><th>Prix unitaire</th><th>Total</th></tr></thead>
+    <thead><tr><th>Articles</th><th class="center">Qté</th><th class="right">Prix unitaire</th><th class="right">Total</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
   <div class="totals">
-    <div><span>Sous-total</span><span>${formatTnd(order.totals.subtotal)}</span></div>
-    <div><span>Livraison</span><span>${order.totals.shipping === 0 ? "Gratuite" : formatTnd(order.totals.shipping)}</span></div>
-    <div class="total"><span>Total</span><span>${formatTnd(order.totals.total)}</span></div>
+    ${promotionSavings > 0 ? `<div><span>Sous-total avant promo</span><span>${formatTnd(subtotalBeforePromotion)}</span></div>
+    <div><span>Promotion appliquée</span><span>-${formatTnd(promotionSavings)}</span></div>` : ""}
+    <div><span>Sous-total</span><strong>${formatTnd(order.totals.subtotal)}</strong></div>
+    <div><span>Livraison</span><strong>${order.totals.shipping === 0 ? "Gratuite" : formatTnd(order.totals.shipping)}</strong></div>
+    <div class="grand"><span>Total</span><span>${formatTnd(order.totals.total)}</span></div>
   </div>
-  <h2>Livraison et paiement</h2>
-  <p>${htmlEscape(shippingLabels[order.shippingMethod])} - ${htmlEscape(paymentLabels[order.paymentMethod])}</p>
-  ${order.customer.notes ? `<h2>Notes</h2><p>${htmlEscape(order.customer.notes)}</p>` : ""}
-  <script>window.onload = () => { window.print(); };</script>
+  ${order.customer.notes ? `<section class="box" style="min-height: auto; margin-top: 22px;"><h2>Note client</h2>${htmlEscape(order.customer.notes)}</section>` : ""}
+  <footer class="footer">Samsonite Tunisie · Appelez-nous: 26 528 103 / 71 809 209 · commercial@samsonite.com.tn<br />Merci pour votre confiance.</footer>
+  </main>
+  <script>window.onload = () => window.print();</script>
 </body>
 </html>`;
   };
@@ -400,8 +447,9 @@ const AdminOrders = () => {
 
   const buildOrdersListPrintHtml = () => {
     const rows = filteredOrders
-      .map(
-        (order) => `
+      .map((order) => {
+        const promotionSavings = getOrderPromotionSavings(order);
+        return `
           <tr>
             <td>${htmlEscape(order.id)}</td>
             <td>${htmlEscape(statusLabels[order.status])}</td>
@@ -410,9 +458,11 @@ const AdminOrders = () => {
             <td>${htmlEscape(shippingLabels[order.shippingMethod])}</td>
             <td>${htmlEscape(paymentLabels[order.paymentMethod])}</td>
             <td>${order.items.reduce((sum, item) => sum + item.quantity, 0)}</td>
+            <td>${promotionSavings > 0 ? htmlEscape(getOrderPromotionNames(order)) : "—"}</td>
+            <td>${promotionSavings > 0 ? `-${formatTnd(promotionSavings)}` : "—"}</td>
             <td>${formatTnd(order.totals.total)}</td>
-          </tr>`
-      )
+          </tr>`;
+      })
       .join("");
     const total = filteredOrders.reduce((sum, order) => sum + order.totals.total, 0);
     const periodStart = formatDateForPdf(dateFrom, "Début");
@@ -456,7 +506,7 @@ const AdminOrders = () => {
   </section>
   <table>
     <thead>
-      <tr><th>Référence</th><th>Statut</th><th>Date</th><th>Client</th><th>Livraison</th><th>Paiement</th><th>Articles</th><th>Total</th></tr>
+      <tr><th>Référence</th><th>Statut</th><th>Date</th><th>Client</th><th>Livraison</th><th>Paiement</th><th>Articles</th><th>Promotion</th><th>Économie promo</th><th>Total</th></tr>
     </thead>
     <tbody>${rows}</tbody>
   </table>
@@ -488,25 +538,34 @@ const AdminOrders = () => {
       "Livraison",
       "Paiement",
       "Articles",
-      "Sous-total",
+      "Sous-total avant promo",
+      "Promotion(s) appliquée(s)",
+      "Économie promotions",
+      "Sous-total après promo",
       "Frais livraison",
       "Total",
     ];
-    const rows = filteredOrders.map((order) => [
-      order.id,
-      formatOrderDate(order.createdAt),
-      statusLabels[order.status],
-      `${order.customer.firstName} ${order.customer.lastName}`,
-      order.customer.phone,
-      order.customer.email,
-      order.customer.city,
-      shippingLabels[order.shippingMethod],
-      paymentLabels[order.paymentMethod],
-      order.items.reduce((sum, item) => sum + item.quantity, 0),
-      order.totals.subtotal,
-      order.totals.shipping,
-      order.totals.total,
-    ]);
+    const rows = filteredOrders.map((order) => {
+      const promotionSavings = getOrderPromotionSavings(order);
+      return [
+        order.id,
+        formatOrderDate(order.createdAt),
+        statusLabels[order.status],
+        `${order.customer.firstName} ${order.customer.lastName}`,
+        order.customer.phone,
+        order.customer.email,
+        order.customer.city,
+        shippingLabels[order.shippingMethod],
+        paymentLabels[order.paymentMethod],
+        order.items.reduce((sum, item) => sum + item.quantity, 0),
+        order.totals.subtotal + promotionSavings,
+        getOrderPromotionNames(order),
+        promotionSavings,
+        order.totals.subtotal,
+        order.totals.shipping,
+        order.totals.total,
+      ];
+    });
     const tableRows = [header, ...rows]
       .map(
         (row, rowIndex) =>
@@ -544,7 +603,7 @@ const AdminOrders = () => {
     <div className="p-6">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Commandes</h1>
+          <h1 className="text-2xl font-black text-gray-950">Commandes</h1>
           <p className="mt-1 text-sm text-gray-500">Suivi des commandes enregistrées depuis le checkout.</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -577,8 +636,6 @@ const AdminOrders = () => {
         <StatCard icon={Truck} label="A confirmer" value={stats.confirmed} tone="amber" />
         <StatCard icon={CalendarDays} label="Aujourd'hui" value={stats.today} />
       </div>
-
-      {error && <div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
 
       <div className="mb-5 rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
@@ -739,22 +796,6 @@ const AdminOrders = () => {
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg bg-white shadow">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3 text-sm text-gray-500">
-            <span>{paginationStart}-{paginationEnd} sur {filteredOrders.length} commande(s)</span>
-            <label className="flex items-center gap-2 text-xs font-semibold text-gray-500">
-              Par page
-              <select
-                value={pageSize}
-                onChange={(event) => setPageSize(Number(event.target.value))}
-                className="h-8 rounded-md border border-gray-200 bg-white px-2 text-xs font-bold text-gray-900"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-              </select>
-            </label>
-          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="border-b bg-gray-50 text-gray-700">
@@ -820,43 +861,7 @@ const AdminOrders = () => {
               </tbody>
             </table>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
-            <p className="text-xs font-semibold text-gray-500">
-              Page {safePage} sur {totalPages}
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                disabled={safePage <= 1}
-                className="rounded-full border border-gray-200 px-3 py-2 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Précédent
-              </button>
-              {Array.from({ length: totalPages }).slice(0, 7).map((_, index) => {
-                const pageNumber = index + 1;
-                return (
-                  <button
-                    key={pageNumber}
-                    type="button"
-                    onClick={() => setPage(pageNumber)}
-                    className={`h-9 w-9 rounded-full border text-xs font-bold transition-colors ${safePage === pageNumber ? "border-black bg-black text-white" : "border-gray-200 text-gray-700 hover:border-black"}`}
-                  >
-                    {pageNumber}
-                  </button>
-                );
-              })}
-              {totalPages > 7 && <span className="px-1 text-xs font-bold text-gray-400">...</span>}
-              <button
-                type="button"
-                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-                disabled={safePage >= totalPages}
-                className="rounded-full border border-gray-200 px-3 py-2 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Suivant
-              </button>
-            </div>
-          </div>
+          <AdminTablePagination page={safePage} pageSize={pageSize} totalItems={filteredOrders.length} pageSizeOptions={[5, 10, 20, 50]} onPageChange={setPage} onPageSizeChange={(nextPageSize) => { setPageSize(nextPageSize); setPage(1); }} />
         </div>
       )}
 
@@ -1045,7 +1050,11 @@ const OrderDetailPanel = ({
   onStatusChange: (id: string, status: OrderStatus, note?: string) => void;
   onPrint: (order: StoredOrder) => void;
   updating: boolean;
-}) => (
+}) => {
+  const promotionSavings = getOrderPromotionSavings(order);
+  const subtotalBeforePromotion = order.totals.subtotal + promotionSavings;
+
+  return (
   <div className="fixed inset-0 z-50 flex justify-end bg-black/35">
     <aside className="h-full w-full max-w-2xl overflow-auto bg-white shadow-2xl">
       <div className="sticky top-0 z-10 flex items-start justify-between border-b border-gray-200 bg-white p-6">
@@ -1123,7 +1132,18 @@ const OrderDetailPanel = ({
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-gray-900">{item.name}</p>
                   {item.selectedColor && <p className="text-xs text-gray-500">Couleur: {item.selectedColor}</p>}
-                  <p className="mt-1 text-xs text-gray-500">{item.quantity} x {formatTnd(item.unitPrice)}</p>
+                  {hasItemPromotion(item) ? (
+                    <div className="mt-1 space-y-1 text-xs">
+                      <p className="text-gray-400 line-through">Prix avant promo : {formatTnd(getOriginalUnitPrice(item))}</p>
+                      <p className="flex items-center gap-1 font-semibold text-red-600">
+                        <BadgePercent className="h-3.5 w-3.5" />
+                        Promotion appliquée{item.discountPercent ? ` : -${item.discountPercent}%` : ""}{item.promotionName ? ` · ${item.promotionName}` : ""}
+                      </p>
+                      <p className="text-gray-600">Prix après promo : {item.quantity} x {formatTnd(item.unitPrice)}</p>
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-xs text-gray-500">{item.quantity} x {formatTnd(item.unitPrice)}</p>
+                  )}
                 </div>
                 <p className="font-bold text-gray-900">{formatTnd(item.total)}</p>
               </div>
@@ -1134,8 +1154,20 @@ const OrderDetailPanel = ({
         <section className="rounded-lg border border-gray-200 p-4">
           <h3 className="mb-4 font-bold text-gray-900">Total</h3>
           <div className="space-y-2 text-sm">
+            {promotionSavings > 0 && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Sous-total avant promo</span>
+                  <span className="text-gray-500 line-through">{formatTnd(subtotalBeforePromotion)}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-md bg-red-50 px-2 py-1.5 text-red-600">
+                  <span className="inline-flex items-center gap-1 font-semibold"><BadgePercent className="h-4 w-4" />Promotion appliquée</span>
+                  <span className="font-bold">-{formatTnd(promotionSavings)}</span>
+                </div>
+              </>
+            )}
             <div className="flex justify-between">
-              <span className="text-gray-500">Sous-total</span>
+              <span className="text-gray-500">Sous-total après promo</span>
               <span>{formatTnd(order.totals.subtotal)}</span>
             </div>
             <div className="flex justify-between">
@@ -1151,7 +1183,8 @@ const OrderDetailPanel = ({
       </div>
     </aside>
   </div>
-);
+  );
+};
 
 const InfoLine = ({ icon: Icon, label, value }: { icon: typeof Phone; label: string; value: string }) => (
   <div className="flex gap-3">

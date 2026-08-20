@@ -27,6 +27,9 @@ export interface StoredOrderItem {
   sku?: string;
   quantity: number;
   unitPrice: number;
+  originalUnitPrice: number;
+  discountPercent: number | null;
+  promotionName: string;
   total: number;
 }
 

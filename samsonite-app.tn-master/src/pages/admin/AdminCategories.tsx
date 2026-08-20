@@ -8,6 +8,7 @@ import {
     type AdminCategory,
 } from "@/lib/admin-api";
 import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
+import AdminTablePagination from "@/components/admin/AdminTablePagination";
 import { toast } from "@/components/ui/sonner";
 
 type CategoryForm = {
@@ -184,8 +185,6 @@ const AdminCatégories = () => {
         const start = (safePage - 1) * pageSize;
         return displayedCatégories.slice(start, start + pageSize);
     }, [displayedCatégories, pageSize, safePage]);
-    const paginationStart = displayedCatégories.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
-    const paginationEnd = Math.min(displayedCatégories.length, safePage * pageSize);
 
     const activeFilterCount = [
         search.trim(),
@@ -398,7 +397,7 @@ const AdminCatégories = () => {
         <div className="p-6 space-y-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Catégories</h1>
+                    <h1 className="text-2xl font-black text-gray-950">Catégories</h1>
                     <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
                         <span>
                             <strong className="text-gray-700">{categories.length}</strong> catégories
@@ -434,7 +433,7 @@ const AdminCatégories = () => {
                     </button>
                     <button
                         onClick={startCreate}
-                        className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+                        className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-black px-4 text-xs font-bold text-white transition-colors hover:bg-gray-800"
                     >
                         <PlusCircle className="h-4 w-4" />
                         Nouvelle catégorie
@@ -788,9 +787,7 @@ const AdminCatégories = () => {
             </div>
 
             <div className="bg-white border border-gray-200">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3 text-sm text-gray-500">
-                    <span>{paginationStart}-{paginationEnd} sur {displayedCatégories.length} catégorie(s)</span>
-                    <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2 border-b border-gray-100 px-4 py-3">
                         <button
                             type="button"
                             onClick={() => setExpandedRootIds(new Set(rootCategoryIds))}
@@ -809,20 +806,6 @@ const AdminCatégories = () => {
                             <ChevronRight className="h-4 w-4" />
                             Tout fermer
                         </button>
-                        <label className="flex items-center gap-2 text-xs font-semibold text-gray-500">
-                            Par page
-                            <select
-                                value={pageSize}
-                                onChange={(event) => setPageSize(Number(event.target.value))}
-                                className="h-8 rounded-md border border-gray-200 bg-white px-2 text-xs font-bold text-gray-900"
-                            >
-                                <option value={5}>5</option>
-                                <option value={10}>10</option>
-                                <option value={20}>20</option>
-                                <option value={50}>50</option>
-                            </select>
-                        </label>
-                    </div>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -1038,43 +1021,7 @@ const AdminCatégories = () => {
                     </table>
                 </div>
                 {!loading && displayedCatégories.length > 0 && (
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3">
-                        <p className="text-xs font-semibold text-gray-500">
-                            Page {safePage} sur {totalPages}
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                                disabled={safePage <= 1}
-                                className="rounded-full border border-gray-200 px-3 py-2 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                                Précédent
-                            </button>
-                            {Array.from({ length: totalPages }).slice(0, 7).map((_, index) => {
-                                const pageNumber = index + 1;
-                                return (
-                                    <button
-                                        key={pageNumber}
-                                        type="button"
-                                        onClick={() => setPage(pageNumber)}
-                                        className={`h-9 w-9 rounded-full border text-xs font-bold transition-colors ${safePage === pageNumber ? "border-black bg-black text-white" : "border-gray-200 text-gray-700 hover:border-black"}`}
-                                    >
-                                        {pageNumber}
-                                    </button>
-                                );
-                            })}
-                            {totalPages > 7 && <span className="px-1 text-xs font-bold text-gray-400">...</span>}
-                            <button
-                                type="button"
-                                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-                                disabled={safePage >= totalPages}
-                                className="rounded-full border border-gray-200 px-3 py-2 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-black disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                                Suivant
-                            </button>
-                        </div>
-                    </div>
+                    <AdminTablePagination page={safePage} pageSize={pageSize} totalItems={displayedCatégories.length} pageSizeOptions={[5, 10, 20, 50]} onPageChange={setPage} onPageSizeChange={(nextPageSize) => { setPageSize(nextPageSize); setPage(1); }} />
                 )}
             </div>
         </div>

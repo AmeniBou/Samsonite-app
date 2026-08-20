@@ -20,6 +20,8 @@ import {
     type AdminProduct,
 } from "@/lib/admin-api";
 import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
+import AdminTablePagination from "@/components/admin/AdminTablePagination";
+import { toast } from "@/components/ui/sonner";
 
 type SortKey = "id" | "name" | "reference" | "price" | "stock" | "categoryName" | "active";
 type SortDirection = "asc" | "desc";
@@ -94,6 +96,10 @@ const AdminDashboard = () => {
     useEffect(() => {
         loadProducts();
     }, [loadProducts]);
+
+    useEffect(() => {
+        if (error) toast.error(error);
+    }, [error]);
 
     const handleDelete = async (product: AdminProduct) => {
 
@@ -238,9 +244,6 @@ const AdminDashboard = () => {
     const startIndex = sorted.length === 0 ? 0 : pageStart + 1;
     const endIndex = Math.min(pageStart + pageItems.length, sorted.length);
 
-    const visiblePages = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
-        (page) => Math.abs(page - safeCurrentPage) <= 2
-    );
 
     const activeCount = products.filter((p) => p.active).length;
 
@@ -270,7 +273,7 @@ const AdminDashboard = () => {
         <div className="p-6">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Produits</h1>
+                    <h1 className="text-2xl font-black text-gray-950">Produits</h1>
                     <p className="text-sm text-gray-500 mt-1">
                         {products.length} produits • {activeCount} actifs
                     </p>
@@ -286,10 +289,10 @@ const AdminDashboard = () => {
                     </button>
                     <Link
                         to="/admin/produits/nouveau"
-                        className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+                        className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-black px-4 text-xs font-bold text-white transition-colors hover:bg-gray-800"
                     >
                         <PlusCircle className="h-4 w-4" />
-                        Ajouter
+                        Nouveau produit
                     </Link>
                 </div>
             </div>
@@ -475,11 +478,6 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            {error && (
-                <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-md mb-4">
-                    {error}
-                </div>
-            )}
 
             <div className="bg-white rounded-lg shadow overflow-hidden">
                 <div className="overflow-x-auto">
@@ -716,58 +714,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {!loading && (
-                    <div className="flex items-center justify-between gap-4 px-4 py-3 border-t bg-gray-50">
-                        <div className="text-xs text-gray-600">
-                            Affichage {startIndex}-{endIndex} sur {sorted.length}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <label htmlFor="items-per-page" className="text-xs text-gray-600">
-                                Par page
-                            </label>
-                            <select
-                                id="items-per-page"
-                                value={itemsPerPage}
-                                onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                                className="text-xs border border-gray-300 rounded px-2 py-1 bg-white"
-                            >
-                                <option value={10}>10</option>
-                                <option value={25}>25</option>
-                                <option value={50}>50</option>
-                            </select>
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                            <button
-                                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                                disabled={safeCurrentPage === 1}
-                                className="px-2 py-1 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-white"
-                            >
-                                Prec.
-                            </button>
-
-                            {visiblePages.map((page) => (
-                                <button
-                                    key={page}
-                                    onClick={() => setCurrentPage(page)}
-                                    className={`px-2 py-1 text-xs border rounded ${page === safeCurrentPage
-                                        ? "bg-black text-white border-black"
-                                        : "border-gray-300 hover:bg-white"
-                                        }`}
-                                >
-                                    {page}
-                                </button>
-                            ))}
-
-                            <button
-                                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                                disabled={safeCurrentPage === totalPages}
-                                className="px-2 py-1 text-xs border border-gray-300 rounded disabled:opacity-50 hover:bg-white"
-                            >
-                                Suiv.
-                            </button>
-                        </div>
-                    </div>
+                    <AdminTablePagination page={safeCurrentPage} pageSize={itemsPerPage} totalItems={sorted.length} onPageChange={setCurrentPage} onPageSizeChange={(pageSize) => { setItemsPerPage(pageSize); setCurrentPage(1); }} />
                 )}
             </div>
         </div>

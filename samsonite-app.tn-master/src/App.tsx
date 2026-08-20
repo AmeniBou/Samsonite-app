@@ -50,7 +50,7 @@ const App = () => {
         <LanguageProvider>
         <TooltipProvider>
           <Toaster />
-          <Sonner />
+          <Sonner position="top-right" closeButton richColors />
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Routes>
               {/* Admin routes - layout séparé sans header/footer public */}

@@ -3,6 +3,11 @@ import type { CartItem, ProductDisplay } from "@/lib/prestashop/types";
 
 const CART_STORAGE_KEY = "samsonite_cart";
 
+const getCartItemUnitPrice = (item: CartItem) => {
+  const variant = item.product.variants.find((candidate) => candidate.combinationId === item.variantId);
+  return variant?.price && variant.price > 0 ? variant.price : item.product.price;
+};
+
 type CartSelection = string | {
   color?: string;
   size?: string;
@@ -97,7 +102,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const clearCart = useCallback(() => setItems([]), []);
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalPrice = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
+  const totalPrice = items.reduce((sum, i) => sum + getCartItemUnitPrice(i) * i.quantity, 0);
 
   return (
     <CartContext.Provider

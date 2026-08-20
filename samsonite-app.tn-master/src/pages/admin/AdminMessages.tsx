@@ -14,6 +14,7 @@ import {
 } from "@/lib/contact";
 import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
 import { toast } from "@/components/ui/sonner";
+import AdminTablePagination from "@/components/admin/AdminTablePagination";
 
 const statusLabels: Record<ContactMessageStatus, string> = {
   new: "Nouveau",
@@ -27,6 +28,12 @@ const statusClasses: Record<ContactMessageStatus, string> = {
   new: "border-blue-100 bg-blue-50 text-blue-700",
   read: "border-amber-100 bg-amber-50 text-amber-700",
   closed: "border-emerald-100 bg-emerald-50 text-emerald-700",
+};
+
+const statusSortOrder: Record<ContactMessageStatus, number> = {
+  new: 0,
+  read: 1,
+  closed: 2,
 };
 
 const formatDate = (date: string) =>
@@ -60,6 +67,8 @@ const AdminMessages = () => {
   const [subjectForm, setSubjectForm] = useState({ labelFr: "" });
   const [savingSubject, setSavingSubject] = useState(false);
   const [subjectsOpen, setSubjectsOpen] = useState(false);
+  const [messagesPage, setMessagesPage] = useState(1);
+  const [messagesPageSize, setMessagesPageSize] = useState(5);
 
   const loadMessages = async () => {
     try {
@@ -82,6 +91,10 @@ const AdminMessages = () => {
     loadMessages();
   }, []);
 
+  useEffect(() => {
+    if (error) toast.error(error);
+  }, [error]);
+
   const filteredMessages = useMemo(() => {
     const query = search.trim().toLowerCase();
     return messages.filter((message) => {
@@ -92,8 +105,16 @@ const AdminMessages = () => {
         .join(" ")
         .toLowerCase()
         .includes(query);
+    }).sort((first, second) => {
+      const statusDifference = statusSortOrder[first.status] - statusSortOrder[second.status];
+      if (statusDifference) return statusDifference;
+      return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
     });
   }, [messages, search, statusFilter, subjectFilter]);
+
+  useEffect(() => setMessagesPage(1), [search, statusFilter, subjectFilter, messagesPageSize]);
+  const safeMessagesPage = Math.min(messagesPage, Math.max(1, Math.ceil(filteredMessages.length / messagesPageSize)));
+  const paginatedMessages = filteredMessages.slice((safeMessagesPage - 1) * messagesPageSize, safeMessagesPage * messagesPageSize);
 
 
   const handleStatusChange = async (id: number, status: ContactMessageStatus) => {
@@ -151,7 +172,7 @@ const AdminMessages = () => {
     <div className="p-6">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Messages contact</h1>
+          <h1 className="text-2xl font-black text-gray-950">Messages contact</h1>
           <p className="mt-1 text-sm text-gray-500">Demandes envoyées depuis la page Nous contacter.</p>
         </div>
         <button
@@ -165,7 +186,6 @@ const AdminMessages = () => {
         </button>
       </div>
 
-      {error && <div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
 
       <div className="mb-4 rounded-lg border border-gray-200 bg-white shadow-sm">
         <button
@@ -324,19 +344,20 @@ const AdminMessages = () => {
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_420px]">
           <div className="overflow-hidden rounded-lg bg-white shadow">
-            <div className={`divide-y divide-gray-100 ${filteredMessages.length > 4 ? "max-h-[520px] overflow-y-auto" : ""}`}>
-              {filteredMessages.map((message) => (
+            <div className="divide-y divide-gray-100">
+              {paginatedMessages.map((message) => (
                 <button
                   key={message.id}
                   type="button"
                   onClick={() => setSelected(message)}
-                  className={`block w-full px-5 py-4 text-left transition-colors hover:bg-gray-50 ${
-                    selected?.id === message.id ? "bg-gray-50" : ""
+                  className={`block w-full px-5 py-4 text-left transition-colors ${
+                    message.status === "new" ? "border-l-4 border-l-blue-500 bg-blue-50/60 hover:bg-blue-50" : "hover:bg-gray-50"
+                  } ${selected?.id === message.id ? "bg-gray-100" : ""}
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-gray-900">{message.subject}</p>
+                      <p className={`truncate text-sm font-bold ${message.status === "new" ? "text-blue-950" : "text-gray-900"}`}>{message.subject}</p>
                       <p className="mt-1 text-xs text-gray-500">{message.email}</p>
                       <p className="mt-2 line-clamp-2 text-sm text-gray-600">{message.message}</p>
                     </div>
@@ -348,6 +369,7 @@ const AdminMessages = () => {
                 </button>
               ))}
             </div>
+            <AdminTablePagination page={safeMessagesPage} pageSize={messagesPageSize} totalItems={filteredMessages.length} onPageChange={setMessagesPage} onPageSizeChange={(pageSize) => { setMessagesPageSize(pageSize); setMessagesPage(1); }} />
           </div>
 
           <aside className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">

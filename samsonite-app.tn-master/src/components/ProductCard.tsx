@@ -21,7 +21,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const isOutOfStock = !product.stock || product.stock <= 0;
   const visibleColors = product.colors.slice(0, 4);
   const hiddenColorsCount = Math.max(0, product.colors.length - visibleColors.length);
-  const hasPromotion = Boolean(product.hasPromotion && product.originalPrice && product.originalPrice > product.price);
+  const hasPromotion = Boolean(!isOutOfStock && product.hasPromotion && product.originalPrice && product.originalPrice > product.price);
 
   return (
     <Link to={productUrl} className="group flex h-full flex-col">

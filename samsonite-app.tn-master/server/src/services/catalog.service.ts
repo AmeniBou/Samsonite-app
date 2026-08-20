@@ -26,6 +26,10 @@ const getCatalogQuantity = (availability?: string | null, quantity?: number | nu
   return 0;
 };
 
+// A promotion must never turn an unavailable item into an apparent offer.
+const isCatalogItemAvailable = (availability?: string | null, quantity?: number | null) =>
+  !isAvailabilityInactive(availability) && !isAvailabilityOutOfStock(availability) && getCatalogQuantity(availability, quantity) > 0;
+
 type CatalogVariantRow = {
   id: number;
   groupName: string;
@@ -200,7 +204,9 @@ const mapProductToRaw = (product: {
   const imageIds = product.images.map((image) => image.id).filter(Boolean);
   const catalogVariants = getCatalogProductVariants(product.variants, product.images);
   const quantity = getCatalogQuantity(product.availability, product.quantity);
-  const promotion = getBestPromotionForProduct(product, activePromotions);
+  const promotion = isCatalogItemAvailable(product.availability, quantity)
+    ? getBestPromotionForProduct(product, activePromotions)
+    : undefined;
   const originalPrice = Number(product.price);
   const promotionPrice = getPromotionPrice(originalPrice, promotion);
   const categoryAssociations = product.categories
@@ -288,7 +294,10 @@ export const getPublicCatalog = async () => {
       products: products.map((product) => mapProductToRaw(product, activePromotions)),
       categories: categories.map(mapCategoryToRaw),
       combinations: variants.map(({ product, variant }) => {
-        const promotion = getBestPromotionForProduct(product, activePromotions);
+        const productQuantity = getCatalogQuantity(product.availability, product.quantity);
+        const promotion = isCatalogItemAvailable(product.availability, productQuantity) && (variant.stock ?? 0) > 0
+          ? getBestPromotionForProduct(product, activePromotions)
+          : undefined;
         const originalPrice = Number(variant.price ?? product.price);
         const promotionPrice = getPromotionPrice(originalPrice, promotion);
         return {

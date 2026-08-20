@@ -165,6 +165,14 @@ const AdminProductForm = () => {
     const [success, setSuccess] = useState("");
     const [currentStep, setCurrentStep] = useState<ProductFormStep>(1);
     const [previewVariantIndex, setPreviewVariantIndex] = useState(0);
+
+    useEffect(() => {
+        if (error) toast.error(error);
+    }, [error]);
+
+    useEffect(() => {
+        if (success) toast.success(success);
+    }, [success]);
     const [draggedVariantImage, setDraggedVariantImage] = useState<{
         variantIndex: number;
         imageIndex: number;
@@ -786,7 +794,6 @@ const AdminProductForm = () => {
                     ? "Produit mis à jour avec succès"
                     : `Produit créé avec succès (ID: ${(result as any).id})`;
                 setSuccess(msg);
-                toast.success(msg);
                 setTimeout(() => navigate("/admin"), 1500);
             } else {
                 setError(result.error || "Une erreur est survenue");
@@ -971,23 +978,13 @@ const AdminProductForm = () => {
                     <ArrowLeft className="h-4 w-4" />
                     Retour
                 </button>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-black text-gray-950">
                     {isEdit ? `Modifier : ${form.name || "..."}` : "Ajouter un produit"}
                 </h1>
                 {isEdit && id && (
                     <p className="text-xs text-gray-400 font-mono mt-1">ID PrestaShop : {id}</p>
                 )}
             </div>
-
-            {/* Alerts */}
-            {error && (
-                <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-md mb-4">{error}</div>
-            )}
-            {success && (
-                <div className="bg-green-50 text-green-600 text-sm px-4 py-3 rounded-md mb-4">
-                    {success}
-                </div>
-            )}
 
             {/* Form */}
             <div className="max-w-5xl">
