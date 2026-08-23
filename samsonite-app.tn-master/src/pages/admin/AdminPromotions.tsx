@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, BadgePercent, Check, Edit2, Percent, PlusCircle, Trash2, X } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import AdminTablePagination from "@/components/admin/AdminTablePagination";
+import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import { adminFilterChipClass, adminFilterControlClass, adminFilterLabelClass } from "@/components/admin/AdminFilters";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
     AdminPromotion,
     AdminPromotionPayload,
@@ -46,7 +49,7 @@ const targetText = (promotion: AdminPromotion) => {
 };
 
 const chipClass = (selected: boolean) =>
-    `rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${
+    `${adminFilterChipClass} ${
         selected ? "border-sky-500 bg-sky-50 text-sky-800" : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
     }`;
 
@@ -319,7 +322,11 @@ const AdminPromotions = () => {
                     {loading ? (
                         <p className="p-4 text-sm text-gray-500">Chargement...</p>
                     ) : promotions.length === 0 ? (
-                        <p className="p-4 text-sm text-gray-500">Aucune promotion enregistrée.</p>
+                        <AdminEmptyState
+                            icon={BadgePercent}
+                            title="Aucune promotion enregistrée"
+                            description="Les promotions créées pour le catalogue apparaîtront ici."
+                        />
                     ) : (
                         paginatedPromotions.map((promotion) => (
                             <div key={promotion.id} className="grid gap-3 border-b border-gray-100 px-4 py-3 last:border-b-0 lg:grid-cols-[1fr_auto]">
@@ -395,11 +402,11 @@ const AdminPromotions = () => {
                             </label>
                             <label className="space-y-1">
                                 <span className="text-xs font-bold uppercase tracking-wide text-gray-600">Début</span>
-                                <input type="date" value={toDateInput(form.startsAt)} onChange={(e) => setForm({ ...form, startsAt: e.target.value || null })} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black" />
+                                <DatePickerField locale="fr" value={toDateInput(form.startsAt)} onChange={(e) => setForm({ ...form, startsAt: e.target.value || null })} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black" />
                             </label>
                             <label className="space-y-1">
                                 <span className="text-xs font-bold uppercase tracking-wide text-gray-600">Fin</span>
-                                <input type="date" value={toDateInput(form.endsAt)} onChange={(e) => setForm({ ...form, endsAt: e.target.value || null })} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black" />
+                                <DatePickerField locale="fr" value={toDateInput(form.endsAt)} onChange={(e) => setForm({ ...form, endsAt: e.target.value || null })} className="w-full border border-gray-300 px-3 py-2 text-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black" />
                             </label>
                             <label className="space-y-1">
                                 <span className="text-xs font-bold uppercase tracking-wide text-gray-600">Priorité</span>
@@ -435,7 +442,7 @@ const AdminPromotions = () => {
 
                             {targetMode === "filters" ? <>
                                 <div>
-                                    <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-600">Marques</h3>
+                                    <h3 className="mb-1.5 text-xs font-semibold text-gray-600">Marques</h3>
                                     <p className="mb-2 text-xs text-gray-500">Sans catégorie, tous les produits des marques sélectionnées sont concernés.</p>
                                     <div className="flex flex-wrap gap-2">
                                         {brands.map((brand) => (
@@ -445,16 +452,19 @@ const AdminPromotions = () => {
                                 </div>
 
                                 <div>
-                                    <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-600">Catégories</h3>
+                                    <h3 className="mb-1.5 text-xs font-semibold text-gray-600">Catégories</h3>
                                     <p className="mb-3 text-xs text-gray-500">Avec une marque, seuls les produits correspondant aussi aux catégories choisies sont concernés.</p>
                                     <div className="space-y-3 border border-gray-100 p-3">
                                         {rootCategories.map(renderCategoryTarget)}
                                     </div>
                                 </div>
                             </> : <div>
-                                <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-600">Produits spécifiques</h3>
+                                <h3 className="mb-1.5 text-xs font-semibold text-gray-600">Produits spécifiques</h3>
                                 <p className="mb-3 text-xs text-gray-500">Les marques et catégories ne sont pas utilisées dans ce mode.</p>
-                                <input value={search} onChange={(e) => setSearch(e.target.value)} className="mb-3 w-full border border-gray-300 px-3 py-2 text-sm font-medium focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10" placeholder="Rechercher un produit..." />
+                                <label className={`${adminFilterLabelClass} mb-3 block`}>
+                                    Recherche globale
+                                    <input type="search" aria-label="Rechercher un produit à cibler" value={search} onChange={(e) => setSearch(e.target.value)} className={adminFilterControlClass} placeholder="Nom ou référence du produit..." />
+                                </label>
                                 <div className="grid max-h-64 gap-2 overflow-y-auto md:grid-cols-2">
                                     {filteredProducts.map((product) => (
                                         <button key={product.id} type="button" onClick={() => toggleId("productIds", product.id)} className={`${chipClass(form.productIds.includes(product.id))} text-left`}>{product.name}</button>

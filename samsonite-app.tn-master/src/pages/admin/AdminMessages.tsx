@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ExternalLink, Mail, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { ChevronDown, ExternalLink, Mail, Plus, RefreshCw, Trash2 } from "lucide-react";
 
 import {
   createContactSubject,
@@ -14,12 +14,23 @@ import {
 } from "@/lib/contact";
 import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
 import { toast } from "@/components/ui/sonner";
+import { AppSelect } from "@/components/ui/app-select";
 import AdminTablePagination from "@/components/admin/AdminTablePagination";
+import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import {
+  AdminActiveFilter,
+  AdminFilterChip,
+  AdminFilterSearch,
+  AdminFiltersPanel,
+  adminFilterActionClass,
+  adminFilterControlClass,
+  adminFilterLabelClass,
+} from "@/components/admin/AdminFilters";
 
 const statusLabels: Record<ContactMessageStatus, string> = {
   new: "Nouveau",
   read: "Lu",
-  closed: "Traite",
+  closed: "Traité",
 };
 
 type StatusFilter = "all" | ContactMessageStatus;
@@ -225,7 +236,7 @@ const AdminMessages = () => {
 
             <div className="mt-5 divide-y divide-gray-100 overflow-hidden rounded-md border border-gray-200">
               {subjects.length === 0 ? (
-                <p className="px-4 py-5 text-sm text-gray-500">Aucun sujet configure.</p>
+                <p className="px-4 py-5 text-sm text-gray-500">Aucun sujet configuré.</p>
               ) : (
                 subjects.map((subject) => (
                   <div key={subject.id} className="flex flex-col gap-3 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -284,52 +295,63 @@ const AdminMessages = () => {
         )}
       </div>
 
-      <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
+      <AdminFiltersPanel
+        title="Filtres des messages"
+        summary={`${filteredMessages.length} résultat${filteredMessages.length !== 1 ? "s" : ""} sur ${messages.length} message${messages.length !== 1 ? "s" : ""}`}
+        className="mb-4"
+        actions={(
+          <button
+            type="button"
+            onClick={() => { setSearch(""); setSubjectFilter("all"); setStatusFilter("all"); }}
+            disabled={!search.trim() && subjectFilter === "all" && statusFilter === "all"}
+            className={`${adminFilterActionClass} border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40`}
+          >
+            Réinitialiser
+          </button>
+        )}
+      >
+        <div className="grid gap-3 xl:grid-cols-[minmax(260px,1fr)_minmax(220px,0.45fr)]">
+          <label className={adminFilterLabelClass}>
+            Recherche globale
+            <AdminFilterSearch
+              label="Rechercher dans les messages"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Rechercher par sujet, email ou message..."
-              className="h-10 w-full rounded-md border border-gray-300 pl-10 pr-3 text-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black"
+              placeholder="Sujet, email ou contenu du message..."
             />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={subjectFilter}
-              onChange={(event) => setSubjectFilter(event.target.value)}
-              className="h-9 rounded-full border border-gray-200 bg-white px-3 text-xs font-bold text-gray-700 focus:border-black focus:outline-none"
-            >
+          </label>
+          <label className={adminFilterLabelClass}>
+            Sujet
+            <AppSelect value={subjectFilter} onChange={(event) => setSubjectFilter(event.target.value)} className={adminFilterControlClass}>
               <option value="all">Tous les sujets</option>
-              {subjects
-                .slice()
-                .sort((a, b) => a.position - b.position)
-                .map((subject) => (
-                  <option key={subject.id} value={subject.labelFr}>{subject.labelFr}</option>
-                ))}
-            </select>
-            {([
-              ["all", "Tous"],
-              ["new", statusLabels.new],
-              ["read", statusLabels.read],
-              ["closed", statusLabels.closed],
-            ] as Array<[StatusFilter, string]>).map(([value, label]) => (
-              <button
+              {subjects.slice().sort((a, b) => a.position - b.position).map((subject) => (
+                <option key={subject.id} value={subject.labelFr}>{subject.labelFr}</option>
+              ))}
+            </AppSelect>
+          </label>
+        </div>
+        <div className="mt-3">
+          <span className="mb-1.5 block text-xs font-semibold text-gray-600">Statut</span>
+          <div className="flex flex-wrap gap-2">
+            {([ ["all", "Tous les statuts"], ["new", statusLabels.new], ["read", statusLabels.read], ["closed", statusLabels.closed] ] as Array<[StatusFilter, string]>).map(([value, label]) => (
+              <AdminFilterChip
                 key={value}
-                type="button"
+                active={statusFilter === value}
+                activeClassName={value === "all" ? undefined : statusClasses[value]}
                 onClick={() => setStatusFilter(value)}
-                className={`rounded-full border px-3 py-2 text-xs font-bold transition-colors ${statusFilter === value
-                  ? "border-gray-900 bg-gray-900 text-white"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-400 hover:text-gray-900"
-                  }`}
               >
                 {label}
-              </button>
+              </AdminFilterChip>
             ))}
           </div>
         </div>
-      </div>
+        {(subjectFilter !== "all" || statusFilter !== "all") && (
+        <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Filtres actifs">
+          {subjectFilter !== "all" && <AdminActiveFilter label={`Sujet : ${subjectFilter}`} onRemove={() => setSubjectFilter("all")} />}
+          {statusFilter !== "all" && <AdminActiveFilter label={`Statut : ${statusLabels[statusFilter]}`} onRemove={() => setStatusFilter("all")} />}
+        </div>
+        )}
+      </AdminFiltersPanel>
 
       {loading ? (
         <div className="rounded-lg border border-dashed border-gray-300 bg-white p-12 text-center">
@@ -337,10 +359,14 @@ const AdminMessages = () => {
           <p className="font-medium text-gray-700">Chargement des messages...</p>
         </div>
       ) : filteredMessages.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 bg-white p-12 text-center">
-          <Mail className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-          <p className="font-medium text-gray-700">Aucun message trouve</p>
-        </div>
+        <AdminEmptyState
+          icon={Mail}
+          title={messages.length === 0 ? "Aucun message reçu" : "Aucun message trouvé"}
+          description={messages.length === 0
+            ? "Les messages envoyés depuis le formulaire de contact apparaîtront ici."
+            : "Aucun message ne correspond à la recherche ou aux filtres sélectionnés."}
+          bordered
+        />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[1fr_420px]">
           <div className="overflow-hidden rounded-lg bg-white shadow">
@@ -381,7 +407,7 @@ const AdminMessages = () => {
                     <h2 className="mt-1 text-lg font-bold text-gray-900">{selected.subject}</h2>
                     <p className="mt-1 text-sm text-gray-500">{formatDate(selected.createdAt)}</p>
                   </div>
-                  <select
+                  <AppSelect
                     value={selected.status}
                     onChange={(event) => handleStatusChange(selected.id, event.target.value as ContactMessageStatus)}
                     disabled={updatingId === selected.id}
@@ -392,7 +418,7 @@ const AdminMessages = () => {
                         {label}
                       </option>
                     ))}
-                  </select>
+                  </AppSelect>
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Email</p>
@@ -440,7 +466,7 @@ const AdminMessages = () => {
                 </div>
               </div>
             ) : (
-              <div className="py-12 text-center text-sm text-gray-500">Selectionnez un message pour voir le detail.</div>
+              <div className="py-12 text-center text-sm text-gray-500">Sélectionnez un message pour voir le détail.</div>
             )}
           </aside>
         </div>

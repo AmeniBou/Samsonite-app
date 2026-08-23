@@ -12,6 +12,7 @@ import {
     ChevronUp,
     ChevronDown,
     Filter,
+    Package,
 } from "lucide-react";
 import {
     fetchAdminProducts,
@@ -21,7 +22,10 @@ import {
 } from "@/lib/admin-api";
 import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
 import AdminTablePagination from "@/components/admin/AdminTablePagination";
+import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import { AdminActiveFilter, adminFilterControlClass, adminFilterLabelClass } from "@/components/admin/AdminFilters";
 import { toast } from "@/components/ui/sonner";
+import { AppSelect } from "@/components/ui/app-select";
 
 type SortKey = "id" | "name" | "reference" | "price" | "stock" | "categoryName" | "active";
 type SortDirection = "asc" | "desc";
@@ -126,11 +130,12 @@ const AdminDashboard = () => {
                 setProducts((prev) =>
                     prev.map((p) => (p.id === product.id ? { ...p, active: !p.active } : p))
                 );
+                toast.success(`Produit « ${decodeAdminText(product.name)} » ${product.active ? "désactivé" : "activé"} avec succès.`);
             } else {
-                alert(`Erreur: ${result.error}`);
+                toast.error(result.error || "Impossible de modifier le statut du produit.");
             }
         } catch {
-            alert("Erreur de modification");
+            toast.error("Impossible de modifier le statut du produit.");
         } finally {
             setTogglingId(null);
         }
@@ -181,7 +186,6 @@ const AdminDashboard = () => {
     });
 
     const activeFilterCount = [
-        search.trim(),
         statusFilter !== "all",
         brandFilter !== "all",
         categoryFilter !== "all",
@@ -192,7 +196,7 @@ const AdminDashboard = () => {
         maxPrice.trim(),
     ].filter(Boolean).length;
 
-    const hasActiveFilters = activeFilterCount > 0;
+    const hasActiveFilters = activeFilterCount > 0 || Boolean(search.trim());
 
     const resetFilters = () => {
         setSearch("");
@@ -265,10 +269,6 @@ const AdminDashboard = () => {
         );
     };
 
-    const filterLabelClass = "space-y-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-500";
-    const filterControlClass =
-        "h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm font-medium normal-case text-gray-900 shadow-sm transition-colors hover:border-gray-300 focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10";
-
     return (
         <div className="p-6">
             <div className="flex items-center justify-between mb-6">
@@ -297,16 +297,16 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            <div className="mb-5 rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="mb-5 rounded-lg border border-gray-200 bg-white shadow-sm">
                 <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-950 text-white">
                             <Filter className="h-4 w-4" />
                         </div>
                         <div>
-                            <h2 className="text-sm font-bold uppercase tracking-wide text-gray-950">Filtres catalogue</h2>
+                            <h2 className="text-sm font-bold text-gray-950">Filtres du catalogue</h2>
                             <p className="text-xs text-gray-500">
-                                {sorted.length} résultat{sorted.length > 1 ? "s" : ""} sur {products.length} produits
+                                {sorted.length} résultat{sorted.length !== 1 ? "s" : ""} sur {products.length} produit{products.length !== 1 ? "s" : ""}
                             </p>
                         </div>
                     </div>
@@ -314,7 +314,7 @@ const AdminDashboard = () => {
                         <button
                             type="button"
                             onClick={() => setFiltersOpen((prev) => !prev)}
-                            className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-gray-950 px-4 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-gray-800"
+                            className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-gray-950 px-3 text-xs font-bold text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-950/20"
                             aria-expanded={filtersOpen}
                         >
                             {filtersOpen ? "Masquer les filtres" : "Afficher les filtres"}
@@ -329,7 +329,7 @@ const AdminDashboard = () => {
                             type="button"
                             onClick={resetFilters}
                             disabled={!hasActiveFilters}
-                            className="inline-flex h-9 items-center justify-center rounded-full border border-gray-200 px-4 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="inline-flex h-9 items-center justify-center rounded-full border border-gray-200 px-3 text-xs font-bold text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-950/10 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                             Réinitialiser
                         </button>
@@ -337,91 +337,95 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="p-4">
+                    <label className={adminFilterLabelClass}>
+                        Recherche globale
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
-                            type="text"
+                            type="search"
+                            aria-label="Rechercher dans les produits"
                             placeholder="Nom, référence, marque, catégorie ou ID..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="h-11 w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm font-medium text-gray-900 transition-colors placeholder:text-gray-400 hover:bg-white focus:border-black focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
+                            className="h-10 w-full rounded-md border border-gray-300 bg-gray-50 pl-10 pr-4 text-sm font-medium text-gray-900 shadow-sm transition-colors placeholder:font-normal placeholder:text-gray-400 hover:border-gray-400 hover:bg-white focus:border-gray-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-950/10"
                         />
                     </div>
+                    </label>
 
                     {filtersOpen && (
                         <>
                     <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                        <label className={filterLabelClass}>
+                        <label className={adminFilterLabelClass}>
                             Marque
-                            <select
+                            <AppSelect
                                 value={brandFilter}
                                 onChange={(e) => setBrandFilter(e.target.value)}
-                                className={filterControlClass}
+                                className={adminFilterControlClass}
                             >
                                 <option value="all">Toutes les marques</option>
                                 {brandOptions.map((brand) => (
                                     <option key={brand} value={brand}>{brand}</option>
                                 ))}
-                            </select>
+                            </AppSelect>
                         </label>
 
-                        <label className={filterLabelClass}>
+                        <label className={adminFilterLabelClass}>
                             Catégorie
-                            <select
+                            <AppSelect
                                 value={categoryFilter}
                                 onChange={(e) => setCategoryFilter(e.target.value)}
-                                className={filterControlClass}
+                                className={adminFilterControlClass}
                             >
                                 <option value="all">Toutes les catégories</option>
                                 {categoryOptions.map((category) => (
                                     <option key={category} value={category}>{category}</option>
                                 ))}
-                            </select>
+                            </AppSelect>
                         </label>
 
-                        <label className={filterLabelClass}>
+                        <label className={adminFilterLabelClass}>
                             Stock
-                            <select
+                            <AppSelect
                                 value={stockFilter}
                                 onChange={(e) => setStockFilter(e.target.value as StockFilter)}
-                                className={filterControlClass}
+                                className={adminFilterControlClass}
                             >
                                 <option value="all">Tous les stocks</option>
                                 <option value="available">Disponible</option>
                                 <option value="low">Stock faible (1 à 5)</option>
                                 <option value="out">Rupture de stock</option>
-                            </select>
+                            </AppSelect>
                         </label>
 
-                        <label className={filterLabelClass}>
+                        <label className={adminFilterLabelClass}>
                             Variantes
-                            <select
+                            <AppSelect
                                 value={variantFilter}
                                 onChange={(e) => setVariantFilter(e.target.value as VariantFilter)}
-                                className={filterControlClass}
+                                className={adminFilterControlClass}
                             >
                                 <option value="all">Tous les produits</option>
                                 <option value="with">Avec variantes</option>
                                 <option value="without">Sans variantes</option>
-                            </select>
+                            </AppSelect>
                         </label>
 
-                        <label className={filterLabelClass}>
+                        <label className={adminFilterLabelClass}>
                             Images
-                            <select
+                            <AppSelect
                                 value={imageFilter}
                                 onChange={(e) => setImageFilter(e.target.value as ImageFilter)}
-                                className={filterControlClass}
+                                className={adminFilterControlClass}
                             >
                                 <option value="all">Tous</option>
                                 <option value="with">Avec image</option>
                                 <option value="without">Sans image</option>
-                            </select>
+                            </AppSelect>
                         </label>
                     </div>
 
-                    <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-[180px_180px_minmax(0,1fr)]">
-                        <label className={filterLabelClass}>
+                    <div className="mt-3 grid gap-3 md:grid-cols-2 xl:max-w-[372px]">
+                        <label className={adminFilterLabelClass}>
                             Prix min
                             <input
                                 type="number"
@@ -430,11 +434,11 @@ const AdminDashboard = () => {
                                 value={minPrice}
                                 onChange={(e) => setMinPrice(e.target.value)}
                                 placeholder="0.000"
-                                className={filterControlClass}
+                                className={adminFilterControlClass}
                             />
                         </label>
 
-                        <label className={filterLabelClass}>
+                        <label className={adminFilterLabelClass}>
                             Prix max
                             <input
                                 type="number"
@@ -443,37 +447,24 @@ const AdminDashboard = () => {
                                 value={maxPrice}
                                 onChange={(e) => setMaxPrice(e.target.value)}
                                 placeholder="9999.000"
-                                className={filterControlClass}
+                                className={adminFilterControlClass}
                             />
                         </label>
 
-                        <div className="flex flex-wrap items-end gap-2">
-                            {statusFilter !== "all" && (
-                                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
-                                    Statut: {statusFilter === "active" ? "actifs" : "inactifs"}
-                                </span>
-                            )}
-                            {brandFilter !== "all" && (
-                                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
-                                    Marque: {brandFilter}
-                                </span>
-                            )}
-                            {categoryFilter !== "all" && (
-                                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
-                                    Catégorie : {categoryFilter}
-                                </span>
-                            )}
-                            {stockFilter !== "all" && (
-                                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
-                                    Stock: {stockFilter === "available" ? "disponible" : stockFilter === "low" ? "faible" : "rupture"}
-                                </span>
-                            )}
-                            {!hasActiveFilters && (
-                                <span className="text-xs font-medium text-gray-400">Aucun filtre actif</span>
-                            )}
-                        </div>
                     </div>
                         </>
+                    )}
+                    {(statusFilter !== "all" || brandFilter !== "all" || categoryFilter !== "all" || stockFilter !== "all" || variantFilter !== "all" || imageFilter !== "all" || minPrice.trim() || maxPrice.trim()) && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Filtres actifs">
+                        {statusFilter !== "all" && <AdminActiveFilter label={`Statut : ${statusFilter === "active" ? "actifs" : "inactifs"}`} onRemove={() => setStatusFilter("all")} />}
+                        {brandFilter !== "all" && <AdminActiveFilter label={`Marque : ${brandFilter}`} onRemove={() => setBrandFilter("all")} />}
+                        {categoryFilter !== "all" && <AdminActiveFilter label={`Catégorie : ${categoryFilter}`} onRemove={() => setCategoryFilter("all")} />}
+                        {stockFilter !== "all" && <AdminActiveFilter label={`Stock : ${stockFilter === "available" ? "disponible" : stockFilter === "low" ? "faible" : "rupture"}`} onRemove={() => setStockFilter("all")} />}
+                        {variantFilter !== "all" && <AdminActiveFilter label={`Variantes : ${variantFilter === "with" ? "avec" : "sans"}`} onRemove={() => setVariantFilter("all")} />}
+                        {imageFilter !== "all" && <AdminActiveFilter label={`Images : ${imageFilter === "with" ? "avec" : "sans"}`} onRemove={() => setImageFilter("all")} />}
+                        {minPrice.trim() && <AdminActiveFilter label={`Prix min : ${minPrice}`} onRemove={() => setMinPrice("")} />}
+                        {maxPrice.trim() && <AdminActiveFilter label={`Prix max : ${maxPrice}`} onRemove={() => setMaxPrice("")} />}
+                    </div>
                     )}
                 </div>
             </div>
@@ -579,8 +570,14 @@ const AdminDashboard = () => {
                             )}
                             {!loading && sorted.length === 0 && (
                                 <tr>
-                                    <td colSpan={9} className="px-4 py-12 text-center text-gray-400">
-                                        {hasActiveFilters ? "Aucun produit ne correspond aux filtres" : "Aucun produit"}
+                                    <td colSpan={9}>
+                                        <AdminEmptyState
+                                            icon={Package}
+                                            title={products.length === 0 ? "Aucun produit enregistré" : "Aucun produit trouvé"}
+                                            description={products.length === 0
+                                                ? "Les produits ajoutés au catalogue apparaîtront ici."
+                                                : "Aucun produit ne correspond à la recherche ou aux filtres sélectionnés."}
+                                        />
                                     </td>
                                 </tr>
                             )}
@@ -645,7 +642,7 @@ const AdminDashboard = () => {
                                             <ConfirmDeleteDialog
                                                 title={product.active ? "Désactiver ce produit ?" : "Activer ce produit ?"}
                                                 description={product.active
-                                                    ? `Le produit "${decodeAdminText(product.name)}" ne sera plus affiche sur le site public ni dans le catalogue client. Il restera conserve dans le backoffice.`
+                                                    ? `Le produit "${decodeAdminText(product.name)}" ne sera plus affiché sur le site public ni dans le catalogue client. Il restera conservé dans le backoffice.`
                                                     : `Le produit "${decodeAdminText(product.name)}" sera de nouveau visible sur le site public, si sa catégorie est active.`}
                                                 confirmLabel={product.active ? "Désactiver" : "Activer"}
                                                 pendingLabel="Modification..."

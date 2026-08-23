@@ -4,6 +4,7 @@ import { Search as SearchIcon, SlidersHorizontal } from "lucide-react";
 
 import ProductCard from "@/components/ProductCard";
 import BrandLoader from "@/components/BrandLoader";
+import { AppSelect } from "@/components/ui/app-select";
 import { fetchDisplayCategories, fetchDisplayProducts } from "@/lib/prestashop/catalog";
 import type { CategoryDisplay, ProductDisplay } from "@/lib/prestashop/types";
 import { useLanguage } from "@/lib/i18n";
@@ -218,7 +219,7 @@ const Search = () => {
 
         <label className="flex items-center gap-3 text-xs font-black uppercase tracking-wide">
           {t("category.sortBy")}
-          <select
+          <AppSelect
             value={sortBy}
             onChange={(event) => setSortBy(event.target.value)}
             className="h-10 border border-border bg-white px-3 text-xs font-semibold outline-none"
@@ -228,7 +229,7 @@ const Search = () => {
                 {t(option.labelKey)}
               </option>
             ))}
-          </select>
+          </AppSelect>
         </label>
       </div>
 

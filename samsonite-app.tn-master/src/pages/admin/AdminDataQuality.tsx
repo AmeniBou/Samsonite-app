@@ -4,12 +4,11 @@ import { Link } from "react-router-dom";
 import {
     AlertTriangle,
     Boxes,
-    CheckCircle2,
     Database,
     FolderTree,
     RefreshCw,
-    Search,
     ShieldAlert,
+    ShieldCheck,
     Tag,
 } from "lucide-react";
 import {
@@ -20,6 +19,15 @@ import {
     type DataQualitySeverity,
 } from "@/lib/admin-api";
 import AdminTablePagination from "@/components/admin/AdminTablePagination";
+import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import {
+    AdminActiveFilter,
+    AdminFilterChip,
+    AdminFilterSearch,
+    AdminFiltersPanel,
+    adminFilterActionClass,
+    adminFilterLabelClass,
+} from "@/components/admin/AdminFilters";
 import { toast } from "@/components/ui/sonner";
 
 const severityLabels: Record<DataQualitySeverity | "all", string> = {
@@ -180,57 +188,63 @@ const AdminDataQuality = () => {
                         />
                     </div>
 
-                    <div className="mb-4 border border-gray-200 bg-white p-3">
-                        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                            <div className="relative min-w-0 flex-1">
-                                <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-                                <input
-                                    value={search}
-                                    onChange={(event) => setSearch(event.target.value)}
-                                    placeholder="Rechercher un produit, une catégorie, un ID..."
-                                    className="h-9 w-full border border-gray-300 bg-white pl-9 pr-3 text-xs outline-none transition-colors focus:border-gray-900"
-                                />
-                            </div>
-
-                            <div className="flex flex-wrap gap-2">
-                                {(Object.keys(severityLabels) as Array<DataQualitySeverity | "all">).map((severity) => (
-                                    <button
-                                        key={severity}
-                                        onClick={() => setSeverityFilter(severity)}
-                                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide transition-colors ${
-                                            severityFilter === severity
-                                                ? "bg-gray-950 text-white"
-                                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                        }`}
-                                    >
-                                        {severityLabels[severity]} ({issueCounts[severity]})
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="mt-3 flex flex-wrap gap-2">
+                    <AdminFiltersPanel
+                        title="Filtres de qualité"
+                        summary={`${filteredIssues.length} résultat${filteredIssues.length !== 1 ? "s" : ""} sur ${(report.issues || []).length} problème${(report.issues || []).length !== 1 ? "s" : ""}`}
+                        className="mb-4"
+                        actions={(
                             <button
-                                onClick={() => setEntityFilter("all")}
-                                className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                                    entityFilter === "all" ? "bg-gray-950 text-white" : "bg-gray-100 text-gray-600"
-                                }`}
+                                type="button"
+                                onClick={() => { setSearch(""); setSeverityFilter("all"); setEntityFilter("all"); }}
+                                disabled={!search.trim() && severityFilter === "all" && entityFilter === "all"}
+                                className={`${adminFilterActionClass} border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40`}
                             >
-                                Tous les types
+                                Réinitialiser
                             </button>
-                            {groupedByType.map((item) => (
-                                <button
-                                    key={item.key}
-                                    onClick={() => setEntityFilter(item.key)}
-                                    className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                                        entityFilter === item.key ? "bg-gray-950 text-white" : entityStyles[item.key]
-                                    }`}
-                                >
-                                    {entityLabels[item.key]} ({item.count})
-                                </button>
-                            ))}
+                        )}
+                    >
+                        <label className={adminFilterLabelClass}>
+                            Recherche globale
+                            <AdminFilterSearch
+                                label="Rechercher dans les problèmes de qualité"
+                                value={search}
+                                onChange={(event) => setSearch(event.target.value)}
+                                placeholder="Produit, catégorie, message ou ID..."
+                            />
+                        </label>
+
+                        <div className="mt-3 grid gap-3 xl:grid-cols-2">
+                            <div>
+                                <span className="mb-1.5 block text-xs font-semibold text-gray-600">Sévérité</span>
+                                <div className="flex flex-wrap gap-2">
+                                    {(Object.keys(severityLabels) as Array<DataQualitySeverity | "all">).map((severity) => (
+                                        <AdminFilterChip key={severity} active={severityFilter === severity} onClick={() => setSeverityFilter(severity)}>
+                                            {severityLabels[severity]} ({issueCounts[severity]})
+                                        </AdminFilterChip>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <span className="mb-1.5 block text-xs font-semibold text-gray-600">Type d’élément</span>
+                                <div className="flex flex-wrap gap-2">
+                                    <AdminFilterChip active={entityFilter === "all"} onClick={() => setEntityFilter("all")}>
+                                        Tous les types
+                                    </AdminFilterChip>
+                                    {groupedByType.map((item) => (
+                                        <AdminFilterChip key={item.key} active={entityFilter === item.key} onClick={() => setEntityFilter(item.key)}>
+                                            {entityLabels[item.key]} ({item.count})
+                                        </AdminFilterChip>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                        {(severityFilter !== "all" || entityFilter !== "all") && (
+                        <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Filtres actifs">
+                            {severityFilter !== "all" && <AdminActiveFilter label={`Sévérité : ${severityLabels[severityFilter]}`} onRemove={() => setSeverityFilter("all")} />}
+                            {entityFilter !== "all" && <AdminActiveFilter label={`Type : ${entityLabels[entityFilter]}`} onRemove={() => setEntityFilter("all")} />}
+                        </div>
+                        )}
+                    </AdminFiltersPanel>
 
                     <div className="overflow-hidden border border-gray-200 bg-white">
                         <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2.5">
@@ -248,15 +262,13 @@ const AdminDataQuality = () => {
                         </div>
 
                         {filteredIssues.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center">
-                                <CheckCircle2 className="h-8 w-8 text-emerald-500" />
-                                <div>
-                                    <p className="text-sm font-bold text-gray-950">Aucun problème pour ces filtres</p>
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        Change les filtres ou relance l'analyse pour vérifier la base.
-                                    </p>
-                                </div>
-                            </div>
+                            <AdminEmptyState
+                                icon={ShieldCheck}
+                                title={(report.issues || []).length === 0 ? "Aucun problème détecté" : "Aucun problème trouvé"}
+                                description={(report.issues || []).length === 0
+                                    ? "La dernière analyse n’a détecté aucun problème de qualité des données."
+                                    : "Aucun problème ne correspond à la recherche ou aux filtres sélectionnés."}
+                            />
                         ) : (
                             <div className="divide-y divide-gray-100">
                                 {paginatedIssues.map((issue) => (

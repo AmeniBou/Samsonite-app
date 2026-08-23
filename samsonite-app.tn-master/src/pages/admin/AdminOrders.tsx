@@ -22,7 +22,11 @@ import {
 
 import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
 import AdminTablePagination from "@/components/admin/AdminTablePagination";
+import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import { AdminActiveFilter, adminFilterControlClass, adminFilterLabelClass } from "@/components/admin/AdminFilters";
 import { toast } from "@/components/ui/sonner";
+import { AppSelect } from "@/components/ui/app-select";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import {
   Dialog,
   DialogContent,
@@ -319,7 +323,6 @@ const AdminOrders = () => {
   };
 
   const activeFilterCount = [
-    search.trim(),
     statusFilter !== "all",
     shippingFilter !== "all",
     paymentFilter !== "all",
@@ -327,10 +330,7 @@ const AdminOrders = () => {
     dateTo,
     sortKey !== "dateDesc",
   ].filter(Boolean).length;
-  const hasActiveFilters = activeFilterCount > 0;
-  const filterLabelClass = "space-y-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-500";
-  const filterControlClass =
-    "h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm font-medium normal-case text-gray-900 shadow-sm transition-colors hover:border-gray-300 focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10";
+  const hasActiveFilters = activeFilterCount > 0 || Boolean(search.trim());
 
   const clearFilters = () => {
     setSearch("");
@@ -637,16 +637,16 @@ const AdminOrders = () => {
         <StatCard icon={CalendarDays} label="Aujourd'hui" value={stats.today} />
       </div>
 
-      <div className="mb-5 rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="mb-5 rounded-lg border border-gray-200 bg-white shadow-sm">
         <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-950 text-white">
               <Filter className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold uppercase tracking-wide text-gray-950">Filtres commandes</h2>
+              <h2 className="text-sm font-bold text-gray-950">Filtres des commandes</h2>
               <p className="text-xs text-gray-500">
-                {filteredOrders.length} résultat{filteredOrders.length > 1 ? "s" : ""} sur {orders.length} commandes
+                {filteredOrders.length} résultat{filteredOrders.length !== 1 ? "s" : ""} sur {orders.length} commande{orders.length !== 1 ? "s" : ""}
               </p>
             </div>
           </div>
@@ -655,7 +655,7 @@ const AdminOrders = () => {
             <button
               type="button"
               onClick={() => setFiltersOpen((previous) => !previous)}
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-gray-950 px-4 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-gray-800"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-gray-950 px-3 text-xs font-bold text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-950/20"
               aria-expanded={filtersOpen}
             >
               {filtersOpen ? "Masquer les filtres" : "Afficher les filtres"}
@@ -670,117 +670,108 @@ const AdminOrders = () => {
               type="button"
               onClick={clearFilters}
               disabled={!hasActiveFilters}
-              className="inline-flex h-9 items-center justify-center rounded-full border border-gray-200 px-4 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex h-9 items-center justify-center rounded-full border border-gray-200 px-3 text-xs font-bold text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-950/10 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Réinitialiser
             </button>
           </div>
         </div>
 
-        {filtersOpen && (
-          <div className="p-4">
+        <div className="p-4">
           <div className="grid gap-3">
-            <label className={filterLabelClass}>
+            <label className={adminFilterLabelClass}>
               Recherche globale
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
+                  type="search"
+                  aria-label="Rechercher dans les commandes"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Client, téléphone, email, ville ou produit..."
-                  className="h-10 w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm font-medium text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 hover:bg-white focus:border-black focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
+                  className="h-10 w-full rounded-md border border-gray-300 bg-gray-50 pl-10 pr-3 text-sm font-medium text-gray-900 shadow-sm transition-colors placeholder:font-normal placeholder:text-gray-400 hover:border-gray-400 hover:bg-white focus:border-gray-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-950/10"
                 />
               </div>
             </label>
           </div>
 
+          {filtersOpen && (
+          <>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <label className={filterLabelClass}>
+            <label className={adminFilterLabelClass}>
               Statut
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)} className={filterControlClass}>
+              <AppSelect value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)} className={adminFilterControlClass}>
                 <option value="all">Tous les statuts</option>
                 {Object.entries(statusLabels).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
-              </select>
+              </AppSelect>
             </label>
 
-            <label className={filterLabelClass}>
+            <label className={adminFilterLabelClass}>
               Livraison
-              <select value={shippingFilter} onChange={(event) => setShippingFilter(event.target.value as ShippingFilter)} className={filterControlClass}>
-                <option value="all">Toutes livraisons</option>
+              <AppSelect value={shippingFilter} onChange={(event) => setShippingFilter(event.target.value as ShippingFilter)} className={adminFilterControlClass}>
+                <option value="all">Toutes les livraisons</option>
                 {Object.entries(shippingLabels).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
-              </select>
+              </AppSelect>
             </label>
 
-            <label className={filterLabelClass}>
+            <label className={adminFilterLabelClass}>
               Paiement
-              <select value={paymentFilter} onChange={(event) => setPaymentFilter(event.target.value as PaymentFilter)} className={filterControlClass}>
-                <option value="all">Tous paiements</option>
+              <AppSelect value={paymentFilter} onChange={(event) => setPaymentFilter(event.target.value as PaymentFilter)} className={adminFilterControlClass}>
+                <option value="all">Tous les paiements</option>
                 {Object.entries(paymentLabels).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
-              </select>
+              </AppSelect>
             </label>
 
-            <label className={filterLabelClass}>
+            <label className={adminFilterLabelClass}>
               Date début
-              <input
-                type="date"
+              <DatePickerField
+                locale="fr"
                 value={dateFrom}
                 onChange={(event) => setDateFrom(event.target.value)}
-                className={filterControlClass}
+                className={adminFilterControlClass}
               />
             </label>
 
-            <label className={filterLabelClass}>
+            <label className={adminFilterLabelClass}>
               Date fin
-              <input
-                type="date"
+              <DatePickerField
+                locale="fr"
                 value={dateTo}
                 onChange={(event) => setDateTo(event.target.value)}
-                className={filterControlClass}
+                className={adminFilterControlClass}
               />
             </label>
 
-            <label className={filterLabelClass}>
+            <label className={adminFilterLabelClass}>
               Tri
-              <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)} className={filterControlClass}>
+              <AppSelect value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)} className={adminFilterControlClass}>
                 <option value="dateDesc">Plus récentes</option>
                 <option value="dateAsc">Plus anciennes</option>
                 <option value="totalDesc">Total élevé</option>
                 <option value="totalAsc">Total faible</option>
-              </select>
+              </AppSelect>
             </label>
           </div>
 
-          <div className="mt-3 flex min-h-7 flex-wrap items-center gap-2">
-            {statusFilter !== "all" && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Statut: {statusLabels[statusFilter]}</span>
-            )}
-            {shippingFilter !== "all" && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Livraison: {shippingLabels[shippingFilter]}</span>
-            )}
-            {paymentFilter !== "all" && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Paiement: {paymentLabels[paymentFilter]}</span>
-            )}
-            {dateFrom && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Depuis: {formatDisplayDate(dateFrom)}</span>
-            )}
-            {dateTo && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Jusqu'au: {formatDisplayDate(dateTo)}</span>
-            )}
-            {sortKey !== "dateDesc" && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">Tri personnalisé</span>
-            )}
-              {!hasActiveFilters && (
-                <span className="text-xs font-medium text-gray-400">Aucun filtre actif</span>
-              )}
-            </div>
+          </>
+          )}
+          {(statusFilter !== "all" || shippingFilter !== "all" || paymentFilter !== "all" || dateFrom || dateTo || sortKey !== "dateDesc") && (
+          <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Filtres actifs">
+            {statusFilter !== "all" && <AdminActiveFilter label={`Statut : ${statusLabels[statusFilter]}`} onRemove={() => setStatusFilter("all")} />}
+            {shippingFilter !== "all" && <AdminActiveFilter label={`Livraison : ${shippingLabels[shippingFilter]}`} onRemove={() => setShippingFilter("all")} />}
+            {paymentFilter !== "all" && <AdminActiveFilter label={`Paiement : ${paymentLabels[paymentFilter]}`} onRemove={() => setPaymentFilter("all")} />}
+            {dateFrom && <AdminActiveFilter label={`Depuis : ${formatDisplayDate(dateFrom)}`} onRemove={() => setDateFrom("")} />}
+            {dateTo && <AdminActiveFilter label={`Jusqu’au : ${formatDisplayDate(dateTo)}`} onRemove={() => setDateTo("")} />}
+            {sortKey !== "dateDesc" && <AdminActiveFilter label="Tri personnalisé" onRemove={() => setSortKey("dateDesc")} />}
           </div>
-        )}
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -789,11 +780,14 @@ const AdminOrders = () => {
           <p className="font-medium text-gray-700">Chargement des commandes...</p>
         </div>
       ) : filteredOrders.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 bg-white p-12 text-center">
-          <PackageCheck className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-          <p className="font-medium text-gray-700">{orders.length === 0 ? "Aucune commande pour le moment" : "Aucune commande trouvée"}</p>
-          <p className="mt-1 text-sm text-gray-500">Les commandes validées depuis le checkout apparaîtront ici.</p>
-        </div>
+        <AdminEmptyState
+          icon={PackageCheck}
+          title={orders.length === 0 ? "Aucune commande enregistrée" : "Aucune commande trouvée"}
+          description={orders.length === 0
+            ? "Les commandes validées depuis le parcours d’achat apparaîtront ici."
+            : "Aucune commande ne correspond à la recherche ou aux filtres sélectionnés."}
+          bordered
+        />
       ) : (
         <div className="overflow-hidden rounded-lg bg-white shadow">
           <div className="overflow-x-auto">

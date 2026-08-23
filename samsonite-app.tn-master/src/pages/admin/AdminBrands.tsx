@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BadgeCheck, Package, Pencil, Plus, PlusCircle, RefreshCw, Search, Trash2, X } from "lucide-react";
+import { BadgeCheck, Package, Pencil, Plus, PlusCircle, RefreshCw, Trash2, X } from "lucide-react";
 import {
     createBrand,
     deleteBrand,
@@ -10,6 +10,8 @@ import {
 import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
 import { toast } from "@/components/ui/sonner";
 import AdminTablePagination from "@/components/admin/AdminTablePagination";
+import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import { AdminFilterSearch, AdminFiltersPanel, adminFilterActionClass, adminFilterLabelClass } from "@/components/admin/AdminFilters";
 
 const normalizeText = (value?: string | null) => (value || "").trim();
 
@@ -173,17 +175,31 @@ const AdminBrands = () => {
                 </div>
             </form>}
 
-            <div className="mb-4 border border-gray-200 bg-white p-2.5 shadow-sm">
-                <div className="relative">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-                    <input
+            <AdminFiltersPanel
+                title="Filtres des marques"
+                summary={`${filteredBrands.length} résultat${filteredBrands.length !== 1 ? "s" : ""} sur ${brands.length} marque${brands.length !== 1 ? "s" : ""}`}
+                className="mb-4"
+                actions={(
+                    <button
+                        type="button"
+                        onClick={() => setSearch("")}
+                        disabled={!search.trim()}
+                        className={`${adminFilterActionClass} border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40`}
+                    >
+                        Réinitialiser
+                    </button>
+                )}
+            >
+                <label className={adminFilterLabelClass}>
+                    Recherche globale
+                    <AdminFilterSearch
+                        label="Rechercher dans les marques"
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Rechercher une marque..."
-                        className="h-9 w-full border border-gray-300 pl-9 pr-3 text-xs font-medium outline-none focus:border-black focus:ring-2 focus:ring-black/10"
+                        placeholder="Nom ou ID de la marque..."
                     />
-                </div>
-            </div>
+                </label>
+            </AdminFiltersPanel>
 
             <div className="overflow-hidden border border-gray-200 bg-white shadow-sm">
                 <div className="grid grid-cols-[1fr_120px_96px] border-b border-gray-200 bg-gray-50 px-3 py-2.5 text-[10px] font-black uppercase tracking-wide text-gray-500">
@@ -195,7 +211,13 @@ const AdminBrands = () => {
                 {loading ? (
                     <div className="px-4 py-8 text-center text-sm text-gray-500">Chargement...</div>
                 ) : filteredBrands.length === 0 ? (
-                    <div className="px-4 py-8 text-center text-sm text-gray-500">Aucune marque trouvée.</div>
+                    <AdminEmptyState
+                        icon={BadgeCheck}
+                        title={brands.length === 0 ? "Aucune marque enregistrée" : "Aucune marque trouvée"}
+                        description={brands.length === 0
+                            ? "Les marques ajoutées au catalogue apparaîtront ici."
+                            : "Aucune marque ne correspond à la recherche saisie."}
+                    />
                 ) : (
                     paginatedBrands.map((brand) => {
                         const productCount = brand.productCount ?? 0;

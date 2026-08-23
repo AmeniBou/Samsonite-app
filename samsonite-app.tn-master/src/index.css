@@ -227,10 +227,214 @@
   font-size: 0.75rem !important;
 }
 
+.admin-reference .admin-product-form label {
+  font-size: 0.75rem !important;
+}
+
+.admin-reference .admin-product-form label.block {
+  font-weight: 600 !important;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.admin-reference .admin-product-form input,
+.admin-reference .admin-product-form select,
+.admin-reference .admin-product-form textarea {
+  font-size: 0.875rem !important;
+}
+
+.admin-reference .admin-product-form input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+.admin-reference .admin-product-form select {
+  min-height: 2.5rem;
+}
+
 /* Sonner uses a left-side close control by default in LTR layouts. */
 [data-sonner-toast] [data-close-button] {
   top: 8px !important;
   right: 8px !important;
   left: auto !important;
   transform: none !important;
+}
+
+/* Shared form controls: one visual language for native and Radix-based forms. */
+:root {
+  --form-control-height: 2.625rem;
+  --form-control-radius: 0.625rem;
+  --form-control-border: #d1d5db;
+  --form-control-border-hover: #9ca3af;
+  --form-control-focus: #111827;
+  --form-control-background: #ffffff;
+  --form-control-placeholder: #9ca3af;
+}
+
+input:not([type]),
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="url"],
+select:not([multiple]),
+textarea,
+.app-form-control {
+  min-height: var(--form-control-height);
+  border: 1px solid var(--form-control-border) !important;
+  border-radius: var(--form-control-radius) !important;
+  background-color: var(--form-control-background) !important;
+  color: #111827;
+  font-family: inherit;
+  font-size: 0.875rem !important;
+  line-height: 1.25rem;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04), 0 1px 1px rgba(17, 24, 39, 0.02);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+input:not([type]),
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="url"],
+select:not([multiple]) {
+  height: var(--form-control-height);
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+}
+
+textarea {
+  min-height: 6rem;
+  padding: 0.75rem;
+  resize: vertical;
+}
+
+select:not([multiple]) {
+  appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1rem;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--form-control-placeholder) !important;
+  font-weight: 400;
+  opacity: 1;
+}
+
+input:not([type]):hover,
+input[type="text"]:hover,
+input[type="email"]:hover,
+input[type="tel"]:hover,
+input[type="password"]:hover,
+input[type="search"]:hover,
+input[type="number"]:hover,
+input[type="date"]:hover,
+input[type="time"]:hover,
+input[type="datetime-local"]:hover,
+input[type="url"]:hover,
+select:not([multiple]):hover,
+textarea:hover {
+  border-color: var(--form-control-border-hover) !important;
+}
+
+input:not([type]):focus,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+input[type="datetime-local"]:focus,
+input[type="url"]:focus,
+select:not([multiple]):focus,
+textarea:focus,
+.app-form-control:focus {
+  border-color: var(--form-control-focus) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1) !important;
+}
+
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-color: #f87171 !important;
+  background-color: #fff7f7 !important;
+}
+
+input[aria-invalid="true"]:focus,
+select[aria-invalid="true"]:focus,
+textarea[aria-invalid="true"]:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled,
+.app-form-control:disabled,
+.app-form-control[data-disabled] {
+  cursor: not-allowed;
+  border-color: #e5e7eb !important;
+  background-color: #f3f4f6 !important;
+  color: #9ca3af;
+  box-shadow: none;
+  opacity: 1;
+}
+
+/* Compact typography for the shared custom dropdown and date picker. */
+.app-select-trigger,
+.app-date-picker-trigger {
+  font-size: 0.75rem !important;
+  line-height: 1.25rem;
+}
+
+.calendar-period-select.app-form-control {
+  height: 2rem !important;
+  min-height: 2rem !important;
+  padding-left: 0.625rem !important;
+  padding-right: 0.625rem !important;
+  font-size: 0.75rem !important;
+}
+
+input:read-only:not([type="checkbox"]):not([type="radio"]) {
+  background-color: #f9fafb !important;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: #111827;
+  cursor: pointer;
+}
+
+input[type="checkbox"] {
+  border-radius: 0.3125rem;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 160ms ease;
+}
+
+input[type="date"]:hover::-webkit-calendar-picker-indicator,
+input[type="time"]:hover::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator {
+  opacity: 1;
 }

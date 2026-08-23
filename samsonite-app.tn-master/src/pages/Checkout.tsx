@@ -23,6 +23,8 @@ import { createStoredOrder, type PaymentMethod, type ShippingMethod } from "@/li
 import type { CartItem, ProductVariant } from "@/lib/prestashop/types";
 import { useLanguage } from "@/lib/i18n";
 import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
+import { AppSelect } from "@/components/ui/app-select";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 
 interface CheckoutFormState {
   title: "M" | "Mme";
@@ -76,7 +78,13 @@ const initialFormState: CheckoutFormState = {
 const fieldBaseClass =
   "border border-border bg-white px-3 transition-colors focus:border-black focus:outline-none focus:ring-1 focus:ring-black";
 const fieldInvalidClass = (invalid: boolean) => (invalid ? "border-red-400" : "border-border");
-const labelClass = "pt-3 text-sm font-medium text-foreground/90";
+const labelClass = "pt-2.5 text-xs font-medium text-foreground/90";
+const checkoutActionBaseClass =
+  "premium-control inline-flex min-h-11 items-center justify-center gap-2 px-6 py-3 text-xs font-bold uppercase tracking-wider";
+const formatSectionTitle = (value: string) => {
+  const normalized = value.trim().toLocaleLowerCase();
+  return normalized ? normalized.charAt(0).toLocaleUpperCase() + normalized.slice(1) : normalized;
+};
 
 const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 const isValidPhone = (phone: string) => /^\d{8}$/.test(phone.trim());
@@ -326,10 +334,10 @@ const Checkout = () => {
   };
 
   const StepTitle = ({ number, title, icon: Icon }: { number: number; title: string; icon: typeof CheckCircle2 }) => (
-    <div className="mb-5 flex items-center gap-3 border-b border-border pb-3">
-      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-sm font-black text-white">{number}</span>
-      <Icon className="h-5 w-5 text-foreground" />
-      <h2 className="text-xl font-normal uppercase tracking-tight">{title}</h2>
+    <div className="mb-4 flex items-center gap-2.5 border-b border-border pb-3">
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white">{number}</span>
+      <Icon className="h-4 w-4 text-foreground" />
+      <h2 className="text-lg font-semibold tracking-tight">{formatSectionTitle(title)}</h2>
     </div>
   );
 
@@ -345,8 +353,8 @@ const Checkout = () => {
   return (
     <div className="bg-[#f4f4f4] py-8 lg:py-10">
       <div className="samsonite-container max-w-[1180px]">
-        <div className="mb-6 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          {[t("cart.title"), t("checkout.stepInfo"), t("checkout.stepAddress"), t("checkout.delivery"), t("checkout.payment")].map((label, index) => (
+        <div className="mb-6 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-muted-foreground">
+          {[t("cart.title"), t("checkout.personalInfo"), t("checkout.stepAddress"), t("checkout.delivery"), t("checkout.payment")].map((label, index) => (
             <button
               key={label}
               type="button"
@@ -359,7 +367,7 @@ const Checkout = () => {
                   : "cursor-not-allowed border-border bg-white/60 text-muted-foreground"
                 }`}
             >
-              {index + 1}. {label}
+              {index + 1}. {formatSectionTitle(label)}
             </button>
           ))}
         </div>
@@ -368,7 +376,7 @@ const Checkout = () => {
           <div className="bg-white p-6 shadow-sm md:p-8">
             {step === 0 && (
               <section>
-                <h1 className="mb-5 border-b border-border pb-4 text-xl font-normal uppercase tracking-tight">{t("cart.title")}</h1>
+                <h1 className="mb-5 border-b border-border pb-4 text-lg font-semibold tracking-tight">{formatSectionTitle(t("cart.title"))}</h1>
                 <div>{items.map((item) => renderCartItem(item))}</div>
                 <button onClick={() => navigate(-1)} className="mt-6 inline-flex items-center gap-2 text-sm hover:underline">
                   <ArrowLeft className="h-4 w-4" /> {t("cart.continue")}
@@ -406,7 +414,7 @@ const Checkout = () => {
                     </span>
                   </div>                  <div className="flex justify-between border-t border-border pt-4 text-sm font-bold"><span>{t("cart.total")}</span><span>{formatTnd(orderTotal)}</span></div>
                 </div>
-                <button type="button" onClick={() => goToStep(1)} className="premium-control mt-6 flex w-full items-center justify-center bg-[#27b9d2] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[#1ea8bf]">
+                <button type="button" onClick={() => goToStep(1)} className={`${checkoutActionBaseClass} mt-6 w-full bg-[#27b9d2] text-white hover:bg-[#1ea8bf]`}>
                   {t("checkout.order")}
                 </button>
               </section>
@@ -414,13 +422,13 @@ const Checkout = () => {
 
             {step === 1 && (
               <section>
-                <StepTitle number={1} title={t("checkout.personalInfo")} icon={CheckCircle2} />
-                <div className="mb-5 flex flex-wrap items-center gap-5 text-sm">
+                <StepTitle number={2} title={t("checkout.personalInfo")} icon={CheckCircle2} />
+                <div className="mb-4 flex flex-wrap items-center gap-5 text-[13px]">
                   <span className="font-medium">{t("checkout.titleField")}</span>
                   <label className="inline-flex items-center gap-2"><input type="radio" checked={form.title === "M"} onChange={() => updateField("title", "M")} /> M</label>
                   <label className="inline-flex items-center gap-2"><input type="radio" checked={form.title === "Mme"} onChange={() => updateField("title", "Mme")} /> Mme</label>
                 </div>
-                <div className="grid gap-4 md:grid-cols-[150px_minmax(0,1fr)] md:items-start">
+                <div className="grid gap-3.5 md:grid-cols-[140px_minmax(0,1fr)] md:items-start">
                   <RequiredLabel>{t("checkout.firstName")}</RequiredLabel>
                   <input required className={`h-11 ${fieldBaseClass}`} value={form.firstName} onChange={(event) => updateField("firstName", event.target.value)} />
                   <RequiredLabel>{t("checkout.lastName")}</RequiredLabel>
@@ -446,8 +454,7 @@ const Checkout = () => {
                   </div>
                   <label className={labelClass}>{t("checkout.birthDate")}</label>
                   <div>
-                    <input
-                      type="date"
+                    <DatePickerField
                       max={todayIso}
                       className={`h-11 w-full ${fieldBaseClass} ${fieldInvalidClass(Boolean(form.birthDate && !birthDateValid))}`}
                       value={form.birthDate}
@@ -456,7 +463,7 @@ const Checkout = () => {
                     {form.birthDate && !birthDateValid && <p className="mt-1 text-xs font-semibold text-red-600">{t("checkout.invalidBirthDate")}</p>}
                   </div>
                 </div>
-                <div className="mt-6 space-y-4 text-sm">
+                <div className="mt-5 space-y-3 text-xs leading-5">
                   <label className="flex gap-3"><input type="checkbox" checked={form.newsletter} onChange={(event) => updateField("newsletter", event.target.checked)} /> {t("checkout.newsletter")}</label>
                   <label className="flex gap-3"><input type="checkbox" checked={form.privacy} onChange={(event) => updateField("privacy", event.target.checked)} /> <span><span className="mr-1 text-red-600">*</span>{t("checkout.privacyConsent")}</span></label>
                 </div>
@@ -465,9 +472,9 @@ const Checkout = () => {
 
             {step === 2 && (
               <section>
-                <StepTitle number={2} title={t("checkout.stepAddress")} icon={MapPin} />
-                <p className="mb-5 text-sm leading-6 text-muted-foreground">{t("checkout.addressUse")}</p>
-                <div className="grid gap-4 md:grid-cols-[150px_minmax(0,1fr)] md:items-start">
+                <StepTitle number={3} title={t("checkout.stepAddress")} icon={MapPin} />
+                <p className="mb-4 text-xs leading-5 text-muted-foreground">{t("checkout.addressUse")}</p>
+                <div className="grid gap-3.5 md:grid-cols-[140px_minmax(0,1fr)] md:items-start">
                   <label className={labelClass}>Alias</label>
                   <input className={`h-11 ${fieldBaseClass}`} value={form.addressAlias} onChange={(event) => updateField("addressAlias", event.target.value)} />
                   <label className={labelClass}>{t("checkout.company")}</label>
@@ -483,51 +490,51 @@ const Checkout = () => {
                   <RequiredLabel>{t("checkout.city")}</RequiredLabel>
                   <input required className={`h-11 ${fieldBaseClass}`} value={form.city} onChange={(event) => updateField("city", event.target.value)} />
                   <label className={labelClass}>{t("checkout.country")}</label>
-                  <select className={`h-11 ${fieldBaseClass}`} value={form.country} onChange={(event) => updateField("country", event.target.value)}><option value="Tunisie">{t("checkout.tunisia")}</option></select>
+                  <AppSelect className={`h-11 ${fieldBaseClass}`} value={form.country} onChange={(event) => updateField("country", event.target.value)}><option value="Tunisie">{t("checkout.tunisia")}</option></AppSelect>
                 </div>
-                <label className="mt-5 flex gap-3 text-sm"><input type="checkbox" checked={form.sameBilling} onChange={(event) => updateField("sameBilling", event.target.checked)} /> {t("checkout.sameBilling")}</label>
+                <label className="mt-4 flex gap-3 text-xs leading-5"><input type="checkbox" checked={form.sameBilling} onChange={(event) => updateField("sameBilling", event.target.checked)} /> {t("checkout.sameBilling")}</label>
               </section>
             )}
 
             {step === 3 && (
               <section>
-                <StepTitle number={3} title={t("checkout.delivery")} icon={Truck} />
+                <StepTitle number={4} title={t("checkout.delivery")} icon={Truck} />
                 <div className="space-y-3">
                   {shippingOptions.map((option) => (
-                    <label key={option.value} className={`grid cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-4 border p-4 transition-colors ${shippingMethod === option.value ? "border-[#27b9d2] bg-[#edfafe]" : "border-border bg-white hover:bg-neutral-50"}`}>
+                    <label key={option.value} className={`grid cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-3 rounded-lg border p-3 transition-colors ${shippingMethod === option.value ? "border-[#27b9d2] bg-[#edfafe]" : "border-border bg-white hover:bg-neutral-50"}`}>
                       <input type="radio" checked={shippingMethod === option.value} onChange={() => setShippingMethod(option.value)} />
-                      <span><strong>{option.title}</strong><span className="block text-sm text-muted-foreground">{option.description}</span></span>
-                      <span className="text-sm font-black">{option.price}</span>
+                      <span className="text-[13px]"><strong className="font-semibold">{option.title}</strong><span className="block text-xs leading-5 text-muted-foreground">{option.description}</span></span>
+                      <span className="text-xs font-bold">{option.price}</span>
                     </label>
                   ))}
                 </div>
-                <label className="mt-5 block text-sm font-medium">{t("checkout.orderMessage")}</label>
+                <label className="mt-4 block text-xs font-medium">{t("checkout.orderMessage")}</label>
                 <textarea className={`mt-2 min-h-20 w-full resize-none p-3 ${fieldBaseClass}`} value={form.notes} onChange={(event) => updateField("notes", event.target.value)} />
-                <label className="mt-4 flex gap-3 text-sm"><input type="checkbox" checked={form.giftWrap} onChange={(event) => updateField("giftWrap", event.target.checked)} /> {t("checkout.giftWrap")}</label>
+                <label className="mt-4 flex gap-3 text-xs leading-5"><input type="checkbox" checked={form.giftWrap} onChange={(event) => updateField("giftWrap", event.target.checked)} /> {t("checkout.giftWrap")}</label>
               </section>
             )}
 
             {step === 4 && (
               <section>
-                <StepTitle number={4} title={t("checkout.payment")} icon={CreditCard} />
+                <StepTitle number={5} title={t("checkout.payment")} icon={CreditCard} />
                 <div className="space-y-3">
                   {paymentOptions.map((option) => (
-                    <label key={option.value} className="flex cursor-pointer gap-3 text-sm">
+                    <label key={option.value} className="flex cursor-pointer gap-3 text-[13px] leading-5">
                       <input type="radio" checked={paymentMethod === option.value} onChange={() => setPaymentMethod(option.value)} />
                       <span><strong>{option.title}</strong><span className="block text-muted-foreground">{option.description}</span></span>
                     </label>
                   ))}
                 </div>
-                <label className="mt-6 flex gap-3 text-sm"><input type="checkbox" checked={form.terms} onChange={(event) => updateField("terms", event.target.checked)} /> <span><span className="mr-1 text-red-600">*</span>{t("checkout.terms")}</span></label>
+                <label className="mt-5 flex gap-3 text-xs leading-5"><input type="checkbox" checked={form.terms} onChange={(event) => updateField("terms", event.target.checked)} /> <span><span className="mr-1 text-red-600">*</span>{t("checkout.terms")}</span></label>
 
-                <div className="mt-8 space-y-6">
-                  <h3 className="text-lg font-black">{t("checkout.reviewOrder")}</h3>
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div><p className="font-black">{t("checkout.shippingAddress")}</p><p className="mt-2 text-sm leading-6 text-muted-foreground">{form.firstName} {form.lastName}<br />{form.address}<br />{form.address2 && <>{form.address2}<br /></>}{form.postalCode} {form.city}<br />{t("checkout.tunisia")}</p></div>
-                    <div><p className="font-black">{t("checkout.billingAddress")}</p><p className="mt-2 text-sm leading-6 text-muted-foreground">{form.sameBilling ? t("checkout.sameAsShipping") : t("checkout.billingToConfirm")}</p></div>
+                <div className="mt-6 space-y-4">
+                  <h3 className="text-sm font-semibold">{formatSectionTitle(t("checkout.reviewOrder"))}</h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div><p className="text-xs font-semibold">{t("checkout.shippingAddress")}</p><p className="mt-1.5 text-xs leading-5 text-muted-foreground">{form.firstName} {form.lastName}<br />{form.address}<br />{form.address2 && <>{form.address2}<br /></>}{form.postalCode} {form.city}<br />{t("checkout.tunisia")}</p></div>
+                    <div><p className="text-xs font-semibold">{t("checkout.billingAddress")}</p><p className="mt-1.5 text-xs leading-5 text-muted-foreground">{form.sameBilling ? t("checkout.sameAsShipping") : t("checkout.billingToConfirm")}</p></div>
                   </div>
-                  <div className="border border-border p-4"><p className="font-black">{t("checkout.delivery")}</p><p className="mt-2 text-sm text-muted-foreground">{selectedShipping.title} - {selectedShipping.description}</p></div>
-                  <div className="border border-border p-4"><p className="font-black">{t("order.items")}</p>{items.map((item) => renderCartItem(item, true))}</div>
+                  <div className="rounded-lg border border-border p-3"><p className="text-xs font-semibold">{t("checkout.delivery")}</p><p className="mt-1.5 text-xs text-muted-foreground">{selectedShipping.title} - {selectedShipping.description}</p></div>
+                  <div className="rounded-lg border border-border p-3"><p className="text-xs font-semibold">{t("order.items")}</p>{items.map((item) => renderCartItem(item, true))}</div>
                 </div>
               </section>
             )}
@@ -536,15 +543,15 @@ const Checkout = () => {
 
             {step > 0 && (
               <div className="mt-8 flex flex-wrap justify-between gap-3 border-t border-border pt-6">
-                <button type="button" onClick={() => goToStep(step - 1)} className="inline-flex items-center gap-2 border border-border px-5 py-3 text-sm font-black uppercase hover:bg-neutral-50">
+                <button type="button" onClick={() => goToStep(step - 1)} className={`${checkoutActionBaseClass} border border-border bg-white text-foreground hover:bg-neutral-50`}>
                   <ArrowLeft className="h-4 w-4" /> {t("checkout.back")}
                 </button>
                 {step < 4 ? (
-                  <button type="button" onClick={continueFromStep} className="premium-control bg-[#27b9d2] px-8 py-3 text-sm font-black uppercase tracking-wide text-white hover:bg-[#1ea8bf]">
+                  <button type="button" onClick={continueFromStep} className={`${checkoutActionBaseClass} bg-[#27b9d2] text-white hover:bg-[#1ea8bf]`}>
                     {t("checkout.continue")}
                   </button>
                 ) : (
-                  <button type="submit" disabled={!canSubmit || submitted} className="premium-control inline-flex items-center gap-2 bg-black px-8 py-3 text-sm font-black uppercase tracking-wide text-white disabled:cursor-not-allowed disabled:opacity-50">
+                  <button type="submit" disabled={!canSubmit || submitted} className={`${checkoutActionBaseClass} bg-[#27b9d2] text-white hover:bg-[#1ea8bf] disabled:cursor-not-allowed disabled:opacity-50`}>
                     <Lock className="h-4 w-4" /> {submitted ? t("checkout.validating") : t("checkout.order")}
                   </button>
                 )}

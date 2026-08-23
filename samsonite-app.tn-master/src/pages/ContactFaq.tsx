@@ -4,6 +4,7 @@ import { FileText, HelpCircle, Mail, MapPin, MessageSquareText, Phone, Printer, 
 
 import { createContactMessage, listContactSubjects, type ContactSubject } from "@/lib/contact";
 import { useLanguage } from "@/lib/i18n";
+import { AppSelect } from "@/components/ui/app-select";
 
 const ContactFaq = () => {
   const { language } = useLanguage();
@@ -196,11 +197,11 @@ const ContactFaq = () => {
               <label className="mb-2 block text-xs font-black uppercase tracking-wide text-muted-foreground">
                 {isEn ? "Subject" : "Sujet"}
               </label>
-              <select name="subject" className="h-12 w-full border border-border bg-white px-3 text-sm focus:border-black focus:outline-none">
+              <AppSelect name="subject" className="h-12 w-full border border-border bg-white px-3 text-sm focus:border-black focus:outline-none">
                 {subjectOptions.map((subject) => (
                   <option key={subject} value={subject}>{subject}</option>
                 ))}
-              </select>
+              </AppSelect>
             </div>
 
             <div>

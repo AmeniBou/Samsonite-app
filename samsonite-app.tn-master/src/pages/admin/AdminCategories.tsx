@@ -9,7 +9,10 @@ import {
 } from "@/lib/admin-api";
 import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
 import AdminTablePagination from "@/components/admin/AdminTablePagination";
+import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import { AdminActiveFilter, adminFilterControlClass, adminFilterLabelClass } from "@/components/admin/AdminFilters";
 import { toast } from "@/components/ui/sonner";
+import { AppSelect } from "@/components/ui/app-select";
 
 type CategoryForm = {
     name: string;
@@ -187,7 +190,6 @@ const AdminCatégories = () => {
     }, [displayedCatégories, pageSize, safePage]);
 
     const activeFilterCount = [
-        search.trim(),
         statusFilter !== "all",
         typeFilter !== "all",
         menuFilter !== "all",
@@ -196,7 +198,7 @@ const AdminCatégories = () => {
         childrenFilter !== "all",
     ].filter(Boolean).length;
 
-    const hasActiveFilters = activeFilterCount > 0;
+    const hasActiveFilters = activeFilterCount > 0 || Boolean(search.trim());
 
     const resetFilters = () => {
         setSearch("");
@@ -209,10 +211,6 @@ const AdminCatégories = () => {
     };
 
     const parentFilterOptions = categories.filter((category) => !category.parentId);
-
-    const filterLabelClass = "space-y-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-500";
-    const filterControlClass =
-        "h-10 w-full rounded-md border border-gray-200 bg-white px-3 text-sm font-medium normal-case text-gray-900 shadow-sm transition-colors hover:border-gray-300 focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10";
 
     useEffect(() => {
         setPage(1);
@@ -497,7 +495,7 @@ const AdminCatégories = () => {
                     </label>
                     <label className="space-y-1">
                         <span className="text-xs font-bold uppercase tracking-wide text-gray-600">Catégorie parente</span>
-                        <select
+                        <AppSelect
                             value={form.parentId}
                             onChange={(event) => {
                                 const parentId = Number(event.target.value);
@@ -515,7 +513,7 @@ const AdminCatégories = () => {
                                     {getCategoryPath(category)}
                                 </option>
                             ))}
-                        </select>
+                        </AppSelect>
                     </label>
                 </div>
 
@@ -607,16 +605,16 @@ const AdminCatégories = () => {
             </form>
             )}
 
-            <div className="mb-5 rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="mb-5 rounded-lg border border-gray-200 bg-white shadow-sm">
                 <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-950 text-white">
                             <Filter className="h-4 w-4" />
                         </div>
                         <div>
-                            <h2 className="text-sm font-bold uppercase tracking-wide text-gray-950">Filtres catégories</h2>
+                            <h2 className="text-sm font-bold text-gray-950">Filtres des catégories</h2>
                             <p className="text-xs text-gray-500">
-                                {displayedCatégories.length} résultat{displayedCatégories.length > 1 ? "s" : ""} sur {categories.length} catégories
+                                {displayedCatégories.length} résultat{displayedCatégories.length !== 1 ? "s" : ""} sur {categories.length} catégorie{categories.length !== 1 ? "s" : ""}
                             </p>
                         </div>
                     </div>
@@ -624,7 +622,7 @@ const AdminCatégories = () => {
                         <button
                             type="button"
                             onClick={() => setFiltersOpen((prev) => !prev)}
-                            className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-gray-950 px-4 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-gray-800"
+                            className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-gray-950 px-3 text-xs font-bold text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-950/20"
                             aria-expanded={filtersOpen}
                         >
                             {filtersOpen ? "Masquer les filtres" : "Afficher les filtres"}
@@ -639,7 +637,7 @@ const AdminCatégories = () => {
                             type="button"
                             onClick={resetFilters}
                             disabled={!hasActiveFilters}
-                            className="inline-flex h-9 items-center justify-center rounded-full border border-gray-200 px-4 text-xs font-bold uppercase tracking-wide text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="inline-flex h-9 items-center justify-center rounded-full border border-gray-200 px-3 text-xs font-bold text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-950/10 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                             Réinitialiser
                         </button>
@@ -647,67 +645,71 @@ const AdminCatégories = () => {
                 </div>
 
                 <div className="p-4">
+                    <label className={adminFilterLabelClass}>
+                        Recherche globale
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
-                            type="text"
+                            type="search"
+                            aria-label="Rechercher dans les catégories"
                             placeholder="Nom, slug, parent ou ID..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="h-11 w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm font-medium text-gray-900 transition-colors placeholder:text-gray-400 hover:bg-white focus:border-black focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
+                            className="h-10 w-full rounded-md border border-gray-300 bg-gray-50 pl-10 pr-4 text-sm font-medium text-gray-900 shadow-sm transition-colors placeholder:font-normal placeholder:text-gray-400 hover:border-gray-400 hover:bg-white focus:border-gray-950 focus:bg-white focus:outline-none focus:ring-2 focus:ring-gray-950/10"
                         />
                     </div>
+                    </label>
 
                     {filtersOpen && (
                         <>
                     <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                        <label className={filterLabelClass}>
+                        <label className={adminFilterLabelClass}>
                             Statut
-                            <select
+                            <AppSelect
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
-                                className={filterControlClass}
+                                className={adminFilterControlClass}
                             >
                                 <option value="all">Tous les statuts</option>
                                 <option value="active">Actives</option>
                                 <option value="inactive">Masquées</option>
-                            </select>
+                            </AppSelect>
                         </label>
 
-                        <label className={filterLabelClass}>
+                        <label className={adminFilterLabelClass}>
                             Type
-                            <select
+                            <AppSelect
                                 value={typeFilter}
                                 onChange={(e) => setTypeFilter(e.target.value as "all" | "root" | "child")}
-                                className={filterControlClass}
+                                className={adminFilterControlClass}
                             >
                                 <option value="all">Tous les types</option>
                                 <option value="root">Catégories principales</option>
                                 <option value="child">Sous-catégories</option>
-                            </select>
+                            </AppSelect>
                         </label>
 
-                        <label className={filterLabelClass}>
+                        <label className={adminFilterLabelClass}>
                             Menu principal
-                            <select
+                            <AppSelect
                                 value={menuFilter}
                                 onChange={(e) => setMenuFilter(e.target.value as "all" | "inMenu" | "notInMenu")}
-                                className={filterControlClass}
+                                className={adminFilterControlClass}
                             >
                                 <option value="all">Tous</option>
                                 <option value="inMenu">Dans le menu principal</option>
                                 <option value="notInMenu">Hors menu principal</option>
-                            </select>
+                            </AppSelect>
                         </label>
                     </div>
 
                     <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                        <label className={filterLabelClass}>
+                        <label className={adminFilterLabelClass}>
                             Catégorie parente
-                            <select
+                            <AppSelect
                                 value={parentFilter}
                                 onChange={(e) => setParentFilter(e.target.value)}
-                                className={filterControlClass}
+                                className={adminFilterControlClass}
                             >
                                 <option value="all">Toutes les catégories</option>
                                 <option value="0">Catégories racines</option>
@@ -716,72 +718,47 @@ const AdminCatégories = () => {
                                         {getCategoryPath(category)}
                                     </option>
                                 ))}
-                            </select>
+                            </AppSelect>
                         </label>
 
-                        <label className={filterLabelClass}>
+                        <label className={adminFilterLabelClass}>
                             Produits
-                            <select
+                            <AppSelect
                                 value={productsFilter}
                                 onChange={(e) => setProductsFilter(e.target.value as "all" | "with" | "without")}
-                                className={filterControlClass}
+                                className={adminFilterControlClass}
                             >
                                 <option value="all">Tous</option>
                                 <option value="with">Avec produits</option>
                                 <option value="without">Sans produits</option>
-                            </select>
+                            </AppSelect>
                         </label>
 
-                        <label className={filterLabelClass}>
+                        <label className={adminFilterLabelClass}>
                             Sous-catégories
-                            <select
+                            <AppSelect
                                 value={childrenFilter}
                                 onChange={(e) => setChildrenFilter(e.target.value as "all" | "with" | "without")}
-                                className={filterControlClass}
+                                className={adminFilterControlClass}
                             >
                                 <option value="all">Tous</option>
                                 <option value="with">Avec sous-catégories</option>
                                 <option value="without">Sans sous-catégories</option>
-                            </select>
+                            </AppSelect>
                         </label>
                     </div>
 
-                    <div className="mt-3 flex flex-wrap items-end gap-2">
-                        {statusFilter !== "all" && (
-                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
-                                Statut: {statusFilter === "active" ? "actives" : "masquées"}
-                            </span>
-                        )}
-                        {typeFilter !== "all" && (
-                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
-                                Type: {typeFilter === "root" ? "principales" : "sous-catégories"}
-                            </span>
-                        )}
-                        {menuFilter !== "all" && (
-                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
-                                Menu: {menuFilter === "inMenu" ? "dans le menu" : "hors menu"}
-                            </span>
-                        )}
-                        {parentFilter !== "all" && (
-                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
-                                Parent: {parentFilter === "0" ? "racine" : getCategoryPath(categories.find((c) => String(c.id) === parentFilter)!)}
-                            </span>
-                        )}
-                        {productsFilter !== "all" && (
-                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
-                                Produits: {productsFilter === "with" ? "avec" : "sans"}
-                            </span>
-                        )}
-                        {childrenFilter !== "all" && (
-                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700">
-                                Sous-cat.: {childrenFilter === "with" ? "avec" : "sans"}
-                            </span>
-                        )}
-                        {!hasActiveFilters && (
-                            <span className="text-xs font-medium text-gray-400">Aucun filtre actif</span>
-                        )}
-                    </div>
                         </>
+                    )}
+                    {(statusFilter !== "all" || typeFilter !== "all" || menuFilter !== "all" || parentFilter !== "all" || productsFilter !== "all" || childrenFilter !== "all") && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Filtres actifs">
+                        {statusFilter !== "all" && <AdminActiveFilter label={`Statut : ${statusFilter === "active" ? "actives" : "masquées"}`} onRemove={() => setStatusFilter("all")} />}
+                        {typeFilter !== "all" && <AdminActiveFilter label={`Type : ${typeFilter === "root" ? "principales" : "sous-catégories"}`} onRemove={() => setTypeFilter("all")} />}
+                        {menuFilter !== "all" && <AdminActiveFilter label={`Menu : ${menuFilter === "inMenu" ? "dans le menu" : "hors menu"}`} onRemove={() => setMenuFilter("all")} />}
+                        {parentFilter !== "all" && <AdminActiveFilter label={`Parent : ${parentFilter === "0" ? "racine" : getCategoryPath(categories.find((category) => String(category.id) === parentFilter)!)}`} onRemove={() => setParentFilter("all")} />}
+                        {productsFilter !== "all" && <AdminActiveFilter label={`Produits : ${productsFilter === "with" ? "avec" : "sans"}`} onRemove={() => setProductsFilter("all")} />}
+                        {childrenFilter !== "all" && <AdminActiveFilter label={`Sous-catégories : ${childrenFilter === "with" ? "avec" : "sans"}`} onRemove={() => setChildrenFilter("all")} />}
+                    </div>
                     )}
                 </div>
             </div>
@@ -831,8 +808,14 @@ const AdminCatégories = () => {
                                 </tr>
                             ) : displayedCatégories.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="px-4 py-10 text-center text-gray-500">
-                                        Aucune catégorie trouvée.
+                                    <td colSpan={8}>
+                                        <AdminEmptyState
+                                            icon={FolderTree}
+                                            title={categories.length === 0 ? "Aucune catégorie enregistrée" : "Aucune catégorie trouvée"}
+                                            description={categories.length === 0
+                                                ? "Les catégories créées pour organiser le catalogue apparaîtront ici."
+                                                : "Aucune catégorie ne correspond à la recherche ou aux filtres sélectionnés."}
+                                        />
                                     </td>
                                 </tr>
                             ) : (

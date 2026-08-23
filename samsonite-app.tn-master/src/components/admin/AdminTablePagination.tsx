@@ -1,3 +1,5 @@
+import { AppSelect } from "@/components/ui/app-select";
+
 interface AdminTablePaginationProps {
   page: number;
   pageSize: number;
@@ -28,13 +30,13 @@ const AdminTablePagination = ({
       <p className="text-xs font-semibold text-gray-500">Affichage {start}-{end} sur {totalItems}</p>
       <label className="flex items-center gap-2 text-xs font-semibold text-gray-500">
         Par page
-        <select
+        <AppSelect
           value={pageSize}
           onChange={(event) => onPageSizeChange(Number(event.target.value))}
           className="h-8 rounded-md border border-gray-200 bg-white px-2 text-xs font-bold text-gray-900"
         >
           {pageSizeOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-        </select>
+        </AppSelect>
       </label>
       <div className="flex items-center gap-2">
         <span className="hidden text-xs font-semibold text-gray-500 sm:inline">Page {safePage} sur {totalPages}</span>

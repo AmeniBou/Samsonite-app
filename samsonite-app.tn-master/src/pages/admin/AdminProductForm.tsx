@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, Loader2, Upload, ImageOff, Copy, X, GripVertical, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Upload, ImageOff, Copy, X, GripVertical, ShoppingBag, Trash2, Minus, Plus, Truck, RotateCcw, Shield } from "lucide-react";
 import {
     fetchAdminProduct,
     createProduct,
@@ -13,6 +13,8 @@ import {
 } from "@/lib/admin-api";
 import ConfirmDeleteDialog from "@/components/ConfirmDeleteDialog";
 import { toast } from "@/components/ui/sonner";
+import { formatTnd } from "@/lib/currency";
+import { AppSelect } from "@/components/ui/app-select";
 
 const decodeAdminText = (value?: string | null): string => {
     let text = value || "";
@@ -165,6 +167,8 @@ const AdminProductForm = () => {
     const [success, setSuccess] = useState("");
     const [currentStep, setCurrentStep] = useState<ProductFormStep>(1);
     const [previewVariantIndex, setPreviewVariantIndex] = useState(0);
+    const [previewImageIndex, setPreviewImageIndex] = useState(0);
+    const [validatedSteps, setValidatedSteps] = useState<Set<ProductFormStep>>(new Set());
 
     useEffect(() => {
         if (error) toast.error(error);
@@ -453,7 +457,7 @@ const AdminProductForm = () => {
                     .filter(Boolean)
                     .join("\n"),
             }));
-            setSuccess(`${result.images.length} image(s) importee(s)`);
+            setSuccess(`${result.images.length} image(s) importée(s)`);
         } catch {
             setError("Erreur pendant l'import des images");
         } finally {
@@ -504,7 +508,7 @@ const AdminProductForm = () => {
                 };
                 return { ...prev, variants };
             });
-            setSuccess(`${result.images.length} image(s) importee(s) dans la variante #${index + 1}`);
+            setSuccess(`${result.images.length} image(s) importée(s) dans la variante #${index + 1}`);
         } catch {
             setError("Erreur pendant l'import des images");
         } finally {
@@ -547,7 +551,7 @@ const AdminProductForm = () => {
         });
     };
 
-    const useProductImagesForVariant = (variantIndex: number) => {
+    const copyProductImagesToVariant = (variantIndex: number) => {
         const productImages = parseLines(form.imagesText);
         if (productImages.length === 0) {
             setError("Ajoute d'abord des images générales au produit, ou importe directement les images dans la variante.");
@@ -598,10 +602,15 @@ const AdminProductForm = () => {
             return;
         }
 
-        const finalValidationErrors = [...getGeneralValidationErrors(), ...getVariantsValidationErrors()];
+        const generalValidationErrors = getGeneralValidationErrors();
+        const variantValidationErrors = getVariantsValidationErrors();
+        const finalValidationErrors = [...generalValidationErrors, ...variantValidationErrors];
         if (finalValidationErrors.length > 0) {
-            setError(finalValidationErrors[0]);
-            setCurrentStep(getGeneralValidationErrors().length > 0 ? 1 : 2);
+            setValidatedSteps(new Set<ProductFormStep>([1, 2]));
+            setError(generalValidationErrors.length > 0
+                ? "Veuillez remplir tous les champs obligatoires avant de continuer."
+                : variantValidationErrors[0]);
+            setCurrentStep(generalValidationErrors.length > 0 ? 1 : 2);
             return;
         }
 
@@ -614,7 +623,7 @@ const AdminProductForm = () => {
             return;
         }
         if (!form.parentCategoryId) {
-            setError("La catégorie parent est requise.");
+            setError("La catégorie parente est requise.");
             return;
         }
         if (!form.categoryId) {
@@ -632,7 +641,7 @@ const AdminProductForm = () => {
                 return;
             }
             if (!isValidPositiveNumber(variant.price)) {
-                setError(`Le prix de la variante #${index + 1} est requis et doit etre superieur a 0.`);
+            setError(`Le prix de la variante #${index + 1} est requis et doit être supérieur à 0.`);
                 return;
             }
             if (!variant.stock.trim()) {
@@ -662,11 +671,11 @@ const AdminProductForm = () => {
                 return;
             }
             if (!isValidNonNegativeNumber(variant.stockInitial)) {
-                setError(`Le stock initial de la variante #${index + 1} doit etre numerique.`);
+                setError(`Le stock initial de la variante #${index + 1} doit être numérique.`);
                 return;
             }
             if (!isValidNonNegativeNumber(variant.stock)) {
-                setError(`Le stock de la variante #${index + 1} doit etre numerique.`);
+                setError(`Le stock de la variante #${index + 1} doit être numérique.`);
                 return;
             }
             const invalidVariantImage = parseLines(variant.imagesText).find((image) => !isValidImageReference(image));
@@ -697,7 +706,7 @@ const AdminProductForm = () => {
             if (form.roulettes) featuresAuto.push({ label: "Roulettes", value: form.roulettes });
             if (form.typeRoues) featuresAuto.push({ label: "Type de roues", value: form.typeRoues });
             if (form.porteAdresse) featuresAuto.push({ label: "Porte-Adresse", value: form.porteAdresse });
-            featuresAuto.push({ label: "Ecoresponsable", value: form.ecoresponsable ? "Oui" : "Non" });
+            featuresAuto.push({ label: "Écoresponsable", value: form.ecoresponsable ? "Oui" : "Non" });
             if (form.interieur) featuresAuto.push({ label: "Intérieur", value: form.interieur });
             if (form.compartimentInf !== undefined)
                 featuresAuto.push({
@@ -710,7 +719,7 @@ const AdminProductForm = () => {
                     value: form.compartimentSup ? "Oui" : "Non",
                 });
             if (form.plateauSeparateur)
-                featuresAuto.push({ label: "Plateau Séparateur", value: form.plateauSeparateur });
+                featuresAuto.push({ label: "Plateau séparateur", value: form.plateauSeparateur });
             if (form.sizesSelected.length)
                 featuresAuto.push({ label: "Tailles", value: form.sizesSelected.join(", ") });
             const features = [...featuresAuto, ...featuresFree];
@@ -790,9 +799,12 @@ const AdminProductForm = () => {
                 : await createProduct(productData);
 
             if (result.success) {
+                const createdProductId = "id" in result ? result.id : undefined;
                 const msg = isEdit
                     ? "Produit mis à jour avec succès"
-                    : `Produit créé avec succès (ID: ${(result as any).id})`;
+                    : createdProductId
+                        ? `Produit créé avec succès (ID : ${createdProductId})`
+                        : "Produit créé avec succès";
                 setSuccess(msg);
                 setTimeout(() => navigate("/admin/produits"), 1500);
             } else {
@@ -817,7 +829,6 @@ const AdminProductForm = () => {
     const imagePreviewItems = allVariantImages.slice(0, 12);
     const allProductImages = allVariantImages;
     const selectedBrandName = brands.find((brand) => String(brand.id) === form.brandId)?.name || "Samsonite";
-    const selectedCategoryName = categories.find((category) => String(category.id) === form.categoryId)?.name || selectedParent?.name || "Catégorie";
     const previewDescription = form.descriptionShort || form.description || "Description courte du produit.";
     const previewVariants = form.variants.map((variant, index) => ({
         ...variant,
@@ -831,12 +842,17 @@ const AdminProductForm = () => {
     const safePreviewVariantIndex = Math.min(previewVariantIndex, Math.max(0, previewVariants.length - 1));
     const selectedPreviewVariant = previewVariants[safePreviewVariantIndex] || previewVariants[0] || createEmptyVariant();
     const previewVariantImages = selectedPreviewVariant.images?.length ? selectedPreviewVariant.images : allProductImages;
-    const previewImage = previewVariantImages[0] || "/placeholder.svg";
+    const safePreviewImageIndex = Math.min(previewImageIndex, Math.max(0, previewVariantImages.length - 1));
+    const previewImage = previewVariantImages[safePreviewImageIndex] || "/placeholder.svg";
     const previewPrice = Number.isFinite(selectedPreviewVariant.priceNumber) && selectedPreviewVariant.priceNumber > 0
-        ? selectedPreviewVariant.priceNumber.toLocaleString("fr-TN", { minimumFractionDigits: 3 })
-        : "0,000";
+        ? selectedPreviewVariant.priceNumber
+        : 0;
     const previewStock = Number.isFinite(selectedPreviewVariant.stockNumber) ? selectedPreviewVariant.stockNumber : 0;
-    const previewAvailability = previewStock > 0 ? "Disponible" : "Temporairement indisponible";
+    const previewAvailability = previewStock <= 0
+        ? "Temporairement indisponible"
+        : previewStock <= 3
+            ? "Plus que quelques pièces disponibles"
+            : "";
     const previewColorOptions = Array.from(
         new Map(
             previewVariants
@@ -854,20 +870,36 @@ const AdminProductForm = () => {
                 .map((variant) => [variant.size.trim().toLowerCase(), variant])
         ).values()
     );
+    const previewFreeFeatures = form.featuresText
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+            const [label, value] = line.split("|");
+            return { label: (label || "").trim(), value: (value || "").trim() };
+        })
+        .filter((row) => row.label && row.value);
     const previewSpecRows = [
-        { label: "Référence", value: form.reference },
-        { label: "Modele", value: form.model },
-        { label: "Matiere", value: form.matiere },
-        { label: "Poignees", value: form.poignees },
-        { label: "Poignee de traction", value: form.poigneeTraction },
-        { label: "Roulettes", value: form.roulettes },
-        { label: "Type de roues", value: form.typeRoues },
-        { label: "Dimension", value: selectedPreviewVariant.dimension ? `${selectedPreviewVariant.dimension} cm` : "" },
-        { label: "Dimension extensible", value: selectedPreviewVariant.isExpandable && selectedPreviewVariant.expandedDimension ? `${selectedPreviewVariant.expandedDimension} cm` : "" },
+        { label: "Couleur", value: selectedPreviewVariant.colorName },
+        { label: "Dimensions", value: selectedPreviewVariant.dimension ? `${selectedPreviewVariant.dimension} cm` : "" },
+        { label: "Dimensions extensibles", value: selectedPreviewVariant.isExpandable && selectedPreviewVariant.expandedDimension ? `${selectedPreviewVariant.expandedDimension} cm` : "" },
         { label: "Taille", value: selectedPreviewVariant.size },
         { label: "Volume", value: selectedPreviewVariant.volume },
         { label: "Poids", value: selectedPreviewVariant.weight },
-        { label: "Stock", value: selectedPreviewVariant.stock },
+        { label: "SKU", value: form.reference },
+        { label: "Modèle", value: form.model },
+        { label: "Matière", value: form.matiere },
+        { label: "Poignées", value: form.poignees },
+        { label: "Poignée de traction", value: form.poigneeTraction },
+        { label: "Roulettes", value: form.roulettes },
+        { label: "Type de roues", value: form.typeRoues },
+        { label: "Porte-adresse", value: form.porteAdresse },
+        { label: "Écoresponsable", value: form.ecoresponsable ? "Oui" : "Non" },
+        { label: "Intérieur", value: form.interieur },
+        { label: "Compartiment inférieur", value: form.compartimentInf ? "Oui" : "Non" },
+        { label: "Compartiment supérieur", value: form.compartimentSup ? "Oui" : "Non" },
+        { label: "Plateau séparateur", value: form.plateauSeparateur },
+        ...previewFreeFeatures,
     ].filter((row) => String(row.value || "").trim());
     const steps: Array<{ id: ProductFormStep; label: string; helper: string }> = [
         { id: 1, label: "Informations", helper: "Produit" },
@@ -879,7 +911,7 @@ const AdminProductForm = () => {
         const errors: string[] = [];
         if (!form.name.trim()) errors.push("Le nom du produit est obligatoire.");
         if (!form.brandId) errors.push("La marque est obligatoire.");
-        if (!form.parentCategoryId) errors.push("La catégorie parent est obligatoire.");
+        if (!form.parentCategoryId) errors.push("La catégorie parente est obligatoire.");
         if (!form.categoryId) errors.push("La sous-catégorie est obligatoire.");
         return errors;
     };
@@ -936,9 +968,10 @@ const AdminProductForm = () => {
     };
 
     const validateGeneralStep = () => {
+        setValidatedSteps((previous) => new Set(previous).add(1));
         const errors = getGeneralValidationErrors();
         if (errors.length > 0) {
-            setError(errors[0]);
+            setError("Veuillez remplir tous les champs obligatoires avant de continuer.");
             return false;
         }
         setError("");
@@ -946,6 +979,7 @@ const AdminProductForm = () => {
     };
 
     const validateVariantsStep = () => {
+        setValidatedSteps((previous) => new Set(previous).add(2));
         const errors = getVariantsValidationErrors();
         if (errors.length > 0) {
             setError(errors[0]);
@@ -967,8 +1001,12 @@ const AdminProductForm = () => {
         setCurrentStep(step);
     };
 
+    const showGeneralErrors = validatedSteps.has(1);
+    const showVariantErrors = validatedSteps.has(2);
+    const invalidControlClass = "border-red-400 bg-red-50/40 focus:border-red-600 focus:ring-red-200";
+
     return (
-        <div className="p-6 max-w-7xl">
+        <div className="w-full p-4 sm:p-5 lg:p-6">
             {/* Header */}
             <div className="mb-6">
                 <button
@@ -981,14 +1019,14 @@ const AdminProductForm = () => {
                 <h1 className="text-2xl font-black text-gray-950">
                     {isEdit ? `Modifier : ${form.name || "..."}` : "Ajouter un produit"}
                 </h1>
-                {isEdit && id && (
-                    <p className="text-xs text-gray-400 font-mono mt-1">ID PrestaShop : {id}</p>
+                {isEdit && (
+                    <p className="mt-1 text-xs text-gray-500">Les modifications seront appliquées à la fiche produit existante après l’enregistrement.</p>
                 )}
             </div>
 
             {/* Form */}
-            <div className="max-w-5xl">
-            <form onSubmit={(event) => event.preventDefault()} className="bg-white rounded-lg shadow p-6 space-y-6">
+            <div className="w-full">
+            <form onSubmit={(event) => event.preventDefault()} className="admin-product-form w-full space-y-6 rounded-lg bg-white p-4 shadow sm:p-5">
                 <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                     <div className="grid gap-3 md:grid-cols-3">
                         {steps.map((step) => {
@@ -1005,7 +1043,7 @@ const AdminProductForm = () => {
                                         {step.id}
                                     </span>
                                     <span>
-                                        <span className="block text-sm font-black uppercase text-gray-950">{step.label}</span>
+                                        <span className="block text-sm font-bold text-gray-950">{step.label}</span>
                                         <span className="block text-xs text-gray-500">{step.helper}</span>
                                     </span>
                                 </button>
@@ -1027,10 +1065,13 @@ const AdminProductForm = () => {
                         type="text"
                         value={form.name}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                        placeholder="ex: Valise Proxis Spinner 55cm"
+                        className={`h-10 w-full rounded-md border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-black ${showGeneralErrors && !form.name.trim() ? invalidControlClass : "border-gray-300"}`}
+                        placeholder="Ex. : Valise Proxis Spinner 55 cm"
+                        aria-invalid={showGeneralErrors && !form.name.trim()}
+                        aria-describedby={showGeneralErrors && !form.name.trim() ? "product-name-error" : undefined}
                         required
                     />
+                    {showGeneralErrors && !form.name.trim() && <p id="product-name-error" className="mt-1 text-xs font-semibold text-red-600">Le nom du produit est obligatoire.</p>}
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
@@ -1069,12 +1110,14 @@ const AdminProductForm = () => {
                         <label htmlFor="product-brand" className="block text-sm font-medium text-gray-700 mb-1">
                             Marque *
                         </label>
-                        <select
+                        <AppSelect
                             id="product-brand"
                             name="brandId"
                             value={form.brandId}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black bg-white"
+                            className={`h-10 w-full rounded-md border bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-black ${showGeneralErrors && !form.brandId ? invalidControlClass : "border-gray-300"}`}
+                            aria-invalid={showGeneralErrors && !form.brandId}
+                            aria-describedby={showGeneralErrors && !form.brandId ? "product-brand-error" : undefined}
                             required
                         >
                             <option value="">Sélectionner une marque</option>
@@ -1083,24 +1126,27 @@ const AdminProductForm = () => {
                                     {brand.name}
                                 </option>
                             ))}
-                        </select>
+                        </AppSelect>
+                        {showGeneralErrors && !form.brandId && <p id="product-brand-error" className="mt-1 text-xs font-semibold text-red-600">La marque est obligatoire.</p>}
                         <p className="mt-1 text-xs text-gray-500">
                             Marque absente ?{" "}
                             <Link to="/admin/marques" className="font-bold text-black underline">
-                                Gerer les marques
+                                Gérer les marques
                             </Link>
                         </p>
                     </div>
                     <div>
                         <label htmlFor="product-parent-category" className="block text-sm font-medium text-gray-700 mb-1">
-                            Catégorie parent *
+                            Catégorie parente *
                         </label>
-                        <select
+                        <AppSelect
                             id="product-parent-category"
                             name="parentCategoryId"
                             value={form.parentCategoryId}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black bg-white"
+                            className={`h-10 w-full rounded-md border bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-black ${showGeneralErrors && !form.parentCategoryId ? invalidControlClass : "border-gray-300"}`}
+                            aria-invalid={showGeneralErrors && !form.parentCategoryId}
+                            aria-describedby={showGeneralErrors && !form.parentCategoryId ? "product-parent-category-error" : undefined}
                             required
                         >
                             <option value="">Choisir un parent</option>
@@ -1109,18 +1155,21 @@ const AdminProductForm = () => {
                                     {category.name}
                                 </option>
                             ))}
-                        </select>
+                        </AppSelect>
+                        {showGeneralErrors && !form.parentCategoryId && <p id="product-parent-category-error" className="mt-1 text-xs font-semibold text-red-600">La catégorie parente est obligatoire.</p>}
                     </div>
                     <div>
                         <label htmlFor="product-category" className="block text-sm font-medium text-gray-700 mb-1">
                             Sous-catégorie *
                         </label>
-                        <select
+                        <AppSelect
                             id="product-category"
                             name="categoryId"
                             value={form.categoryId}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black bg-white"
+                            className={`h-10 w-full rounded-md border bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-black disabled:bg-gray-100 ${showGeneralErrors && !form.categoryId ? invalidControlClass : "border-gray-300"}`}
+                            aria-invalid={showGeneralErrors && !form.categoryId}
+                            aria-describedby={showGeneralErrors && !form.categoryId ? "product-category-error" : undefined}
                             required
                             disabled={!form.parentCategoryId}
                         >
@@ -1130,7 +1179,8 @@ const AdminProductForm = () => {
                                     {category.id === selectedParent?.id ? `Toutes - ${category.name}` : category.name}
                                 </option>
                             ))}
-                        </select>
+                        </AppSelect>
+                        {showGeneralErrors && !form.categoryId && <p id="product-category-error" className="mt-1 text-xs font-semibold text-red-600">La sous-catégorie est obligatoire.</p>}
                     </div>
                 </div>
 
@@ -1143,7 +1193,7 @@ const AdminProductForm = () => {
                             value={form.model}
                             onChange={handleChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                            placeholder="ex: AT Work, Proxis..."
+                            placeholder="Ex. : AT Work, Proxis..."
                         />
                     </div>
                     <div>
@@ -1343,19 +1393,38 @@ const AdminProductForm = () => {
                     {form.variants.length === 0 && (
                         <p className="text-xs text-red-500">Un produit doit avoir au moins une variante.</p>
                     )}
-                    {form.variants.map((variant, index) => (
-                        <div key={index} className="border rounded-md p-3 space-y-3 bg-gray-50">
+                    {form.variants.map((variant, index) => {
+                        const colorInvalid = showVariantErrors && !variant.colorName.trim();
+                        const priceInvalid = showVariantErrors && !isValidPositiveNumber(variant.price);
+                        const stockInvalid = showVariantErrors && (!variant.stock.trim() || !isValidNonNegativeNumber(variant.stock));
+                        const imagesInvalid = showVariantErrors && parseLines(variant.imagesText).length === 0;
+                        const expandedHeightInvalid = showVariantErrors && variant.isExpandable && !variant.expandedHeight.trim();
+                        const expandedWidthInvalid = showVariantErrors && variant.isExpandable && !variant.expandedWidth.trim();
+                        const expandedDepthInvalid = showVariantErrors && variant.isExpandable && !variant.expandedDepth.trim();
+                        const missingRequiredFields = [
+                            colorInvalid && "couleur",
+                            priceInvalid && "prix valide",
+                            stockInvalid && "stock actuel valide",
+                            imagesInvalid && "image",
+                            expandedHeightInvalid && "hauteur avec extension",
+                            expandedWidthInvalid && "largeur avec extension",
+                            expandedDepthInvalid && "profondeur avec extension",
+                        ].filter(Boolean) as string[];
+                        return (
+                        <div key={index} className={`rounded-md border p-3 space-y-3 bg-gray-50 ${missingRequiredFields.length > 0 ? "border-red-300" : "border-gray-200"}`}>
                             <div className="flex justify-between items-center">
                                 <span className="text-xs uppercase tracking-wide text-gray-500">
                                     Variante #{index + 1}
                                 </span>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1.5">
                                     <button
                                         type="button"
                                         onClick={() => duplicateVariant(index)}
-                                        className="text-xs font-semibold text-blue-700 hover:underline"
+                                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-700 transition-colors hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                        title="Dupliquer"
+                                        aria-label={`Dupliquer la variante ${index + 1}`}
                                     >
-                                        Dupliquer
+                                        <Copy className="h-3.5 w-3.5" />
                                     </button>
                                     <ConfirmDeleteDialog
                                         title="Supprimer cette variante ?"
@@ -1368,22 +1437,30 @@ const AdminProductForm = () => {
                                                 type="button"
                                                 onClick={openDialog}
                                                 disabled={form.variants.length === 1}
-                                                className="text-xs text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-gray-300 disabled:no-underline"
-                                                title={form.variants.length === 1 ? "Un produit doit garder au moins une variante" : "Supprimer cette variante"}
+                                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-white text-red-600 transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300"
+                                                title={form.variants.length === 1 ? "Un produit doit conserver au moins une variante" : "Supprimer"}
+                                                aria-label={`Supprimer la variante ${index + 1}`}
                                             >
-                                                Supprimer
+                                                <Trash2 className="h-3.5 w-3.5" />
                                             </button>
                                         )}
                                     </ConfirmDeleteDialog>
                                 </div>
                             </div>
+                            {missingRequiredFields.length > 0 && (
+                                <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
+                                    Champs obligatoires à compléter : {missingRequiredFields.join(", ")}.
+                                </p>
+                            )}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                 <input
                                     name="colorName"
                                     value={variant.colorName}
                                     onChange={(e) => handleVariantChange(index, e)}
-                                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                                    placeholder="Couleur (nom)"
+                                    className={`rounded-md border px-3 py-2 text-sm ${colorInvalid ? invalidControlClass : "border-gray-300"}`}
+                                    placeholder="Couleur (nom) *"
+                                    aria-label={`Couleur de la variante ${index + 1}`}
+                                    aria-invalid={colorInvalid}
                                 />
                                 <div className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-2 py-1">
                                     <input
@@ -1453,22 +1530,25 @@ const AdminProductForm = () => {
                                             name="expandedHeight"
                                             value={variant.expandedHeight}
                                             onChange={(e) => handleVariantChange(index, e)}
-                                            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                                            placeholder="Hauteur avec extension"
+                                            className={`rounded-md border px-3 py-2 text-sm ${expandedHeightInvalid ? invalidControlClass : "border-gray-300"}`}
+                                            placeholder="Hauteur avec extension *"
+                                            aria-invalid={expandedHeightInvalid}
                                         />
                                         <input
                                             name="expandedWidth"
                                             value={variant.expandedWidth}
                                             onChange={(e) => handleVariantChange(index, e)}
-                                            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                                            placeholder="Largeur avec extension"
+                                            className={`rounded-md border px-3 py-2 text-sm ${expandedWidthInvalid ? invalidControlClass : "border-gray-300"}`}
+                                            placeholder="Largeur avec extension *"
+                                            aria-invalid={expandedWidthInvalid}
                                         />
                                         <input
                                             name="expandedDepth"
                                             value={variant.expandedDepth}
                                             onChange={(e) => handleVariantChange(index, e)}
-                                            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                                            placeholder="Profondeur avec extension"
+                                            className={`rounded-md border px-3 py-2 text-sm ${expandedDepthInvalid ? invalidControlClass : "border-gray-300"}`}
+                                            placeholder="Profondeur avec extension *"
+                                            aria-invalid={expandedDepthInvalid}
                                         />
                                     </>
                                 )}
@@ -1486,8 +1566,10 @@ const AdminProductForm = () => {
                                     min="0"
                                     value={variant.price}
                                     onChange={(e) => handleVariantChange(index, e)}
-                                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                                    placeholder="Prix (TND)"
+                                    className={`rounded-md border px-3 py-2 text-sm ${priceInvalid ? invalidControlClass : "border-gray-300"}`}
+                                    placeholder="Prix (TND) *"
+                                    aria-label={`Prix de la variante ${index + 1}`}
+                                    aria-invalid={priceInvalid}
                                 />
                                 <input
                                     name="stockInitial"
@@ -1506,20 +1588,22 @@ const AdminProductForm = () => {
                                     min="0"
                                     value={variant.stock}
                                     onChange={(e) => handleVariantChange(index, e)}
-                                    className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-                                    placeholder="Stock actuel"
+                                    className={`rounded-md border px-3 py-2 text-sm ${stockInvalid ? invalidControlClass : "border-gray-300"}`}
+                                    placeholder="Stock actuel *"
+                                    aria-label={`Stock actuel de la variante ${index + 1}`}
+                                    aria-invalid={stockInvalid}
                                 />
                             </div>
-                            <div className="space-y-3 rounded-md border border-gray-200 bg-white p-3">
+                            <div className={`space-y-3 rounded-md border bg-white p-3 ${imagesInvalid ? "border-red-300 ring-1 ring-red-100" : "border-gray-200"}`}>
                                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
-                                        <p className="text-xs font-bold uppercase tracking-wide text-gray-700">Images de cette variante</p>
+                                        <p className="text-xs font-bold uppercase tracking-wide text-gray-700">Images de cette variante *</p>
                                         <p className="text-xs text-gray-500">Ces images s'afficheront quand la couleur/taille est sélectionnée.</p>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
                                         <button
                                             type="button"
-                                            onClick={() => useProductImagesForVariant(index)}
+                                            onClick={() => copyProductImagesToVariant(index)}
                                             disabled={parseLines(form.imagesText).length === 0}
                                             className="inline-flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-bold text-gray-900 hover:border-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
                                             title="Copier les images générales du produit dans cette variante"
@@ -1566,7 +1650,7 @@ const AdminProductForm = () => {
                                             >
                                                 <ConfirmDeleteDialog
                                                     title="Supprimer cette image ?"
-                                                    description="Cette image sera retiree de la variante."
+                                                    description="Cette image sera retirée de la variante."
                                                     onConfirm={() => removeVariantImage(index, image)}
                                                 >
                                                     {(openDialog) => (
@@ -1610,7 +1694,8 @@ const AdminProductForm = () => {
                                 )}
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
                 )}
                 {currentStep === 3 && (
@@ -1618,12 +1703,12 @@ const AdminProductForm = () => {
                     <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
                         <div className="border-b border-gray-100 px-5 py-4">
                             <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Aperçu fidèle de la fiche produit client</p>
-                            <p className="mt-1 text-xs text-gray-500">Clique sur les tailles et couleurs pour vérifier l'image, le prix, le stock et les caractéristiques de chaque variante.</p>
+                            <p className="mt-1 text-xs text-gray-500">Sélectionnez les tailles, les couleurs et les images pour vérifier le rendu de chaque variante.</p>
                         </div>
 
-                        <div className="grid gap-8 p-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.8fr)]">
+                        <div className="mx-auto grid max-w-5xl gap-6 p-4 md:grid-cols-[minmax(0,0.92fr)_minmax(320px,0.78fr)] lg:gap-8">
                             <div>
-                                <div className="mx-auto flex aspect-square max-w-[460px] items-center justify-center border border-gray-100 bg-white p-6">
+                                <div className="mx-auto flex aspect-square max-w-[380px] items-center justify-center border border-gray-100 bg-white p-5">
                                     <img
                                         src={previewImage}
                                         alt="Aperçu produit"
@@ -1639,7 +1724,8 @@ const AdminProductForm = () => {
                                             <button
                                                 key={`${image}-${imageIndex}`}
                                                 type="button"
-                                                className={`h-16 w-16 flex-shrink-0 border-2 bg-white p-1 ${imageIndex === 0 ? "border-black" : "border-transparent hover:border-gray-300"}`}
+                                                onClick={() => setPreviewImageIndex(imageIndex)}
+                                                className={`h-14 w-14 flex-shrink-0 border-2 bg-white p-1 ${imageIndex === safePreviewImageIndex ? "border-black" : "border-transparent hover:border-gray-300"}`}
                                                 title={`Image ${imageIndex + 1}`}
                                             >
                                                 <img src={image} alt="" className="h-full w-full object-contain" />
@@ -1649,23 +1735,23 @@ const AdminProductForm = () => {
                                 )}
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="self-start space-y-4">
                                 <div>
                                     <p className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">{selectedBrandName}</p>
-                                    <h2 className="mt-1 text-3xl font-black uppercase leading-tight text-gray-950">{form.name || "Nom du produit"}</h2>
-                                    <p className="mt-2 text-base leading-7 text-gray-700">{previewDescription}</p>
+                                    <h2 className="mt-1 text-xl font-black uppercase leading-tight tracking-tight text-gray-950 md:text-2xl">{form.name || "Nom du produit"}</h2>
+                                    <p className="mt-1.5 text-sm leading-6 text-gray-700">{previewDescription}</p>
                                 </div>
 
-                                <div className="flex flex-wrap items-center gap-3 border-y border-gray-200 py-4">
-                                    <p className="min-w-[135px] text-2xl font-black text-gray-950">{previewPrice} DT</p>
-                                    <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black uppercase ${previewStock > 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
+                                <div className="flex flex-wrap items-center gap-3 border-y border-gray-200 py-3">
+                                    <p className="min-w-[135px] text-xl font-black text-gray-950">{formatTnd(previewPrice)}</p>
+                                    {previewAvailability && <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black uppercase ${previewStock <= 0 ? "bg-red-50 text-red-600" : "bg-orange-50 text-orange-600"}`}>
                                         <span className="h-2 w-2 rounded-full bg-current" />
                                         {previewAvailability}
-                                    </span>
+                                    </span>}
                                     <span className="text-xs font-semibold text-gray-500">TVA incl.</span>
                                 </div>
 
-                                {previewSizeOptions.length > 0 && (
+                                {previewSizeOptions.length > 1 && (
                                     <div className="grid gap-2 sm:grid-cols-[110px_minmax(0,1fr)]">
                                         <p className="pt-2 text-xs font-black uppercase tracking-wide text-gray-950">Taille</p>
                                         <div className="flex flex-wrap gap-2">
@@ -1675,8 +1761,8 @@ const AdminProductForm = () => {
                                                     <button
                                                         key={`preview-size-${variant.index}`}
                                                         type="button"
-                                                        onClick={() => setPreviewVariantIndex(variant.index)}
-                                                        className={`min-h-11 min-w-[74px] border px-4 py-2 text-sm font-semibold ${isSelected ? "border-black bg-black text-white" : "border-gray-300 bg-white text-black hover:border-black"}`}
+                                                        onClick={() => { setPreviewVariantIndex(variant.index); setPreviewImageIndex(0); }}
+                                                        className={`min-h-12 min-w-[82px] border px-4 py-3 text-sm font-semibold leading-none ${isSelected ? "border-black bg-black text-white" : "border-gray-300 bg-white text-black hover:border-black"}`}
                                                     >
                                                         {variant.size}
                                                     </button>
@@ -1684,17 +1770,6 @@ const AdminProductForm = () => {
                                             })}
                                         </div>
                                     </div>
-                                )}
-
-                                {previewSpecRows.some((row) => /dimension|volume|poids/i.test(row.label)) && (
-                                    <dl className="grid gap-2 border-y border-gray-200 py-4 text-sm">
-                                        {previewSpecRows.filter((row) => /dimension|volume|poids/i.test(row.label)).map((row) => (
-                                            <div key={row.label} className="grid grid-cols-[130px_minmax(0,1fr)] gap-4">
-                                                <dt className="font-black uppercase text-gray-950">{row.label}</dt>
-                                                <dd className="text-gray-600">{row.value}</dd>
-                                            </div>
-                                        ))}
-                                    </dl>
                                 )}
 
                                 {previewColorOptions.length > 0 && (
@@ -1710,11 +1785,11 @@ const AdminProductForm = () => {
                                                     <button
                                                         key={`preview-color-${variant.index}`}
                                                         type="button"
-                                                        onClick={() => setPreviewVariantIndex(variant.index)}
-                                                        className={`flex h-11 w-11 items-center justify-center rounded-full border bg-white ${isSelected ? "border-black shadow-[0_0_0_4px_rgba(0,0,0,0.06)]" : "border-gray-300"}`}
+                                                        onClick={() => { setPreviewVariantIndex(variant.index); setPreviewImageIndex(0); }}
+                                                        className={`flex h-10 w-10 items-center justify-center rounded-full border bg-white ${isSelected ? "border-black shadow-[0_0_0_4px_rgba(0,0,0,0.06)]" : "border-gray-300"}`}
                                                         title={variant.colorName || "Couleur"}
                                                     >
-                                                        <span className="h-7 w-7 rounded-full border border-black/10" style={{ backgroundColor: variant.colorHex || "#d1d5db" }} />
+                                                        <span className="h-6 w-6 rounded-full border border-black/10" style={{ backgroundColor: variant.colorHex || "#d1d5db" }} />
                                                     </button>
                                                 );
                                             })}
@@ -1722,23 +1797,44 @@ const AdminProductForm = () => {
                                     </div>
                                 )}
 
-                                <button type="button" className="flex w-full items-center justify-center gap-2 bg-black px-4 py-4 text-sm font-black uppercase tracking-wide text-white">
-                                    <ShoppingBag className="h-4 w-4" />
-                                    Ajouter au panier
-                                </button>
+                                <div className="flex flex-col gap-3 sm:flex-row">
+                                    {previewStock > 0 && (
+                                        <div className="flex w-fit items-center border border-gray-200 bg-white" aria-label="Aperçu du sélecteur de quantité">
+                                            <button type="button" disabled className="flex h-10 w-10 cursor-not-allowed items-center justify-center text-gray-400"><Minus className="h-4 w-4" /></button>
+                                            <span className="flex h-10 w-12 items-center justify-center border-x border-gray-200 text-sm font-semibold">1</span>
+                                            <button type="button" disabled className="flex h-10 w-10 cursor-not-allowed items-center justify-center text-gray-400"><Plus className="h-4 w-4" /></button>
+                                        </div>
+                                    )}
+                                    <button
+                                        type="button"
+                                        disabled
+                                        aria-label="Ajouter au panier — bouton désactivé dans l’aperçu"
+                                        title="Action indisponible dans l’aperçu administrateur"
+                                        className="flex min-h-10 flex-1 cursor-not-allowed items-center justify-center gap-2 bg-black px-4 py-3 text-xs font-extrabold uppercase tracking-wider text-white"
+                                    >
+                                        <ShoppingBag className="h-4 w-4" />
+                                        Ajouter au panier
+                                    </button>
+                                </div>
+
+                                <div className="grid gap-2 border-t border-gray-200 pt-3 sm:grid-cols-3">
+                                    <div className="flex items-center gap-2"><Truck className="h-4 w-4 shrink-0 text-gray-500" /><p className="text-xs font-semibold leading-4">Livraison offerte à partir de 300 TND</p></div>
+                                    <div className="flex items-center gap-2"><RotateCcw className="h-4 w-4 shrink-0 text-gray-500" /><p className="text-xs font-semibold leading-4">Retours gratuits sous 30 jours</p></div>
+                                    <div className="flex items-center gap-2"><Shield className="h-4 w-4 shrink-0 text-gray-500" /><p className="text-xs font-semibold leading-4">Garantie mondiale</p></div>
+                                </div>
                             </div>
                         </div>
 
                         {previewSpecRows.length > 0 && (
-                            <div className="border-t border-gray-200 p-5">
-                                <h3 className="mb-4 text-base font-black uppercase tracking-tight">Détails du produit</h3>
+                            <div className="mx-auto max-w-5xl border-t border-gray-200 p-4">
+                                <h3 className="mb-3 text-sm font-black uppercase tracking-tight">Détails du produit</h3>
                                 <div className="bg-gray-50">
-                                    <div className="bg-gray-100 px-5 py-4 text-sm font-black uppercase tracking-wide text-gray-600">Specifications</div>
-                                    <dl className="divide-y divide-gray-200 px-5">
+                                    <div className="bg-gray-100 px-4 py-3 text-xs font-black uppercase tracking-wide text-gray-600">Spécifications</div>
+                                    <dl className="divide-y divide-gray-200 px-4">
                                         {previewSpecRows.map((row) => (
-                                            <div key={`${row.label}-${row.value}`} className="grid gap-3 py-3.5 text-sm sm:grid-cols-[190px_minmax(0,1fr)]">
+                                            <div key={`${row.label}-${row.value}`} className="grid gap-2 py-2.5 text-xs sm:grid-cols-[160px_minmax(0,1fr)]">
                                                 <dt className="font-semibold text-gray-600">{row.label}</dt>
-                                                <dd className="leading-6 text-gray-600">{row.value}</dd>
+                                                <dd className="leading-5 text-gray-600">{row.value}</dd>
                                             </div>
                                         ))}
                                     </dl>

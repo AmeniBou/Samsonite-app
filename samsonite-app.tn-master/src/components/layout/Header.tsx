@@ -334,78 +334,77 @@ const Header = () => {
               <div key="bagages-valises" className="contents">
                 <Link
                   to={`/categorie/${item.slug}`}
-                  className={`relative whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-0 after:bg-black after:transition-all hover:text-neutral-500 hover:after:w-full ${
-                    item.highlight ? "text-[#ff263d]" : "text-black"
-                  }`}
+                  className={`relative whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-0 after:bg-black after:transition-all hover:text-neutral-500 hover:after:w-full ${item.highlight ? "text-[#ff263d]" : "text-black"
+                    }`}
                   onClick={closeMenus}
                 >
                   {getNavLabel(item)}
                 </Link>
                 {showValisesMenu && (
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="relative inline-flex items-center gap-1 whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-0 after:bg-black after:transition-all hover:text-neutral-500 hover:after:w-full"
-                    onClick={() => {
-                      setValisesOpen((value) => !value);
-                      setCategoriesOpen(false);
-                      setSacsOpen(false);
-                      setDisneyOpen(false);
-                      setAccessoiresOpen(false);
-                    }}
-                    aria-expanded={valisesOpen}
-                  >
-                    {t("nav.suitcases")}
-                    <ChevronDown className={`h-4 w-4 transition-transform ${valisesOpen ? "rotate-180" : ""}`} />
-                  </button>
-                  {valisesOpen && (
-                    <div className="absolute left-1/2 top-full z-50 mt-5 w-60 -translate-x-1/2 border border-neutral-200 bg-white py-3 shadow-[0_24px_70px_rgba(0,0,0,0.12)] animate-fade-in">
-                      {valisesNavLinks.map((valiseItem) => (
-                        <Link
-                          key={valiseItem.slug}
-                          to={`/categorie/${valiseItem.slug}`}
-                          className="block px-5 py-2.5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-black"
-                          onClick={closeMenus}
-                        >
-                          {getNavLabel(valiseItem)}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="relative inline-flex items-center gap-1 whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-0 after:bg-black after:transition-all hover:text-neutral-500 hover:after:w-full"
+                      onClick={() => {
+                        setValisesOpen((value) => !value);
+                        setCategoriesOpen(false);
+                        setSacsOpen(false);
+                        setDisneyOpen(false);
+                        setAccessoiresOpen(false);
+                      }}
+                      aria-expanded={valisesOpen}
+                    >
+                      {t("nav.suitcases")}
+                      <ChevronDown className={`h-4 w-4 transition-transform ${valisesOpen ? "rotate-180" : ""}`} />
+                    </button>
+                    {valisesOpen && (
+                      <div className="absolute left-1/2 top-full z-50 mt-5 w-60 -translate-x-1/2 border border-neutral-200 bg-white py-3 shadow-[0_24px_70px_rgba(0,0,0,0.12)] animate-fade-in">
+                        {valisesNavLinks.map((valiseItem) => (
+                          <Link
+                            key={valiseItem.slug}
+                            to={`/categorie/${valiseItem.slug}`}
+                            className="block px-5 py-2.5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-black"
+                            onClick={closeMenus}
+                          >
+                            {getNavLabel(valiseItem)}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
                 {showSacsMenu && (
-                <div className="relative">
-                  <button
-                    type="button"
-                    className="relative inline-flex items-center gap-1 whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-0 after:bg-black after:transition-all hover:text-neutral-500 hover:after:w-full"
-                    onClick={() => {
-                      setSacsOpen((value) => !value);
-                      setValisesOpen(false);
-                      setCategoriesOpen(false);
-                      setDisneyOpen(false);
-                      setAccessoiresOpen(false);
-                    }}
-                    aria-expanded={sacsOpen}
-                  >
-                    {t("nav.bags")}
-                    <ChevronDown className={`h-4 w-4 transition-transform ${sacsOpen ? "rotate-180" : ""}`} />
-                  </button>
-                  {sacsOpen && (
-                    <div className="absolute left-1/2 top-full z-50 mt-5 w-56 -translate-x-1/2 border border-neutral-200 bg-white py-3 shadow-[0_24px_70px_rgba(0,0,0,0.12)] animate-fade-in">
-                      {sacsNavLinks.map((sacItem) => (
-                        <Link
-                          key={sacItem.slug}
-                          to={`/categorie/${sacItem.slug}`}
-                          className="block px-5 py-2.5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-black"
-                          onClick={closeMenus}
-                        >
-                          {getNavLabel(sacItem)}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="relative inline-flex items-center gap-1 whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-0 after:bg-black after:transition-all hover:text-neutral-500 hover:after:w-full"
+                      onClick={() => {
+                        setSacsOpen((value) => !value);
+                        setValisesOpen(false);
+                        setCategoriesOpen(false);
+                        setDisneyOpen(false);
+                        setAccessoiresOpen(false);
+                      }}
+                      aria-expanded={sacsOpen}
+                    >
+                      {t("nav.bags")}
+                      <ChevronDown className={`h-4 w-4 transition-transform ${sacsOpen ? "rotate-180" : ""}`} />
+                    </button>
+                    {sacsOpen && (
+                      <div className="absolute left-1/2 top-full z-50 mt-5 w-56 -translate-x-1/2 border border-neutral-200 bg-white py-3 shadow-[0_24px_70px_rgba(0,0,0,0.12)] animate-fade-in">
+                        {sacsNavLinks.map((sacItem) => (
+                          <Link
+                            key={sacItem.slug}
+                            to={`/categorie/${sacItem.slug}`}
+                            className="block px-5 py-2.5 text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-black"
+                            onClick={closeMenus}
+                          >
+                            {getNavLabel(sacItem)}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             ) : item.slug === "disney-amp-enfant" ? (
@@ -476,9 +475,8 @@ const Header = () => {
               <Link
                 key={item.slug}
                 to={`/categorie/${item.slug}`}
-                className={`relative whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-0 after:bg-black after:transition-all hover:text-neutral-500 hover:after:w-full ${
-                  item.highlight ? "text-[#ff263d]" : "text-black"
-                }`}
+                className={`relative whitespace-nowrap text-[15px] font-semibold tracking-tight transition-colors after:absolute after:-bottom-2 after:left-0 after:h-0.5 after:w-0 after:bg-black after:transition-all hover:text-neutral-500 hover:after:w-full ${item.highlight ? "text-[#ff263d]" : "text-black"
+                  }`}
                 onClick={closeMenus}
               >
                 {getNavLabel(item)}
@@ -514,30 +512,126 @@ const Header = () => {
 
         <div className="ml-auto flex shrink-0 items-center justify-end gap-1 sm:gap-5 lg:min-w-[210px]">
           <div className="relative hidden lg:block">
+            <button
+              type="button"
+              onClick={() => setSearchOpen((value) => !value)}
+              aria-label={t("nav.search")}
+              className={`
+      relative z-[60]
+      flex h-10 w-10 items-center justify-center
+      rounded-full
+      transition-all duration-200
+      hover:bg-neutral-100
+      active:scale-95
+      ${searchOpen ? "bg-neutral-100" : ""}
+    `}
+            >
+              <Search
+                className={`
+        h-5 w-5 stroke-[1.8]
+        transition-transform duration-200
+        ${searchOpen ? "scale-90" : ""}
+      `}
+              />
+            </button>
+
             {searchOpen && (
               <form
                 onSubmit={handleSearch}
-                className="absolute right-8 top-1/2 flex h-11 w-80 -translate-y-1/2 items-center border border-neutral-200 bg-white px-4 shadow-[0_18px_45px_rgba(0,0,0,0.12)] animate-fade-in"
+                className="
+        absolute right-0 top-1/2 z-50
+        flex h-11 w-80 -translate-y-1/2
+        items-center
+        rounded-full
+        border border-neutral-200
+        bg-white
+        pl-4 pr-2
+        shadow-[0_12px_35px_rgba(0,0,0,0.10)]
+        animate-fade-in
+      "
               >
+                <Search className="mr-2 h-4 w-4 shrink-0 text-neutral-400" />
                 <input
                   autoFocus
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder={t("nav.search")}
-                  className="h-full w-full border-0 bg-transparent text-sm outline-none"
+                  ref={(element) => {
+                    element?.style.setProperty("border", "none", "important");
+                  }}
+                  className="
+    h-full min-w-0 flex-1
+    bg-transparent
+    text-sm text-neutral-900
+    outline-none
+    placeholder:text-neutral-400
+  "
                 />
+
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="
+            ml-2 flex h-7 w-7 shrink-0
+            items-center justify-center
+            rounded-full
+            text-neutral-400
+            transition-colors
+            hover:bg-neutral-100
+            hover:text-neutral-700
+          "
+                    aria-label="Clear search"
+                  >
+                    ×
+                  </button>
+                )}
+
                 {searchSuggestions.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full z-[90] mt-2 border border-neutral-200 bg-white py-2 shadow-[0_18px_45px_rgba(0,0,0,0.12)]">
+                  <div
+                    className="
+            absolute left-0 right-0 top-full
+            mt-2
+            overflow-hidden
+            rounded-2xl
+            border border-neutral-200
+            bg-white
+            py-2
+            shadow-[0_18px_45px_rgba(0,0,0,0.12)]
+          "
+                  >
                     {searchSuggestions.map((suggestion) => (
                       <button
                         key={`${suggestion.type}-${suggestion.value}`}
                         type="button"
                         onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => chooseSearchSuggestion(suggestion.value, suggestion.href)}
-                        className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm hover:bg-neutral-50"
+                        onClick={() =>
+                          chooseSearchSuggestion(suggestion.value, suggestion.href)
+                        }
+                        className="
+                flex w-full items-center
+                justify-between gap-4
+                px-4 py-3
+                text-left
+                transition-colors
+                hover:bg-neutral-50
+              "
                       >
-                        <span className="font-semibold">{td(suggestion.label)}</span>
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-neutral-500">
+                        <span className="min-w-0 truncate text-sm font-medium">
+                          {td(suggestion.label)}
+                        </span>
+
+                        <span className="
+                shrink-0
+                rounded-full
+                bg-neutral-100
+                px-2 py-1
+                text-[9px]
+                font-bold
+                uppercase
+                tracking-wider
+                text-neutral-500
+              ">
                           {t(`search.type.${suggestion.type}`)}
                         </span>
                       </button>
@@ -546,14 +640,6 @@ const Header = () => {
                 )}
               </form>
             )}
-            <button
-              type="button"
-              className="flex h-10 w-10 items-center justify-center transition-colors hover:bg-neutral-100"
-              onClick={() => setSearchOpen((value) => !value)}
-              aria-label={t("nav.search")}
-            >
-              <Search className="h-6 w-6 stroke-[1.7]" />
-            </button>
           </div>
           <Link to="/panier" className="relative flex h-10 w-10 items-center justify-center transition-colors hover:bg-neutral-100" aria-label={t("nav.cart")}>
             <ShoppingCart className="h-6 w-6 stroke-[1.7]" />
@@ -640,9 +726,8 @@ const Header = () => {
                 key={item.slug}
                 to={`/categorie/${item.slug}`}
                 onClick={closeMenus}
-                className={`block border-b border-neutral-100 py-4 text-base font-black uppercase ${
-                  "highlight" in item && item.highlight ? "text-[#ff263d]" : "text-black"
-                }`}
+                className={`block border-b border-neutral-100 py-4 text-base font-black uppercase ${"highlight" in item && item.highlight ? "text-[#ff263d]" : "text-black"
+                  }`}
               >
                 {getNavLabel(item)}
               </Link>
