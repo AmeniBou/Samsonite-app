@@ -197,7 +197,15 @@ const mapProductToRaw = (product: {
   depth?: string | null;
   quantity?: number | null;
   images: Array<{ id: number; imageUrl: string }>;
-  categories: Array<{ category: { id: number; slug?: string | null } }>;
+  categories: Array<{
+    category: {
+      id: number;
+      name: string;
+      slug?: string | null;
+      parentId?: number | null;
+      parent?: { id: number; name: string; slug?: string | null; parentId?: number | null } | null;
+    };
+  }>;
   variants: CatalogVariantRow[];
   features: Array<{ id: number; featureName: string; featureValue: string }>;
 }, activePromotions: PromotionWithTargets[] = []) => {
@@ -209,12 +217,25 @@ const mapProductToRaw = (product: {
     : undefined;
   const originalPrice = Number(product.price);
   const promotionPrice = getPromotionPrice(originalPrice, promotion);
-  const categoryAssociations = product.categories
-    .map((relation) => ({ id: relation.category.id }))
-    .filter(Boolean);
+  const categoryIds = new Set<number>();
+  for (const relation of product.categories) {
+    if (relation.category.id) categoryIds.add(relation.category.id);
+    if (relation.category.parentId) categoryIds.add(relation.category.parentId);
+  }
+  const categoryAssociations = Array.from(categoryIds).map((id) => ({ id }));
+  const defaultCategory =
+    product.categories.find((relation) => relation.category.parentId)?.category ||
+    product.categories[0]?.category;
+  const parentCategory = defaultCategory?.parent || null;
 
   return {
     id: product.id,
+    categoryId: defaultCategory?.id ?? 0,
+    categoryName: defaultCategory?.name ?? "",
+    categorySlug: defaultCategory?.slug || (defaultCategory?.name ? normalizeSlug(defaultCategory.name) : ""),
+    parentCategoryId: parentCategory?.id ?? null,
+    parentCategoryName: parentCategory?.name ?? "",
+    parentCategorySlug: parentCategory?.slug || (parentCategory?.name ? normalizeSlug(parentCategory.name) : ""),
     name: buildLangField(product.name),
     description: buildLangField(product.description || ""),
     description_short: buildLangField(product.description || ""),
@@ -230,7 +251,7 @@ const mapProductToRaw = (product: {
     reference: product.sku || "",
     active: isAvailabilityInactive(product.availability) ? "0" : "1",
     manufacturer_name: product.brand?.name || "Samsonite",
-    id_category_default: product.categories[0]?.category.id ?? 0,
+    id_category_default: defaultCategory?.id ?? 0,
     id_default_image: imageIds.length > 0 ? imageIds[0] : undefined,
     weight: product.weight || "",
     width: product.width || "",
@@ -257,7 +278,7 @@ export const getPublicCatalog = async () => {
         orderBy: { id: "asc" },
         include: {
           images: { orderBy: { position: "asc" } },
-          categories: { include: { category: true } },
+          categories: { include: { category: { include: { parent: true } } } },
           brand: true,
           variants: { orderBy: { id: "asc" } },
           features: { orderBy: { id: "asc" } },
@@ -731,7 +752,7 @@ const mapAdminProduct = (product: {
   price: { toNumber(): number; toString(): string };
   availability?: string | null;
   brand?: { id: number; name: string } | null;
-  category: { id: number; name: string } | null;
+  category: { id: number; name: string; parentId?: number | null } | null;
   images: Array<{ id: number; imageUrl: string }>;
   features: Array<{ featureName: string; featureValue: string }>;
   variants: CatalogVariantRow[];
@@ -786,6 +807,7 @@ const mapAdminProduct = (product: {
     brandId: product.brand?.id ?? 0,
     brandName: product.brand?.name ?? "Sans marque",
     categoryId: product.category?.id ?? 0,
+    parentCategoryId: product.category?.parentId ?? product.category?.id ?? 0,
     categoryName: product.category?.name ?? "Sans catégorie",
     imageId,
     imageUrl: mainImage?.imageUrl ?? null,
@@ -813,6 +835,13 @@ const mapAdminProduct = (product: {
   };
 };
 
+const selectAdminProductCategory = (
+  categories: Array<{ category: { id: number; name: string; parentId?: number | null } }>
+) => {
+  if (categories.length === 0) return null;
+  return categories.find((relation) => relation.category.parentId)?.category ?? categories[0]?.category ?? null;
+};
+
 export const getMappedAdminProducts = async () => {
   const products = await prisma.product.findMany({
     orderBy: { id: "asc" },
@@ -828,7 +857,7 @@ export const getMappedAdminProducts = async () => {
   return products.map((product) =>
     mapAdminProduct({
       ...product,
-      category: product.categories[0]?.category ?? null,
+      category: selectAdminProductCategory(product.categories),
     })
   );
 };
@@ -849,7 +878,7 @@ export const getMappedAdminProduct = async (id: number) => {
 
   return mapAdminProduct({
     ...product,
-    category: product.categories[0]?.category ?? null,
+    category: selectAdminProductCategory(product.categories),
   });
 };
 
@@ -866,6 +895,14 @@ const ensureCategory = async (categoryId: number) => {
   const category = await prisma.category.findUnique({ where: { id: categoryId } });
   if (!category) {
     throw new Error(`Catégorie introuvable: ${categoryId}`);
+  }
+  return category;
+};
+
+const ensureProductSubCategory = async (categoryId: number) => {
+  const category = await ensureCategory(categoryId);
+  if (!category.parentId) {
+    throw new Error("Choisis une vraie sous-categorie, pas une categorie parente.");
   }
   return category;
 };
@@ -1086,7 +1123,7 @@ export const createProduct = async (fields: {
       throw new Error("Le prix du produit est obligatoire et doit être supérieur à 0.");
     }
     await ensureUniqueProductReference(fields.reference);
-    const category = await ensureCategory(fields.categoryId);
+    const category = await ensureProductSubCategory(fields.categoryId);
     const brand = await ensureBrand(fields.brandId);
     const maxScraped = await prisma.product.aggregate({ _max: { scrapedId: true } });
     const nextScrapedId = (maxScraped._max.scrapedId ?? 0) + 1;
@@ -1185,7 +1222,7 @@ export const updateProduct = async (
     await prisma.product.update({ where: { id }, data });
 
     if (fields.categoryId !== undefined) {
-      await ensureCategory(fields.categoryId);
+      await ensureProductSubCategory(fields.categoryId);
       await prisma.productCategory.deleteMany({ where: { productId: id } });
       await prisma.productCategory.create({ data: { productId: id, categoryId: fields.categoryId } });
     }

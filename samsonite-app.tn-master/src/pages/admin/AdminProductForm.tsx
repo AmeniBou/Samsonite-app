@@ -169,6 +169,7 @@ const AdminProductForm = () => {
     const [previewVariantIndex, setPreviewVariantIndex] = useState(0);
     const [previewImageIndex, setPreviewImageIndex] = useState(0);
     const [validatedSteps, setValidatedSteps] = useState<Set<ProductFormStep>>(new Set());
+    const [loadedProductCategoryId, setLoadedProductCategoryId] = useState("");
 
     useEffect(() => {
         if (error) toast.error(error);
@@ -236,24 +237,33 @@ const AdminProductForm = () => {
         setPreviewVariantIndex((index) => Math.min(index, Math.max(0, form.variants.length - 1)));
     }, [form.variants.length]);
     useEffect(() => {
-        const loadReferences = async () => {
+        let cancelled = false;
+
+        const loadInitialData = async () => {
             try {
-                const [cats, fetchedBrands] = await Promise.all([
+                setLoading(Boolean(isEdit));
+                const [latestCategories, fetchedBrands] = await Promise.all([
                     fetchAdminCategories(),
                     fetchAdminBrands(),
                 ]);
-                setCategories(cats);
-                setBrands(fetchedBrands);
-            } catch {
-                setError("Impossible de charger les catégories ou les marques");
-            }
-        };
 
-        const loadProduct = async () => {
-            if (!isEdit) return;
-            try {
-                setLoading(true);
+                if (cancelled) return;
+                setCategories(latestCategories);
+                setBrands(fetchedBrands);
+
+                if (!isEdit) return;
+
                 const p = await fetchAdminProduct(parseInt(id!, 10));
+                if (cancelled) return;
+
+                const selectedCategory = latestCategories.find((category) => category.id === p.categoryId);
+                const resolvedCategoryId = selectedCategory?.id || p.categoryId || "";
+                const resolvedParentCategoryId =
+                    p.parentCategoryId ||
+                    selectedCategory?.parentId ||
+                    (!selectedCategory?.parentId ? selectedCategory?.id : "") ||
+                    "";
+                setLoadedProductCategoryId(resolvedCategoryId ? String(resolvedCategoryId) : "");
                 const productFeatures = (p.features || []).map((feature) => ({
                     label: decodeAdminText(feature.label),
                     value: decodeAdminText(feature.value),
@@ -263,8 +273,8 @@ const AdminProductForm = () => {
                     description: decodeAdminText(p.description),
                     descriptionShort: decodeAdminText(p.descriptionShort),
                     price: p.price.toString(),
-                    parentCategoryId: "",
-                    categoryId: p.categoryId.toString(),
+                    parentCategoryId: resolvedParentCategoryId ? String(resolvedParentCategoryId) : "",
+                    categoryId: resolvedCategoryId ? String(resolvedCategoryId) : "",
                     brandId: p.brandId?.toString() || "",
                     reference: p.reference,
                     weight: p.weight || "",
@@ -329,14 +339,17 @@ const AdminProductForm = () => {
                 // Actually, let's assume we need to fetch the raw product for full editing
                 // if we want to change description etc.
             } catch {
-                setError("Impossible de charger le produit");
+                setError(isEdit ? "Impossible de charger le produit" : "Impossible de charger les catégories ou les marques");
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         };
 
-        loadReferences();
-        loadProduct();
+        loadInitialData();
+
+        return () => {
+            cancelled = true;
+        };
     }, [id, isEdit]);
 
     useEffect(() => {
@@ -349,14 +362,26 @@ const AdminProductForm = () => {
         }));
     }, [categories, form.categoryId, form.parentCategoryId]);
 
+    useEffect(() => {
+        if (!loadedProductCategoryId || form.categoryId || categories.length === 0) return;
+        const category = categories.find((item) => String(item.id) === loadedProductCategoryId);
+        if (!category) return;
+        setForm((prev) => ({
+            ...prev,
+            parentCategoryId: category.parentId ? String(category.parentId) : prev.parentCategoryId,
+            categoryId: loadedProductCategoryId,
+        }));
+    }, [categories, form.categoryId, loadedProductCategoryId]);
+
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) => {
         const { name, value, type } = e.target;
+        const nextValue = type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
         setForm((prev) => ({
             ...prev,
-            [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
-            ...(name === "parentCategoryId" ? { categoryId: "" } : {}),
+            [name]: nextValue,
+            ...(name === "parentCategoryId" && nextValue !== prev.parentCategoryId ? { categoryId: "" } : {}),
         }));
     };
     const handleVariantChange = (
@@ -821,10 +846,16 @@ const AdminProductForm = () => {
         .filter((category) => !category.parentId)
         .sort((first, second) => first.name.localeCompare(second.name, "fr"));
     const selectedParent = categories.find((category) => String(category.id) === form.parentCategoryId);
+    const selectedCategory = categories.find((category) => String(category.id) === form.categoryId);
     const childCategories = categories
         .filter((category) => String(category.parentId) === form.parentCategoryId)
         .sort((first, second) => first.name.localeCompare(second.name, "fr"));
-    const categoryOptions = selectedParent ? [selectedParent, ...childCategories] : [];
+    const categoryOptions =
+        selectedParent && selectedCategory && !childCategories.some((category) => category.id === selectedCategory.id)
+            ? [...childCategories, selectedCategory].sort((first, second) => first.name.localeCompare(second.name, "fr"))
+            : selectedParent
+              ? childCategories
+              : [];
     const allVariantImages = form.variants.flatMap((variant) => parseLines(variant.imagesText));
     const imagePreviewItems = allVariantImages.slice(0, 12);
     const allProductImages = allVariantImages;
@@ -1162,7 +1193,7 @@ const AdminProductForm = () => {
                         <label htmlFor="product-category" className="block text-sm font-medium text-gray-700 mb-1">
                             Sous-catégorie *
                         </label>
-                        <AppSelect
+                        <select
                             id="product-category"
                             name="categoryId"
                             value={form.categoryId}
@@ -1176,10 +1207,10 @@ const AdminProductForm = () => {
                             <option value="">Choisir une sous-catégorie</option>
                             {categoryOptions.map((category) => (
                                 <option key={category.id} value={category.id}>
-                                    {category.id === selectedParent?.id ? `Toutes - ${category.name}` : category.name}
+                                    {category.name}
                                 </option>
                             ))}
-                        </AppSelect>
+                        </select>
                         {showGeneralErrors && !form.categoryId && <p id="product-category-error" className="mt-1 text-xs font-semibold text-red-600">La sous-catégorie est obligatoire.</p>}
                     </div>
                 </div>

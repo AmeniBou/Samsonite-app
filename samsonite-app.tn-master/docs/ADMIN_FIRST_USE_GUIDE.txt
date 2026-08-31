@@ -1,0 +1,540 @@
+﻿GUIDE DE PREMIERE UTILISATION - ADMIN
+====================================
+
+Objectif du document
+--------------------
+Ce document est destine a l'administrateur du site Samsonite Tunisie.
+Il sert de guide interne pour comprendre le backoffice, configurer le catalogue, gerer les commandes et eviter les erreurs courantes.
+
+Ce guide n'est pas destine aux clients du site. Il explique comment utiliser l'interface d'administration et comment verifier que les donnees affichees sur le site public sont correctes.
+
+
+1. Acceder au backoffice
+-----------------------
+
+Adresse locale du backoffice :
+
+http://localhost:8080/admin
+
+Pour se connecter, l'administrateur doit saisir son nom d'utilisateur et son mot de passe.
+Les identifiants sont verifies cote backend. Si les identifiants sont incorrects, un message d'erreur s'affiche.
+
+A verifier lors de la premiere connexion :
+
+- Le backend doit etre lance.
+- La base PostgreSQL doit etre accessible.
+- L'utilisateur admin doit exister dans la table AdminUser.
+- Le port backend doit correspondre a la configuration du frontend.
+
+Si la connexion ne fonctionne pas :
+
+- verifier que le serveur backend tourne bien sur le port 3002,
+- verifier que la variable DATABASE_URL pointe vers la bonne base,
+- verifier que l'utilisateur admin existe dans la base,
+- verifier la console du navigateur et les logs backend.
+
+Important :
+Le backoffice ne doit pas etre accessible depuis le site public sans authentification.
+Le bouton admin ne doit pas etre visible pour les visiteurs.
+
+
+2. Comprendre l'organisation du backoffice
+-----------------------------------------
+
+Le backoffice est l'espace interne qui permet de gerer le contenu et les donnees du site.
+Il regroupe plusieurs sections :
+
+- Tableau de bord,
+- Commandes,
+- Messages,
+- Categories,
+- Marques,
+- Qualite des donnees,
+- Ajout / modification de produit,
+- Promotions.
+
+La sidebar permet de naviguer entre ces sections.
+Chaque section correspond a une partie importante de la gestion du site.
+
+Avant de commencer a modifier les donnees, il est conseille de faire un tour rapide du backoffice pour comprendre :
+
+- quels produits existent deja,
+- quelles marques sont disponibles,
+- comment les categories sont organisees,
+- quelles commandes sont en attente,
+- quels messages clients doivent etre traites,
+- si la page qualite des donnees signale des problemes.
+
+
+3. Tableau de bord produits
+---------------------------
+
+Le tableau de bord permet de consulter rapidement les produits du catalogue.
+Il donne une vue d'ensemble sur les articles existants et permet de filtrer les produits.
+
+L'administrateur peut utiliser cette page pour :
+
+- retrouver un produit rapidement,
+- verifier son statut,
+- consulter sa marque,
+- consulter sa categorie,
+- voir le nombre de variantes,
+- identifier les produits indisponibles,
+- acceder a la modification d'un produit.
+
+Points a verifier regulierement :
+
+- Un produit doit avoir une marque correcte.
+- Un produit doit etre associe a une categorie parent et une sous-categorie si necessaire.
+- Un produit doit avoir au moins une variante.
+- Les produits visibles sur le site doivent etre actifs.
+- Les produits sans image ou sans stock doivent etre corriges si necessaire.
+
+Exemple d'utilisation :
+Si un produit n'apparait pas sur le site public, verifier dans le backoffice :
+
+1. si le produit existe,
+2. si le produit est actif,
+3. si sa categorie est active,
+4. si sa marque est correcte,
+5. si au moins une variante existe,
+6. si les images sont bien renseignees.
+
+
+4. Ajouter ou modifier un produit
+---------------------------------
+
+La creation ou modification d'un produit se fait en plusieurs etapes.
+Cette organisation permet d'eviter de melanger les informations generales du produit avec les variantes.
+
+Etape 1 : Informations generales
+
+L'administrateur renseigne les informations qui concernent le produit dans son ensemble :
+
+- Nom du produit,
+- Reference,
+- Marque,
+- Categorie parent,
+- Sous-categorie,
+- Modele,
+- Matiere,
+- Poignees,
+- Type de roues,
+- Poignee de traction,
+- Roulettes,
+- Description courte,
+- Description complete,
+- Caracteristiques techniques.
+
+Ces informations ne changent pas forcement d'une couleur a une autre.
+Elles decrivent le produit globalement.
+
+Bonnes pratiques :
+
+- Utiliser un nom clair et proche du nom commercial.
+- Renseigner une reference unique si elle existe.
+- Choisir la bonne marque.
+- Choisir une categorie logique pour faciliter les filtres.
+- Eviter les descriptions trop courtes ou incompletes.
+- Verifier les accents et les caracteres speciaux avant validation.
+
+Etape 2 : Variantes
+
+Chaque produit doit avoir au moins une variante.
+Une variante correspond a une declinaison concrete du produit.
+
+Une variante peut contenir :
+
+- Couleur,
+- Code couleur,
+- Taille si applicable,
+- Hauteur,
+- Largeur,
+- Profondeur,
+- Dimensions extensibles si le produit est extensible,
+- Volume,
+- Poids,
+- Prix,
+- Stock initial,
+- Stock actuel,
+- Images propres a cette variante.
+
+Exemple :
+Un meme modele de valise peut exister en jaune et en noir.
+Chaque couleur peut avoir ses propres images, son propre stock et parfois son propre prix.
+
+Regle importante :
+Deux variantes identiques ne doivent pas etre ajoutees deux fois au meme produit.
+Si une variante a la meme couleur, la meme taille et les memes dimensions qu'une autre, elle doit etre corrigee au lieu d'etre dupliquee.
+
+Etape 3 : Apercu
+
+Avant de valider, l'administrateur doit consulter l'apercu.
+L'objectif est de verifier comment le produit sera affiche cote client.
+
+A verifier dans l'apercu :
+
+- Le nom du produit,
+- La marque,
+- Le prix,
+- Les couleurs,
+- Les dimensions,
+- Le volume,
+- Le poids,
+- Les images,
+- Le stock,
+- Les caracteristiques techniques.
+
+La creation ou modification ne doit etre validee qu'apres verification de cet apercu.
+
+
+5. Gerer les images produit
+---------------------------
+
+Les images peuvent etre importees depuis l'ordinateur.
+Elles sont ensuite associees au produit ou a une variante.
+
+Bonnes pratiques :
+
+- Utiliser des images nettes et propres.
+- Eviter les images trop petites ou mal cadrees.
+- Ajouter plusieurs vues lorsque c'est possible : face, cote, interieur, details.
+- Verifier que chaque couleur affiche les bonnes images.
+- Supprimer les images incorrectes avant validation.
+- Ordonner les images pour que la meilleure vue apparaisse en premier.
+
+Pourquoi l'ordre des images est important :
+La premiere image est souvent celle qui apparait dans les cartes produit, les listes et la galerie principale.
+Une mauvaise premiere image peut donner une impression incorrecte du produit.
+
+
+6. Gerer les categories
+----------------------
+
+Les categories structurent le menu et les pages catalogue.
+Elles permettent aux clients de naviguer facilement dans le site.
+
+Il existe deux niveaux principaux :
+
+- Categorie principale,
+- Sous-categorie.
+
+Le site ne doit pas utiliser de sous-sous-categorie.
+Cela garde le menu plus simple et plus lisible.
+
+Champs importants :
+
+- Nom : libelle affiche dans le backoffice et parfois sur le site.
+- Slug : partie lisible de l'URL.
+- Actif : indique si la categorie est utilisable et visible.
+- Menu principal : indique si la categorie apparait dans la barre principale.
+- Explorer seul : indique si la categorie apparait seulement dans Explorer.
+- Parent : indique si la categorie est une sous-categorie.
+
+Explication du slug :
+Le slug est la partie de l'adresse web qui identifie une page.
+Exemple :
+
+Nom : Valises rigides
+Slug : valises-rigides
+URL : /categorie/valises-rigides
+
+Regles importantes :
+
+- Le slug doit etre unique.
+- Une categorie inactive ne doit pas apparaitre dans le menu public.
+- Le menu principal ne doit pas depasser 7 categories.
+- Une sous-categorie ne doit pas etre ajoutee dans le menu principal comme une categorie racine.
+- Les categories renommees doivent etre verifiees cote front pour eviter les anciens libelles.
+
+Avant de supprimer une categorie :
+
+- Verifier si elle contient des produits.
+- Verifier si elle contient des sous-categories.
+- Verifier si elle est utilisee dans une promotion.
+- Preferer la desactivation si la suppression risque de casser l'organisation.
+
+
+7. Gerer les marques
+-------------------
+
+Les marques servent a classer les produits et a alimenter les filtres du catalogue.
+Les marques actuellement prevues sont :
+
+- Samsonite,
+- American Tourister,
+- Lipault,
+- Disney.
+
+Une marque est utilisee dans plusieurs parties du site :
+
+- fiche produit,
+- carte produit,
+- filtres catalogue,
+- promotions,
+- qualite des donnees.
+
+Bonnes pratiques :
+
+- Ne pas creer deux fois la meme marque avec une orthographe differente.
+- Verifier les majuscules et l'ecriture officielle.
+- Associer chaque produit a la bonne marque.
+- Eviter de supprimer une marque qui contient deja des produits.
+
+Exemple d'incoherence :
+Si un produit American Tourister est associe a Samsonite, il apparaitra dans le mauvais filtre et pourrait recevoir une promotion incorrecte.
+
+
+8. Gerer les commandes
+---------------------
+
+La section commandes permet de suivre les commandes passees par les clients.
+
+Chaque commande contient :
+
+- Une reference,
+- Un statut,
+- Les informations client,
+- L'adresse de livraison,
+- Le mode de livraison,
+- Le mode de paiement,
+- Les articles commandes,
+- Les prix,
+- L'historique des changements de statut.
+
+Statuts possibles selon la logique du site :
+
+- Nouvelle,
+- Confirmee,
+- En preparation,
+- Expediee,
+- Livree,
+- Annulee.
+
+La manipulation des statuts doit rester controlee.
+Par exemple :
+
+- Une commande nouvelle peut etre confirmee ou annulee.
+- Une commande confirmee peut passer en preparation.
+- Une commande livree ne doit pas redevenir nouvelle.
+- Une commande annulee doit rester finale sauf logique exceptionnelle.
+
+Pourquoi cette logique est importante :
+Le statut d'une commande influence le suivi client, le stock et l'historique interne.
+Un mauvais changement de statut peut creer une incoherence dans la gestion commerciale.
+
+A verifier avant de changer un statut :
+
+- La commande a-t-elle ete verifiee ?
+- Le client a-t-il ete contacte si necessaire ?
+- Le stock est-il disponible ?
+- Le paiement est-il compatible avec le statut ?
+
+
+9. Gestion du stock
+------------------
+
+Le stock est lie aux variantes lorsque le produit possede des variantes.
+Lorsqu'une commande est validee, le backend decremente automatiquement le stock de la variante commandee.
+
+Exemple :
+Si une valise jaune a un stock de 3 et qu'un client commande 1 unite, le stock passe a 2.
+
+Points importants :
+
+- Le stock doit etre numerique.
+- Le stock doit correspondre a la variante exacte.
+- Une couleur peut etre disponible alors qu'une autre est indisponible.
+- Une commande annulee peut necessiter une restitution du stock selon la logique definie.
+
+A verifier regulierement :
+
+- Les produits affiches comme disponibles ont bien un stock positif.
+- Les produits indisponibles n'ont pas de stock disponible cache dans une variante.
+- Les variantes sans stock ne doivent pas etre affichees comme disponibles.
+
+
+10. Gerer les messages clients
+-----------------------------
+
+La section messages regroupe les demandes envoyees depuis le formulaire de contact.
+
+L'administrateur peut :
+
+- Lire les messages,
+- Filtrer par statut,
+- Filtrer par sujet,
+- Changer le statut d'un message,
+- Ouvrir une piece jointe,
+- Gerer les sujets du formulaire.
+
+Statuts possibles :
+
+- Nouveau,
+- Lu,
+- Traite.
+
+Les sujets de message permettent d'orienter les demandes client.
+Exemples :
+
+- Service client,
+- Suivi de commande,
+- Service apres-vente,
+- Disponibilite produit.
+
+Bonnes pratiques :
+
+- Garder uniquement les sujets utiles et compréhensibles.
+- Desactiver un sujet inutile au lieu de le supprimer si des messages anciens l'utilisent.
+- Verifier que les pieces jointes s'ouvrent correctement.
+- Traiter les messages regulièrement.
+
+
+11. Gerer les promotions
+-----------------------
+
+Les promotions permettent d'appliquer une remise automatiquement sur certains produits.
+
+Une promotion peut cibler :
+
+- Un ou plusieurs produits precis,
+- Une ou plusieurs marques,
+- Une ou plusieurs categories,
+- Une combinaison de marque et categorie.
+
+Exemple :
+Une promotion de 20% peut cibler tous les produits American Tourister dans la categorie Valises.
+
+Informations importantes d'une promotion :
+
+- Nom de la promotion,
+- Pourcentage de remise,
+- Date de debut,
+- Date de fin,
+- Priorite,
+- Statut actif ou inactif,
+- Produits concernes.
+
+La priorite sert a choisir quelle promotion appliquer si plusieurs promotions correspondent au meme produit.
+La promotion avec la priorite la plus elevee doit etre appliquee en premier selon la logique definie.
+
+Avant d'activer une promotion :
+
+- Verifier le pourcentage.
+- Verifier les marques selectionnees.
+- Verifier les categories selectionnees.
+- Verifier les produits concernes dans l'apercu.
+- Verifier la periode de validite.
+
+Important :
+Les prix remises sont calcules cote backend.
+Cela evite qu'un prix affiche cote client soit different du prix enregistre dans la commande.
+
+
+12. Qualite des donnees
+----------------------
+
+La section qualite des donnees aide l'administrateur a detecter les problemes qui peuvent casser l'affichage du site ou rendre le catalogue incoherent.
+
+Elle peut signaler :
+
+- Produits sans variante,
+- Variantes sans image,
+- Produits sans marque,
+- Categories inactives utilisees,
+- Sous-categories mal placees,
+- Slugs manquants ou dupliques,
+- Caracteristiques manquantes,
+- Donnees mal encodees.
+
+Comment utiliser cette page :
+
+1. Ouvrir la section qualite des donnees.
+2. Lire les problemes critiques en premier.
+3. Corriger les produits ou categories concernes.
+4. Actualiser l'analyse.
+5. Verifier ensuite le site public.
+
+Cette page doit etre consultee avant les grandes mises a jour du catalogue.
+
+
+13. Verifier le site public apres modification
+---------------------------------------------
+
+Apres une modification importante dans le backoffice, il faut toujours verifier l'affichage cote client.
+
+A verifier :
+
+- La page d'accueil,
+- Le menu principal,
+- La page categorie concernee,
+- La fiche produit modifiee,
+- Les filtres,
+- Le panier,
+- Le checkout si le prix ou le stock a change.
+
+Exemple :
+Si vous changez la categorie d'un produit, verifiez que le produit apparait dans la nouvelle categorie et disparait de l'ancienne si c'est le comportement attendu.
+
+
+14. Sauvegarder les donnees
+--------------------------
+
+Avant une grosse modification, il est recommande de sauvegarder la base de donnees.
+
+La base PostgreSQL peut etre exportee avec pg_dump.
+Le fichier obtenu peut etre envoye a un collegue ou conserve comme sauvegarde.
+
+Exemple de dump :
+
+$env:PGPASSWORD='mot_de_passe'
+& 'C:\Program Files\PostgreSQL\15\bin\pg_dump.exe' -h localhost -p 5432 -U postgres -d samsonite -F c -b -v -f 'C:\Users\ameni\Desktop\samsonite_backup.dump'
+
+Attention :
+Le dump contient les donnees de la base, mais pas forcement les fichiers images stockes dans le dossier du projet.
+Pour transferer le projet complet, il faut aussi transferer les dossiers utiles comme :
+
+- server/public/images,
+- server/public/attachments,
+- server/public/order-emails si necessaire.
+
+
+15. Bonnes pratiques generales
+-----------------------------
+
+Avant chaque modification importante :
+
+- Verifier que vous travaillez sur la bonne base de donnees.
+- Faire une sauvegarde si la modification est importante.
+- Eviter de supprimer une donnee utilisee par des produits ou commandes.
+- Preferer desactiver une categorie, une marque ou un sujet si vous avez un doute.
+- Tester le resultat sur le site public.
+- Garder les noms, marques, categories et slugs propres et coherents.
+- Verifier les images apres import.
+- Verifier les promotions avant publication.
+- Verifier le stock apres les commandes de test.
+
+Une bonne gestion du backoffice permet de garder un catalogue clair, fiable et facile a utiliser pour le client final.
+
+
+16. Checklist de premiere utilisation
+------------------------------------
+
+Lors de la premiere utilisation du backoffice, suivre cette checklist :
+
+[ ] Se connecter au backoffice.
+[ ] Verifier que les produits s'affichent.
+[ ] Verifier que les categories principales sont correctes.
+[ ] Verifier que le menu ne depasse pas 7 categories.
+[ ] Verifier que les marques existent.
+[ ] Verifier qu'un produit a au moins une variante.
+[ ] Verifier qu'une variante contient image, prix et stock.
+[ ] Tester l'affichage d'une fiche produit cote client.
+[ ] Tester l'ajout au panier.
+[ ] Tester le checkout avec une commande simple.
+[ ] Verifier que la commande apparait dans le backoffice.
+[ ] Verifier que le stock a ete mis a jour.
+[ ] Verifier les messages clients.
+[ ] Consulter la qualite des donnees.
+[ ] Faire une sauvegarde de la base si tout est correct.
+

@@ -1,0 +1,362 @@
+USER STORIES - SAMSONITE TUNISIE
+================================
+
+Objectif du document
+--------------------
+Ce fichier regroupe les user stories principales du site e-commerce Samsonite Tunisie.
+Il sert a clarifier les besoins fonctionnels du projet cote client et cote backoffice.
+
+
+1. Visiteur / Client
+--------------------
+
+US-01 - Consulter la page d'accueil
+En tant que visiteur,
+je veux voir une page d'accueil moderne avec les principales categories,
+afin de comprendre rapidement ce que le site propose.
+
+Critere d'acceptation :
+- Les categories principales sont visibles.
+- Les images de categories s'affichent correctement.
+- Le menu permet d'acceder rapidement au catalogue.
+
+
+US-02 - Naviguer dans les categories
+En tant que visiteur,
+je veux pouvoir parcourir les categories et sous-categories,
+afin de trouver facilement le type de produit que je cherche.
+
+Critere d'acceptation :
+- Les categories actives s'affichent dans le menu.
+- Les categories inactives ne s'affichent pas.
+- Les sous-categories sont groupees sous leur categorie parent.
+- Le menu ne contient pas de doublons.
+
+
+US-03 - Filtrer les produits
+En tant que visiteur,
+je veux filtrer les produits par marque, categorie, prix, stock, couleur ou caracteristiques,
+afin de trouver plus rapidement un produit adapte a mon besoin.
+
+Critere d'acceptation :
+- Les filtres modifient la liste des produits sans bloquer le site.
+- Les filtres sont faciles a ouvrir, fermer et reinitialiser.
+- Le filtre marque affiche les marques disponibles dans la base.
+
+
+US-04 - Rechercher un produit
+En tant que visiteur,
+je veux rechercher un produit par nom, marque, couleur, collection ou taille,
+afin d'acceder directement aux produits pertinents.
+
+Critere d'acceptation :
+- La recherche affiche des resultats pertinents.
+- Le site ne se bloque pas pendant la recherche.
+- Les erreurs de saisie simples sont tolerees si possible.
+
+
+US-05 - Consulter une fiche produit
+En tant que visiteur,
+je veux consulter les details d'un produit,
+afin de connaitre son prix, ses couleurs, ses dimensions, son volume, son poids et sa disponibilite.
+
+Critere d'acceptation :
+- La fiche produit affiche les images.
+- Les informations sont alignees et lisibles.
+- Les caracteristiques techniques sont presentees clairement.
+- Les variantes indisponibles sont visuellement differentes.
+
+
+US-06 - Changer de variante produit
+En tant que visiteur,
+je veux choisir une couleur ou une variante,
+afin de voir les bonnes images, le bon prix, le bon stock et les bonnes caracteristiques.
+
+Critere d'acceptation :
+- Le changement de couleur change les images.
+- Le changement de variante change le prix si necessaire.
+- Le stock affiche correspond a la variante selectionnee.
+
+
+US-07 - Ajouter un produit au panier
+En tant que client,
+je veux ajouter un produit au panier apres confirmation,
+afin de verifier mon choix avant de continuer mes achats ou commander.
+
+Critere d'acceptation :
+- Un popup de confirmation apparait.
+- Le produit ajoute conserve sa variante, sa couleur, ses dimensions et son prix.
+- Le compteur panier est mis a jour.
+
+
+US-08 - Gerer mon panier
+En tant que client,
+je veux modifier les quantites ou supprimer un article du panier,
+afin de corriger ma commande avant validation.
+
+Critere d'acceptation :
+- La quantite peut etre modifiee.
+- La suppression demande une confirmation.
+- Le total est recalcule automatiquement.
+
+
+US-09 - Passer une commande
+En tant que client,
+je veux suivre un checkout en etapes,
+afin de renseigner mes informations, mon adresse, le mode de livraison et le paiement.
+
+Critere d'acceptation :
+- Les champs obligatoires sont marques par une etoile.
+- Le telephone accepte uniquement 8 chiffres.
+- La date de naissance utilise un champ date.
+- Le paiement par carte bancaire n'est pas affiche si non disponible.
+
+
+US-10 - Recevoir une confirmation de commande
+En tant que client,
+je veux voir une page de commande recue claire,
+afin d'avoir mon numero de commande, le resume et les informations utiles.
+
+Critere d'acceptation :
+- Le numero de commande est affiche.
+- Le resume des articles est affiche.
+- Les informations de livraison sont affichees.
+- Un bouton d'impression est disponible.
+
+
+US-11 - Contacter le service client
+En tant que visiteur,
+je veux envoyer un message avec un sujet et une piece jointe optionnelle,
+afin de contacter l'equipe Samsonite Tunisie.
+
+Critere d'acceptation :
+- Le formulaire affiche les sujets actifs.
+- Le message est enregistre en base.
+- La piece jointe peut etre consultee dans le backoffice.
+- Un message de succes est affiche apres envoi.
+
+
+2. Administrateur
+-----------------
+
+US-12 - Se connecter au backoffice
+En tant qu'administrateur,
+je veux me connecter avec mes identifiants,
+afin d'acceder aux outils de gestion du site.
+
+Critere d'acceptation :
+- Les identifiants sont verifies cote backend.
+- Un message clair apparait en cas d'erreur.
+- Le backoffice n'est pas accessible sans connexion.
+
+
+US-13 - Gerer les produits
+En tant qu'administrateur,
+je veux ajouter, modifier et supprimer des produits,
+afin de maintenir le catalogue a jour.
+
+Critere d'acceptation :
+- Le formulaire produit est organise en etapes.
+- Les informations generales sont separees des variantes.
+- L'aperçu produit est visible avant validation finale.
+- Les erreurs de validation sont claires.
+
+
+US-14 - Gerer les variantes produit
+En tant qu'administrateur,
+je veux ajouter des variantes avec couleur, dimensions, volume, poids, prix, stock et images,
+afin de representer correctement chaque declinaison du produit.
+
+Critere d'acceptation :
+- Chaque produit contient au moins une variante.
+- Une variante identique ne peut pas etre ajoutee deux fois.
+- Les images peuvent etre importees depuis l'ordinateur.
+- Les images peuvent etre supprimees ou reordonnees.
+
+
+US-15 - Gerer les marques
+En tant qu'administrateur,
+je veux creer et modifier les marques,
+afin de classer les produits par Samsonite, American Tourister, Lipault ou Disney.
+
+Critere d'acceptation :
+- Les marques apparaissent dans les filtres.
+- Les produits peuvent etre associes a une marque.
+- La suppression d'une marque est controlee si elle contient des produits.
+
+
+US-16 - Gerer les categories
+En tant qu'administrateur,
+je veux creer des categories et sous-categories,
+afin d'organiser le menu et le catalogue.
+
+Critere d'acceptation :
+- Une categorie peut etre active ou inactive.
+- Une categorie principale peut etre affichee dans le menu principal.
+- Le menu principal accepte maximum 7 categories.
+- Une sous-categorie ne peut pas avoir de sous-sous-categorie.
+- Le slug est unique.
+
+
+US-17 - Comprendre le slug
+En tant qu'administrateur,
+je veux voir une explication courte du slug,
+afin de comprendre son impact sur les URLs.
+
+Critere d'acceptation :
+- Une aide explique que le slug est la partie lisible de l'URL.
+- Le slug est valide et unique.
+- Les erreurs de slug sont comprehensibles.
+
+
+US-18 - Gerer les commandes
+En tant qu'administrateur,
+je veux consulter, filtrer et modifier les commandes,
+afin de suivre le traitement client.
+
+Critere d'acceptation :
+- Les commandes sont paginees.
+- La recherche par reference fonctionne.
+- Les filtres statut, date et paiement sont disponibles.
+- Le changement de statut suit une logique controlee.
+
+
+US-19 - Controler les statuts de commande
+En tant qu'administrateur,
+je veux changer le statut d'une commande selon des transitions autorisees,
+afin d'eviter les incoherences.
+
+Critere d'acceptation :
+- Une commande nouvelle peut etre confirmee ou annulee.
+- Une commande confirmee peut etre preparee ou annulee selon la logique definie.
+- Une commande livree ne peut pas redevenir nouvelle.
+- Chaque changement est enregistre dans l'historique.
+
+
+US-20 - Exporter les commandes
+En tant qu'administrateur,
+je veux exporter les commandes en Excel ou PDF,
+afin de les partager ou les archiver.
+
+Critere d'acceptation :
+- L'export Excel contient les donnees principales.
+- Le PDF ressemble a un document de details de commande.
+- Le statut de la commande est affiche dans l'export.
+
+
+US-21 - Gerer les messages clients
+En tant qu'administrateur,
+je veux lire, filtrer et traiter les messages recus,
+afin de repondre efficacement aux demandes.
+
+Critere d'acceptation :
+- Les messages peuvent etre filtres par statut.
+- Les messages peuvent etre filtres par sujet.
+- Les pieces jointes sont visibles ou telechargeables.
+- Les messages sont affiches dans une liste lisible.
+
+
+US-22 - Gerer les sujets de message
+En tant qu'administrateur,
+je veux ajouter, activer ou desactiver les sujets du formulaire contact,
+afin de controler les choix proposes au client.
+
+Critere d'acceptation :
+- La section sujets est retractable.
+- Un popup confirme l'activation ou la desactivation.
+- Un message de succes apparait apres ajout.
+- La suppression ne casse pas les anciens messages.
+
+
+US-23 - Gerer les promotions
+En tant qu'administrateur,
+je veux creer des promotions avec pourcentage, cible et periode,
+afin d'appliquer automatiquement des prix soldes au catalogue.
+
+Critere d'acceptation :
+- La promotion peut cibler des produits, marques ou categories.
+- Les prix soldes s'affichent cote client.
+- Les commandes conservent le prix original et le prix applique.
+- Une promotion inactive ne modifie pas les prix publics.
+
+
+US-24 - Verifier la qualite des donnees
+En tant qu'administrateur,
+je veux voir les incoherences dans les donnees,
+afin de corriger les produits, variantes, categories ou messages incomplets.
+
+Critere d'acceptation :
+- Les problemes critiques sont distingues des avertissements.
+- Les produits sans variantes sont signales.
+- Les variantes sans images sont signalees.
+- Les categories mal configurees sont signalees.
+
+
+3. Systeme
+----------
+
+US-25 - Decrementer le stock automatiquement
+En tant que systeme,
+je veux decrementer le stock apres validation d'une commande,
+afin que la disponibilite reste correcte.
+
+Critere d'acceptation :
+- Le stock est mis a jour cote backend.
+- Le stock de la variante selectionnee est decremente.
+- Une commande annulee peut restituer le stock selon la logique definie.
+
+
+US-26 - Calculer les promotions cote backend
+En tant que systeme,
+je veux calculer les promotions cote backend,
+afin d'eviter les erreurs de prix cote frontend.
+
+Critere d'acceptation :
+- Le catalogue retourne le prix public deja calcule.
+- Le checkout recalcule le prix avant creation de commande.
+- Les promotions futures s'appliquent aux nouveaux produits correspondants.
+
+
+US-27 - Proteger le backoffice
+En tant que systeme,
+je veux proteger les routes admin,
+afin que seules les personnes connectees puissent gerer le site.
+
+Critere d'acceptation :
+- Les routes admin demandent un token valide.
+- Le bouton admin n'apparait pas dans le site public.
+- Les erreurs d'authentification sont claires.
+
+
+4. Evolutions possibles
+-----------------------
+
+US-28 - Version anglaise complete
+En tant que visiteur anglophone,
+je veux consulter tout le site en anglais,
+afin de comprendre le contenu sans melange FR/EN.
+
+
+US-29 - Images 360 et dimensions visuelles
+En tant que client,
+je veux visualiser le produit en 360 degres avec ses dimensions,
+afin de mieux comprendre sa taille et son volume.
+
+
+US-30 - Avis clients
+En tant que client,
+je veux lire les avis sur un produit,
+afin d'etre rassure avant l'achat.
+
+
+US-31 - Codes promo
+En tant que client,
+je veux appliquer un code promo au panier,
+afin de beneficier d'une remise specifique.
+
+
+US-32 - Notifications de retour en stock
+En tant que client,
+je veux laisser mon email sur un produit indisponible,
+afin d'etre prevenu lorsqu'il revient en stock.
+

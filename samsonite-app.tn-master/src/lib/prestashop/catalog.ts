@@ -112,7 +112,13 @@ export const fetchDisplayCategories = async (): Promise<CategoryDisplay[]> => {
   }, {});
 
   const usedSlugs = new Set<string>();
-  const toChildDisplay = (node: CategoryNode) => ({ name: node.name, slug: node.slug, isActive: node.active });
+  const toChildDisplay = (node: CategoryNode) => ({
+    id: node.id,
+    name: node.name,
+    slug: node.slug,
+    parentId: node.parentId,
+    isActive: node.active,
+  });
   const sortChildren = (items: Array<{ name: string; slug: string }>) =>
     items.sort((a, b) => a.name.localeCompare(b.name, "fr", { sensitivity: "base" }));
 
@@ -198,10 +204,27 @@ export const fetchDisplayProducts = async (): Promise<ProductDisplay[]> => {
   const activeProducts = rawProducts.filter((product) => product.active === "1");
 
   const categorySlugById: Record<number, string> = {};
+  const categoryNameById: Record<number, string> = {};
+  const parentCategorySlugById: Record<number, string> = {};
+  const parentCategoryNameById: Record<number, string> = {};
+  const categoryNodeById = new Map<number, CategoryNode>();
+
   for (const rawCategory of rawCategories) {
-    const id = Number(rawCategory.id);
-    const slug = getRawLangValue(rawCategory.link_rewrite);
+    const node = mapCategoryNode(rawCategory);
+    categoryNodeById.set(node.id, node);
+  }
+
+  for (const node of categoryNodeById.values()) {
+    const id = node.id;
+    const slug = node.slug;
     if (slug) categorySlugById[id] = slug;
+    if (node.name) categoryNameById[id] = node.name;
+
+    const parent = categoryNodeById.get(node.parentId);
+    if (parent && parent.id !== node.id) {
+      parentCategorySlugById[id] = parent.slug;
+      parentCategoryNameById[id] = parent.name;
+    }
   }
 
   const combinationsByProductId = combinations.reduce<Record<number, PSCombination[]>>(
@@ -253,6 +276,9 @@ export const fetchDisplayProducts = async (): Promise<ProductDisplay[]> => {
   return activeProducts.map((product) =>
     mapPSProductToDisplay(product, {
       categorySlugById,
+      categoryNameById,
+      parentCategorySlugById,
+      parentCategoryNameById,
       combinationsByProductId,
       optionValueById,
       optionGroupNameById,

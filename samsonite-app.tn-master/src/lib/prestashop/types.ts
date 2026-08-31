@@ -106,6 +106,12 @@ export interface PSProduct {
   promotion_name?: string;
   reference: string;
   id_category_default: number | string;
+  categoryId?: number | string;
+  categoryName?: string;
+  categorySlug?: string;
+  parentCategoryId?: number | string | null;
+  parentCategoryName?: string;
+  parentCategorySlug?: string;
   active: string;
 
   weight: string;
@@ -202,7 +208,12 @@ export interface ProductDisplay {
   weight?: string;
   volume?: string;
   slug: string;
+  categoryId?: number;
   categorySlug: string;
+  categoryName?: string;
+  parentCategoryId?: number | null;
+  parentCategorySlug?: string;
+  parentCategoryName?: string;
   categorySlugs: string[];
   stock?: number;
 }
@@ -216,8 +227,10 @@ export interface CategoryDisplay {
   isActive?: boolean;
   showInMainMenu?: boolean;
   children?: Array<{
+    id?: number;
     name: string;
     slug: string;
+    parentId?: number;
     isActive?: boolean;
   }>;
 }

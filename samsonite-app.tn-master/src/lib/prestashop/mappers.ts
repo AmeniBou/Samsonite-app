@@ -10,6 +10,9 @@ import { getProductImageUrl } from "./api";
 
 interface ProductMapOptions {
   categorySlugById?: Record<number, string>;
+  categoryNameById?: Record<number, string>;
+  parentCategorySlugById?: Record<number, string>;
+  parentCategoryNameById?: Record<number, string>;
   combinationsByProductId?: Record<number, PSCombination[]>;
   optionValueById?: Record<number, PSProductOptionValue>;
   optionGroupNameById?: Record<number, string>;
@@ -141,7 +144,7 @@ export const mapPSProductToDisplay = (
   const fullDesc = stripHtml(getLangValue(product.description));
   const slug = getLangValue(product.link_rewrite);
 
-  const categoryId = Number(product.id_category_default);
+  const categoryId = Number(product.categoryId || product.id_category_default);
   const associatedCategoryIds =
     product.associations?.categories?.map((category) => Number(category.id)).filter(Boolean) || [];
   const categorySlugs = associatedCategoryIds
@@ -474,7 +477,15 @@ export const mapPSProductToDisplay = (
     weight: numericWeight ? `${numericWeight} kg` : characteristicWeight,
     volume: characteristicVolume,
     slug: slug || `product-${productId}`,
-    categorySlug: options?.categorySlugById?.[categoryId] || `category-${categoryId}`,
+    categoryId,
+    categorySlug: product.categorySlug || options?.categorySlugById?.[categoryId] || `category-${categoryId}`,
+    categoryName: product.categoryName || options?.categoryNameById?.[categoryId],
+    parentCategoryId:
+      product.parentCategoryId === null || product.parentCategoryId === undefined
+        ? undefined
+        : Number(product.parentCategoryId),
+    parentCategorySlug: product.parentCategorySlug || options?.parentCategorySlugById?.[categoryId],
+    parentCategoryName: product.parentCategoryName || options?.parentCategoryNameById?.[categoryId],
     categorySlugs,
     stock,
   };

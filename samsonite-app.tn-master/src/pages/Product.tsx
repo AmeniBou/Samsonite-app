@@ -251,13 +251,71 @@ const Product = () => {
 
 
 
-  const rootCategory = useMemo(() => {
+  const categoryTrail = useMemo(() => {
     if (!product) return null;
-    return (
+
+    if (product.parentCategoryName && product.parentCategorySlug && product.categoryName && product.categorySlug) {
+      return {
+        parent: {
+          id: product.parentCategoryId || 0,
+          name: product.parentCategoryName,
+          slug: product.parentCategorySlug,
+        },
+        child: {
+          name: product.categoryName,
+          slug: product.categorySlug,
+        },
+      };
+    }
+
+    if (product.categoryName && product.categorySlug) {
+      return {
+        parent: {
+          id: product.categoryId || 0,
+          name: product.categoryName,
+          slug: product.categorySlug,
+        },
+        child: null,
+      };
+    }
+
+    const parentCategory =
+      (product.parentCategorySlug
+        ? categories.find((category) => category.slug === product.parentCategorySlug)
+        : null) ||
       categories.find((category) =>
-        product.categorySlugs.includes(category.slug) || product.categorySlug === category.slug
-      ) || null
-    );
+        category.children?.some((child) => child.slug === product.categorySlug)
+      ) ||
+      null;
+
+    const childCategory =
+      parentCategory?.children?.find((child) => child.slug === product.categorySlug) ||
+      categories
+        .flatMap((category) => category.children || [])
+        .find((child) => child.slug === product.categorySlug) ||
+      null;
+
+    if (parentCategory && childCategory && parentCategory.slug !== childCategory.slug) {
+      return {
+        parent: parentCategory,
+        child: {
+          name: product.categoryName || childCategory.name,
+          slug: childCategory.slug,
+        },
+      };
+    }
+
+    const category =
+      categories.find((item) =>
+        product.categorySlugs.includes(item.slug) || product.categorySlug === item.slug
+      ) || null;
+
+    return category
+      ? {
+          parent: category,
+          child: null,
+        }
+      : null;
   }, [categories, product]);
 
   const hasNonZeroNumeric = (value: string): boolean => {
@@ -754,21 +812,26 @@ const Product = () => {
     <div>
       <div className="samsonite-container py-3">
         <nav className="flex items-center gap-2 text-xs text-muted-foreground">
-          {rootCategory ? (
+          <Link to="/" className="hover:text-foreground">
+            {t("category.home")}
+          </Link>
+          <span>/</span>
+          {categoryTrail ? (
             <>
-              <Link to={`/categorie/${rootCategory.slug}`} className="hover:text-foreground">
-                {td(rootCategory.name)}
+              <Link to={`/categorie/${categoryTrail.parent.slug}`} className="hover:text-foreground">
+                {td(categoryTrail.parent.name)}
               </Link>
               <span>/</span>
+              {categoryTrail.child && (
+                <>
+                  <Link to={`/categorie/${categoryTrail.child.slug}`} className="hover:text-foreground">
+                    {td(categoryTrail.child.name)}
+                  </Link>
+                  <span>/</span>
+                </>
+              )}
             </>
-          ) : (
-            <>
-              <Link to="/" className="hover:text-foreground">
-                {t("category.home")}
-              </Link>
-              <span>/</span>
-            </>
-          )}
+          ) : null}
           <span className="text-foreground font-medium">{td(product.name)}</span>
         </nav>
       </div>

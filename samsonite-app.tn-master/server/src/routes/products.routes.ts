@@ -880,6 +880,8 @@ router.put("/products/:id", async (req: Request, res: Response): Promise<void> =
         onSale: boolean;
         onlineOnly: boolean;
         quantity: number | string;
+        categoryId: number | string;
+        brandId: number | string;
         images: string[];
         features: Array<{ label: string; value: string }>;
         variants: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; isExpandable?: boolean; expandedWidth?: string | number; expandedHeight?: string | number; expandedDepth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
@@ -899,6 +901,8 @@ router.put("/products/:id", async (req: Request, res: Response): Promise<void> =
         onSale?: boolean;
         onlineOnly?: boolean;
         quantity?: number;
+        categoryId?: number;
+        brandId?: number;
         images?: string[];
         features?: Array<{ label: string; value: string }>;
         variants?: Array<{ colorName?: string; colorHex?: string; size?: string; weight?: string | number; width?: string | number; height?: string | number; depth?: string | number; volume?: string | number; price?: string | number; stockInitial?: string | number; stock?: string | number; imagesText?: string; images?: string[] }>;
@@ -911,12 +915,28 @@ router.put("/products/:id", async (req: Request, res: Response): Promise<void> =
         normalizedFields.quantity =
             typeof fields.quantity === "string" ? parseFloat(fields.quantity) : fields.quantity;
     }
+    if (fields.categoryId !== undefined) {
+        normalizedFields.categoryId =
+            typeof fields.categoryId === "string" ? parseInt(fields.categoryId, 10) : fields.categoryId;
+    }
+    if (fields.brandId !== undefined) {
+        normalizedFields.brandId =
+            typeof fields.brandId === "string" ? parseInt(fields.brandId, 10) : fields.brandId;
+    }
     if (fields.price !== undefined && (!Number.isFinite(normalizedFields.price) || normalizedFields.price! <= 0)) {
         res.status(400).json({ error: "Le prix doit etre un nombre superieur a 0" });
         return;
     }
     if (fields.quantity !== undefined && (!Number.isFinite(normalizedFields.quantity) || normalizedFields.quantity! < 0)) {
         res.status(400).json({ error: "Le stock doit etre un nombre positif" });
+        return;
+    }
+    if (fields.categoryId !== undefined && (!Number.isInteger(normalizedFields.categoryId) || normalizedFields.categoryId! <= 0)) {
+        res.status(400).json({ error: "La sous-categorie selectionnee est invalide" });
+        return;
+    }
+    if (fields.brandId !== undefined && (!Number.isInteger(normalizedFields.brandId) || normalizedFields.brandId! <= 0)) {
+        res.status(400).json({ error: "La marque selectionnee est invalide" });
         return;
     }
 

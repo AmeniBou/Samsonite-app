@@ -30,6 +30,7 @@ export interface AdminProduct {
     brandId: number;
     brandName: string;
     categoryId: number;
+    parentCategoryId?: number;
     categoryName: string;
     imageId: number | null;
     imageUrl?: string | null;
