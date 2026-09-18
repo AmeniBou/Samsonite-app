@@ -287,8 +287,8 @@ const sendOrderConfirmation = async (order: any) => {
 };
 const getShippingFee = (method: string, subtotal: number) => {
   if (method === "pickup") return 0;
-  if (method === "express") return 12;
-  return subtotal >= 300 ? 0 : 7;
+  if (method === "express") return 30;
+  return subtotal >= 350 ? 0 : 15;
 };
 
 export const mapOrder = (order: any) => ({

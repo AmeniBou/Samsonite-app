@@ -74,6 +74,13 @@ export const updateContactMessageStatus = async (id: number, status: string) => 
 
   return mapContactMessage(updated);
 };
+
+export const deleteContactMessage = async (id: number) => {
+  const existing = await prisma.contactMessage.findUnique({ where: { id } });
+  if (!existing) throw new Error("Message introuvable");
+  await prisma.contactMessage.delete({ where: { id } });
+  return { success: true };
+};
 const DEFAULT_CONTACT_SUBJECTS = [
   { labelFr: "Service client", labelEn: "Customer service", position: 1 },
   { labelFr: "Suivi de commande", labelEn: "Order follow-up", position: 2 },

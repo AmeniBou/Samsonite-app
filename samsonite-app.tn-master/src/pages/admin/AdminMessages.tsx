@@ -3,6 +3,7 @@ import { ChevronDown, ExternalLink, Mail, Plus, RefreshCw, Trash2 } from "lucide
 
 import {
   createContactSubject,
+  deleteContactMessage,
   deleteContactSubject,
   listContactMessages,
   listContactSubjects,
@@ -176,6 +177,17 @@ const AdminMessages = () => {
       if (subjectFilter === subject.labelFr) setSubjectFilter("all");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Impossible de supprimer le sujet");
+    }
+  };
+
+  const handleDeleteMessage = async (message: ContactMessage) => {
+    try {
+      await deleteContactMessage(message.id);
+      setMessages((previous) => previous.filter((item) => item.id !== message.id));
+      setSelected((previous) => (previous?.id === message.id ? null : previous));
+      toast.success("Message supprimé avec succès.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Impossible de supprimer le message");
     }
   };
 
@@ -372,27 +384,50 @@ const AdminMessages = () => {
           <div className="overflow-hidden rounded-lg bg-white shadow">
             <div className="divide-y divide-gray-100">
               {paginatedMessages.map((message) => (
-                <button
+                <div
                   key={message.id}
-                  type="button"
-                  onClick={() => setSelected(message)}
                   className={`block w-full px-5 py-4 text-left transition-colors ${
                     message.status === "new" ? "border-l-4 border-l-blue-500 bg-blue-50/60 hover:bg-blue-50" : "hover:bg-gray-50"
                   } ${selected?.id === message.id ? "bg-gray-100" : ""}
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => setSelected(message)}
+                      className="min-w-0 flex-1 text-left"
+                    >
                       <p className={`truncate text-sm font-bold ${message.status === "new" ? "text-blue-950" : "text-gray-900"}`}>{message.subject}</p>
                       <p className="mt-1 text-xs text-gray-500">{message.email}</p>
                       <p className="mt-2 line-clamp-2 text-sm text-gray-600">{message.message}</p>
+                    </button>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${statusClasses[message.status]}`}>
+                        {statusLabels[message.status]}
+                      </span>
+                      <ConfirmDeleteDialog
+                        title="Supprimer ce message ?"
+                        description={`Le message "${message.subject}" envoyé par ${message.email} sera supprimé définitivement du backoffice.`}
+                        confirmLabel="Supprimer"
+                        pendingLabel="Suppression..."
+                        onConfirm={() => handleDeleteMessage(message)}
+                      >
+                        {(openDialog) => (
+                          <button
+                            type="button"
+                            onClick={openDialog}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-100 text-red-600 transition-colors hover:bg-red-50"
+                            aria-label="Supprimer le message"
+                            title="Supprimer le message"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </ConfirmDeleteDialog>
                     </div>
-                    <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-bold ${statusClasses[message.status]}`}>
-                      {statusLabels[message.status]}
-                    </span>
                   </div>
                   <p className="mt-3 text-xs text-gray-400">{formatDate(message.createdAt)}</p>
-                </button>
+                </div>
               ))}
             </div>
             <AdminTablePagination page={safeMessagesPage} pageSize={messagesPageSize} totalItems={filteredMessages.length} onPageChange={setMessagesPage} onPageSizeChange={(pageSize) => { setMessagesPageSize(pageSize); setMessagesPage(1); }} />

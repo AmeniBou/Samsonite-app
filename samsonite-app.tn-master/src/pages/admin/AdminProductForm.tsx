@@ -1849,7 +1849,7 @@ const AdminProductForm = () => {
                                 </div>
 
                                 <div className="grid gap-2 border-t border-gray-200 pt-3 sm:grid-cols-3">
-                                    <div className="flex items-center gap-2"><Truck className="h-4 w-4 shrink-0 text-gray-500" /><p className="text-xs font-semibold leading-4">Livraison offerte à partir de 300 TND</p></div>
+                                    <div className="flex items-center gap-2"><Truck className="h-4 w-4 shrink-0 text-gray-500" /><p className="text-xs font-semibold leading-4">Livraison standard offerte à partir de 350 TND sur le Grand Tunis</p></div>
                                     <div className="flex items-center gap-2"><RotateCcw className="h-4 w-4 shrink-0 text-gray-500" /><p className="text-xs font-semibold leading-4">Retours gratuits sous 30 jours</p></div>
                                     <div className="flex items-center gap-2"><Shield className="h-4 w-4 shrink-0 text-gray-500" /><p className="text-xs font-semibold leading-4">Garantie mondiale</p></div>
                                 </div>

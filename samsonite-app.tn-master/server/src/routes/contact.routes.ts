@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import { requireAuth } from "../middleware/auth.js";
 import {
   createContactMessage,
+  deleteContactMessage,
   listContactMessages,
   updateContactMessageStatus,
   listContactSubjects,
@@ -136,6 +137,16 @@ adminContactRouter.put("/:id/status", async (req: Request, res: Response): Promi
   try {
     const message = await updateContactMessageStatus(Number(req.params.id), String(req.body.status || ""));
     res.json({ success: true, message });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : "Erreur inconnue";
+    res.status(400).json({ success: false, error: detail });
+  }
+});
+
+adminContactRouter.delete("/:id", async (req: Request, res: Response): Promise<void> => {
+  try {
+    await deleteContactMessage(Number(req.params.id));
+    res.json({ success: true });
   } catch (err) {
     const detail = err instanceof Error ? err.message : "Erreur inconnue";
     res.status(400).json({ success: false, error: detail });

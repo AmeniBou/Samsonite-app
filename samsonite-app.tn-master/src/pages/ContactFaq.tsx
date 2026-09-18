@@ -26,7 +26,7 @@ const ContactFaq = () => {
         {
           icon: Phone,
           title: "Call us",
-          lines: ["26 528 103 / 71 809 209"],
+          lines: ["26528103 / 71809209"],
         },
         {
           icon: Printer,
@@ -48,7 +48,7 @@ const ContactFaq = () => {
         {
           icon: Phone,
           title: "Appelez-nous",
-          lines: ["26 528 103 / 71 809 209"],
+          lines: ["26528103 / 71809209"],
         },
         {
           icon: Printer,

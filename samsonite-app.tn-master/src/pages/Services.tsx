@@ -16,8 +16,8 @@ const Services = () => {
         : "Choisissez la livraison standard, express ou le retrait boutique selon votre ville et votre urgence.",
       href: "/livraison",
       details: isEn
-        ? ["Free from 300 TND", "Express option available", "Order prepared after confirmation"]
-        : ["Offerte des 300 TND", "Option express disponible", "Preparation apres confirmation"],
+        ? ["15 TND in Greater Tunis", "Free from 350 TND", "Order prepared after confirmation"]
+        : ["15 TND sur le Grand Tunis", "Offerte des 350 TND", "Preparation apres confirmation"],
     },
     {
       icon: RotateCcw,
@@ -76,12 +76,12 @@ const Services = () => {
 
   const reassurance = isEn
     ? [
-        { value: "300 TND", label: "Free delivery threshold" },
+        { value: "350 TND", label: "Free delivery threshold" },
         { value: "24-72h", label: "Estimated dispatch after confirmation" },
         { value: "Tunisia", label: "Local stores and support" },
       ]
     : [
-        { value: "300 TND", label: "Seuil de livraison offerte" },
+        { value: "350 TND", label: "Seuil de livraison offerte" },
         { value: "24-72h", label: "Expedition estimee apres confirmation" },
         { value: "Tunisie", label: "Boutiques et support local" },
       ];

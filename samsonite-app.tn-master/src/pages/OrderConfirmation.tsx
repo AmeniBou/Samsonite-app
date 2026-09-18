@@ -22,7 +22,7 @@ const shippingLabels: Record<ShippingMethod, string> = {
 };
 
 const shippingDelays: Record<ShippingMethod, string> = {
-  standard: "Livraison estimée sous 2 à 4 jours ouvrables après confirmation.",
+  standard: "Livraison standard sous 72h après confirmation.",
   express: "Livraison prioritaire sous 24 à 48h ouvrables après confirmation.",
   pickup: "Retrait possible après confirmation de la disponibilité par notre équipe.",
 };
@@ -212,7 +212,7 @@ const buildOrderDetailsHtml = (
     </section>
 
     <footer class="footer">
-      Samsonite Tunisie · Appelez-nous: 26 528 103 / 71 809 209 · commercial@samsonite.com.tn<br />
+      Samsonite Tunisie · Appelez-nous: 26528103 / 71809209 · commercial@samsonite.com.tn<br />
       ${htmlEscape(translate("order.footerNote"))}
     </footer>
   </main>
@@ -516,11 +516,11 @@ const OrderConfirmation = () => {
             <div className="grid gap-4 text-sm md:grid-cols-3">
               <a href="tel:+21626528103" className="flex items-center gap-3 font-semibold hover:underline">
                 <Phone className="h-4 w-4" />
-                26 528 103
+                26528103
               </a>
               <a href="tel:+21671809209" className="flex items-center gap-3 font-semibold hover:underline">
                 <Phone className="h-4 w-4" />
-                71 809 209
+                71809209
               </a>
               <a href="mailto:commercial@samsonite.com.tn" className="flex items-center gap-3 font-semibold hover:underline">
                 <Mail className="h-4 w-4" />

@@ -78,6 +78,16 @@ export const updateContactMessageStatus = async (id: number, status: ContactMess
   }
   return data.message as ContactMessage;
 };
+
+export const deleteContactMessage = async (id: number) => {
+  const res = await fetch(`${API_BASE}/admin/contact-messages/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Impossible de supprimer le message");
+  return true;
+};
 export const listContactSubjects = async (includeInactive = false) => {
   const url = includeInactive ? `${API_BASE}/admin/contact-messages/subjects` : `${API_BASE}/contact/subjects`;
   const res = await fetch(url, { headers: includeInactive ? authHeaders() : undefined });

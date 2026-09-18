@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import { Award, Building2, Globe2, Leaf, Mail, MapPin, Phone, ShieldCheck, Sparkles, Store } from "lucide-react";
 
 import { useLanguage } from "@/lib/i18n";
@@ -52,7 +52,7 @@ const Brand = () => {
         {
           icon: Phone,
           title: "Phone",
-          lines: ["26 528 103", "71 809 209"],
+          lines: ["26528103", "71809209"],
         },
         {
           icon: Mail,
@@ -63,7 +63,7 @@ const Brand = () => {
     : [
         {
           icon: Building2,
-          title: "Société",
+          title: "SociÃ©tÃ©",
           lines: ["Samsonite Tunisie", "Bagages, sacs et accessoires de voyage"],
         },
         {
@@ -73,8 +73,8 @@ const Brand = () => {
         },
         {
           icon: Phone,
-          title: "Téléphone",
-          lines: ["26 528 103", "71 809 209"],
+          title: "TÃ©lÃ©phone",
+          lines: ["26528103", "71809209"],
         },
         {
           icon: Mail,
@@ -142,7 +142,7 @@ const Brand = () => {
           <p className="mt-4 leading-7 text-muted-foreground">
             {isEn
               ? "From hard suitcases to soft luggage, business bags, backpacks and accessories, the selection brings together products designed for mobility, protection and comfort."
-              : "Des valises rigides aux bagages souples, sacs business, sacs à dos et accessoires, la sélection rassemble des produits conçus pour la mobilité, la protection et le confort."}
+              : "Des valises rigides aux bagages souples, sacs business, sacs Ã  dos et accessoires, la sÃ©lection rassemble des produits conÃ§us pour la mobilitÃ©, la protection et le confort."}
           </p>
         </div>
 

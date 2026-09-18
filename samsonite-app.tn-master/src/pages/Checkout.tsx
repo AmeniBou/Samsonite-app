@@ -146,15 +146,15 @@ const Checkout = () => {
 
   const shippingOptions: Array<{ value: ShippingMethod; title: string; description: string; price: string }> = [
     { value: "pickup", title: t("checkout.shipping.pickup"), description: "Charguia 1", price: t("cart.free").toLowerCase() },
-    { value: "standard", title: t("checkout.shipping.standard"), description: t("checkout.shipping.standardDesc"), price: totalPrice >= 300 ? t("cart.free").toLowerCase() : formatTnd(7) },
-    { value: "express", title: t("checkout.shipping.express"), description: t("checkout.shipping.expressDesc"), price: formatTnd(12) },
+    { value: "standard", title: t("checkout.shipping.standard"), description: t("checkout.shipping.standardDesc"), price: totalPrice >= 350 ? t("cart.free").toLowerCase() : formatTnd(15) },
+    { value: "express", title: t("checkout.shipping.express"), description: t("checkout.shipping.expressDesc"), price: formatTnd(30) },
   ];
 
   const paymentOptions: Array<{ value: PaymentMethod; title: string; description: string }> = [
     { value: "cash_on_delivery", title: t("checkout.payment.cash"), description: t("checkout.payment.cashDesc") },
   ];
 
-  const shippingFee = shippingMethod === "pickup" ? 0 : shippingMethod === "express" ? 12 : totalPrice >= 300 ? 0 : 7;
+  const shippingFee = shippingMethod === "pickup" ? 0 : shippingMethod === "express" ? 30 : totalPrice >= 350 ? 0 : 15;
   const giftWrapFee = form.giftWrap ? 7 : 0;
   const orderTotal = totalPrice + shippingFee + giftWrapFee;
   const emailValid = isValidEmail(form.email);

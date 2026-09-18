@@ -10,25 +10,25 @@ const Shipping = () => {
     ? [
         {
           title: "Grand Tunis",
-          price: "Free from 350 DT",
-          desc: "Delivery fees are offered for eligible orders delivered in Greater Tunis.",
+          price: "15 DT / free from 350 DT",
+          desc: "Standard delivery is available in Greater Tunis only. It costs 15 DT and is free for orders over 350 DT.",
         },
         {
           title: "Outside Grand Tunis",
-          price: "10 DT",
-          desc: "A fixed delivery fee applies for orders delivered outside Greater Tunis.",
+          price: "Not covered by standard delivery",
+          desc: "For another delivery area, the team will confirm availability and conditions before validating the order.",
         },
       ]
     : [
         {
           title: "Grand Tunis",
-          price: "Gratuite des 350 DT",
-          desc: "Les frais de port sont offerts pour les commandes eligibles livrees sur le Grand Tunis.",
+          price: "15 DT / gratuite des 350 DT",
+          desc: "La livraison standard est disponible uniquement sur le Grand Tunis. Elle coute 15 DT et devient gratuite pour les commandes de plus de 350 DT.",
         },
         {
           title: "Hors Grand Tunis",
-          price: "10 DT",
-          desc: "Un forfait de livraison s'applique pour les commandes livrees hors Grand Tunis.",
+          price: "Non couvert par la livraison standard",
+          desc: "Pour une autre zone de livraison, l'equipe confirme la disponibilite et les conditions avant validation de la commande.",
         },
       ];
 

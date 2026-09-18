@@ -45,7 +45,7 @@ const Cart = () => {
     return sum + getItemPricing(item, variant).discount * item.quantity;
   }, 0);
   const totalBeforePromotion = totalPrice + promotionSavings;
-  const shippingFee = totalPrice >= 300 ? 0 : 7;
+  const shippingFee = totalPrice >= 350 ? 0 : 15;
 
   if (items.length === 0) {
     return (

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import { Facebook, Instagram } from "lucide-react";
 
 import { useLanguage } from "@/lib/i18n";
@@ -97,6 +97,7 @@ const Footer = () => {
             <h4 className="mb-4 text-xs font-bold tracking-wider">{t("footer.info")}</h4>
             <div className="space-y-1 text-sm leading-6 text-primary-foreground/70">
               <p className="font-semibold text-primary-foreground">Samsonite</p>
+              <p>Boutique et service aprÃ¨s-vente</p>
               <p>9, Rue 8601 Zone Industriel</p>
               <p>Charguia 1</p>
               <p>2035 Ariana</p>
@@ -104,11 +105,11 @@ const Footer = () => {
               <p className="pt-2">
                 {t("footer.callUs")} :{" "}
                 <a href="tel:+21626528103" className="transition-colors hover:text-primary-foreground">
-                  26 528 103
+                  26528103
                 </a>{" "}
                 /{" "}
                 <a href="tel:+21671809209" className="transition-colors hover:text-primary-foreground">
-                  71 809 209
+                  71809209
                 </a>
               </p>
               <p>Fax : 71 809 080</p>
@@ -135,7 +136,7 @@ const Footer = () => {
       <div className="border-t border-primary-foreground/20">
         <div className="samsonite-container flex flex-col items-center justify-between gap-2 py-4 md:flex-row">
           <p className="text-xs text-primary-foreground/50">
-            © {new Date().getFullYear()} Samsonite. {t("footer.rights")}
+            Â© {new Date().getFullYear()} Samsonite. {t("footer.rights")}
           </p>
           <div className="flex items-center gap-4 text-xs text-primary-foreground/50">
             <Link to="/services" className="hover:text-primary-foreground">
