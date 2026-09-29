@@ -134,7 +134,17 @@ const getItemPricing = (item: CartItem, variant?: ProductVariant) => {
 const Checkout = () => {
   const navigate = useNavigate();
   const { t, td } = useLanguage();
-  const { items, totalPrice, totalItems, updateQuantity, removeItem, clearCart } = useCart();
+  const {
+    items,
+    totalPrice,
+    totalItems,
+    updateQuantity,
+    removeItem,
+    clearCart,
+    wheelReward,
+    wheelDiscountAmount,
+    discountedSubtotal,
+  } = useCart();
   const promotionSavings = items.reduce((sum, item) => sum + getItemPricing(item, getCartVariant(item)).discount * item.quantity, 0);
   const totalBeforePromotion = totalPrice + promotionSavings;
   const [form, setForm] = useState<CheckoutFormState>(initialFormState);
@@ -146,7 +156,7 @@ const Checkout = () => {
 
   const shippingOptions: Array<{ value: ShippingMethod; title: string; description: string; price: string }> = [
     { value: "pickup", title: t("checkout.shipping.pickup"), description: "Charguia 1", price: t("cart.free").toLowerCase() },
-    { value: "standard", title: t("checkout.shipping.standard"), description: t("checkout.shipping.standardDesc"), price: totalPrice >= 350 ? t("cart.free").toLowerCase() : formatTnd(15) },
+    { value: "standard", title: t("checkout.shipping.standard"), description: t("checkout.shipping.standardDesc"), price: discountedSubtotal >= 350 ? t("cart.free").toLowerCase() : formatTnd(15) },
     { value: "express", title: t("checkout.shipping.express"), description: t("checkout.shipping.expressDesc"), price: formatTnd(30) },
   ];
 
@@ -154,9 +164,9 @@ const Checkout = () => {
     { value: "cash_on_delivery", title: t("checkout.payment.cash"), description: t("checkout.payment.cashDesc") },
   ];
 
-  const shippingFee = shippingMethod === "pickup" ? 0 : shippingMethod === "express" ? 30 : totalPrice >= 350 ? 0 : 15;
+  const shippingFee = shippingMethod === "pickup" ? 0 : shippingMethod === "express" ? 30 : discountedSubtotal >= 350 ? 0 : 15;
   const giftWrapFee = form.giftWrap ? 7 : 0;
-  const orderTotal = totalPrice + shippingFee + giftWrapFee;
+  const orderTotal = discountedSubtotal + shippingFee + giftWrapFee;
   const emailValid = isValidEmail(form.email);
   const phoneValid = isValidPhone(form.phone);
   const birthDateValid = isValidBirthDate(form.birthDate);
@@ -230,11 +240,22 @@ const Checkout = () => {
           address: [form.address.trim(), form.address2.trim()].filter(Boolean).join(", "),
           city: form.city.trim(),
           postalCode: form.postalCode.trim(),
-          notes: [form.notes.trim(), form.giftWrap ? t("checkout.giftWrapRequested") : ""].filter(Boolean).join(" | "),
+          notes: [
+            form.notes.trim(),
+            form.giftWrap ? t("checkout.giftWrapRequested") : "",
+            wheelReward ? `${t("cart.wheelReward")} ${wheelReward.code} -${wheelReward.percentage}%` : "",
+          ].filter(Boolean).join(" | "),
         },
         items,
         shippingMethod,
         paymentMethod,
+        wheelReward: wheelReward
+          ? {
+            code: wheelReward.code,
+            percentage: wheelReward.percentage,
+            label: wheelReward.label,
+          }
+          : undefined,
       });
 
       clearCart();
@@ -412,7 +433,17 @@ const Checkout = () => {
                         formatTnd(shippingFee)
                       )}
                     </span>
-                  </div>                  <div className="flex justify-between border-t border-border pt-4 text-sm font-bold"><span>{t("cart.total")}</span><span>{formatTnd(orderTotal)}</span></div>
+                  </div>
+                  {wheelReward && wheelDiscountAmount > 0 && (
+                    <div className="flex justify-between text-cyan-700">
+                      <span className="inline-flex items-center gap-1">
+                        <BadgePercent className="h-3.5 w-3.5" />
+                        {t("cart.wheelReward")} ({wheelReward.code})
+                      </span>
+                      <span className="font-semibold">-{formatTnd(wheelDiscountAmount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between border-t border-border pt-4 text-sm font-bold"><span>{t("cart.total")}</span><span>{formatTnd(orderTotal)}</span></div>
                 </div>
                 <button type="button" onClick={() => goToStep(1)} className={`${checkoutActionBaseClass} mt-6 w-full bg-[#27b9d2] text-white hover:bg-[#1ea8bf]`}>
                   {t("checkout.order")}
@@ -585,6 +616,15 @@ const Checkout = () => {
                 </>
               )}
               <div className="flex justify-between"><span className="text-muted-foreground">{t("cart.subtotal")}</span><span>{formatTnd(totalPrice)}</span></div>
+              {wheelReward && wheelDiscountAmount > 0 && (
+                <div className="flex justify-between text-cyan-700">
+                  <span className="inline-flex items-center gap-1">
+                    <BadgePercent className="h-3.5 w-3.5" />
+                    {t("cart.wheelReward")} ({wheelReward.code})
+                  </span>
+                  <span className="font-semibold">-{formatTnd(wheelDiscountAmount)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("cart.shipping")}</span>
                 <span className="font-medium">
@@ -594,7 +634,8 @@ const Checkout = () => {
                     formatTnd(shippingFee)
                   )}
                 </span>
-              </div>              {form.giftWrap && <div className="flex justify-between"><span className="text-muted-foreground">{t("checkout.giftWrapShort")}</span><span>{formatTnd(giftWrapFee)}</span></div>}
+              </div>
+              {form.giftWrap && <div className="flex justify-between"><span className="text-muted-foreground">{t("checkout.giftWrapShort")}</span><span>{formatTnd(giftWrapFee)}</span></div>}
             </div>
             <div className="flex justify-between border-t border-border pt-4 text-sm font-bold"><span>{t("cart.total")}</span><span>{formatTnd(orderTotal)}</span></div>
             {step >= 3 &&

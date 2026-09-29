@@ -76,9 +76,25 @@ export interface CreateOrderInput {
   items?: CreateOrderItemInput[];
   shippingMethod?: string;
   paymentMethod?: string;
+  wheelReward?: {
+    code?: string;
+    percentage?: number;
+    label?: string;
+  };
 }
 
 const toNumber = (value: unknown) => Number(value || 0);
+
+const getValidWheelReward = (reward?: CreateOrderInput["wheelReward"]) => {
+  const code = String(reward?.code || "").trim().toUpperCase();
+  const percentage = Number(reward?.percentage || 0);
+  if (code !== "REFONTE10" || percentage !== 10) return null;
+  return {
+    code,
+    percentage,
+    label: String(reward?.label || "Remise roue de fortune").trim() || "Remise roue de fortune",
+  };
+};
 
 const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -346,6 +362,7 @@ export const createOrder = async (input: CreateOrderInput) => {
   const paymentMethod = PAYMENT_METHODS.has(input.paymentMethod || "")
     ? input.paymentMethod!
     : "cash_on_delivery";
+  const wheelReward = getValidWheelReward(input.wheelReward);
 
   const required = [
     customer.firstName,
@@ -402,7 +419,7 @@ export const createOrder = async (input: CreateOrderInput) => {
   const order = await prisma.$transaction(async (tx) => {
     const affectedProductIds = new Set<number>();
 
-    const reservedItems = await Promise.all(
+    const reservedItemsBeforeWheel = await Promise.all(
       normalizedItems.map(async (item) => {
         if (!item.variantId) {
           if (!item.productId) return item;
@@ -501,6 +518,20 @@ export const createOrder = async (input: CreateOrderInput) => {
         };
       })
     );
+
+    const reservedItems = wheelReward
+      ? reservedItemsBeforeWheel.map((item) => {
+          const unitPrice = Number((item.unitPrice * (1 - wheelReward.percentage / 100)).toFixed(3));
+          const basePromotionName = item.promotionName ? `${item.promotionName} + ` : "";
+          return {
+            ...item,
+            unitPrice,
+            lineTotal: unitPrice * item.quantity,
+            discountPercent: Number((((item.originalUnitPrice - unitPrice) / item.originalUnitPrice) * 100).toFixed(2)),
+            promotionName: `${basePromotionName}${wheelReward.label} (${wheelReward.code})`,
+          };
+        })
+      : reservedItemsBeforeWheel;
 
     for (const productId of affectedProductIds) {
       const result = await tx.productVariant.aggregate({

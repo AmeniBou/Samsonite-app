@@ -39,13 +39,13 @@ const getItemPricing = (item: CartItem, variant?: ProductVariant) => {
 
 const Cart = () => {
   const { t, td } = useLanguage();
-  const { items, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
+  const { items, removeItem, updateQuantity, totalPrice, totalItems, wheelReward, wheelDiscountAmount, discountedSubtotal } = useCart();
   const promotionSavings = items.reduce((sum, item) => {
     const variant = getCartVariant(item);
     return sum + getItemPricing(item, variant).discount * item.quantity;
   }, 0);
   const totalBeforePromotion = totalPrice + promotionSavings;
-  const shippingFee = totalPrice >= 350 ? 0 : 15;
+  const shippingFee = discountedSubtotal >= 350 ? 0 : 15;
 
   if (items.length === 0) {
     return (
@@ -195,6 +195,15 @@ const Cart = () => {
                 <span className="text-muted-foreground">{t("cart.subtotal")}</span>
                 <span>{formatTnd(totalPrice)}</span>
               </div>
+              {wheelReward && wheelDiscountAmount > 0 && (
+                <div className="flex justify-between text-cyan-700">
+                  <span className="inline-flex items-center gap-1">
+                    <BadgePercent className="h-3.5 w-3.5" />
+                    {t("cart.wheelReward")} ({wheelReward.code})
+                  </span>
+                  <span className="font-semibold">-{formatTnd(wheelDiscountAmount)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("cart.shipping")}</span>
                 <span className="text-samsonite-teal font-medium">
@@ -204,7 +213,7 @@ const Cart = () => {
             </div>
             <div className="border-t border-border pt-4 flex justify-between font-bold text-sm">
               <span>{t("cart.total")}</span>
-              <span>{formatTnd(totalPrice + shippingFee)}</span>
+              <span>{formatTnd(discountedSubtotal + shippingFee)}</span>
             </div>
             <Link
               to="/commande"

@@ -71,6 +71,11 @@ export interface CreateOrderInput {
   items: CartItem[];
   shippingMethod: ShippingMethod;
   paymentMethod: PaymentMethod;
+  wheelReward?: {
+    code: string;
+    percentage: number;
+    label?: string;
+  };
 }
 
 export const createStoredOrder = async ({
@@ -78,6 +83,7 @@ export const createStoredOrder = async ({
   items,
   shippingMethod,
   paymentMethod,
+  wheelReward,
 }: CreateOrderInput) => {
   const formatVariantLabel = (item: CartItem) =>
     [
@@ -96,6 +102,7 @@ export const createStoredOrder = async ({
       customer,
       shippingMethod,
       paymentMethod,
+      wheelReward,
       items: items.map((item) => ({
         productId: item.product.id,
         slug: item.product.slug,

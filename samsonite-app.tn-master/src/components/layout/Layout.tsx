@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import TopBar from "./TopBar";
 import Header from "./Header";
 import Footer from "./Footer";
+import LuckyWheelPopup from "@/components/LuckyWheelPopup";
 
 const ScrollToTop = () => {
   const location = useLocation();
@@ -33,6 +34,7 @@ const Layout = () => {
         <Outlet />
       </main>
       <Footer />
+      <LuckyWheelPopup />
     </div>
   );
 };

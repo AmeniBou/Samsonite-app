@@ -40,7 +40,7 @@ const maxImageBytes = 5 * 1024 * 1024;
 type QualitySeverity = "critical" | "warning" | "info";
 type QualityEntityType = "product" | "variant" | "category" | "brand" | "order" | "contact";
 
-const hasBrokenText = (value?: string | null) => Boolean(value && /Ã|Â|â€|&amp;|&#/.test(value));
+const hasBrokenText = (value?: string | null) => Boolean(value && /\u00c3|\u00c2|\u00e2\u20ac|&amp;|&#/.test(value));
 const isBlank = (value?: string | number | null) => value === null || value === undefined || String(value).trim() === "";
 
 const qualityIssue = (

@@ -43,7 +43,7 @@ const decodeAdminText = (value?: string | null): string => {
         text = textarea.value;
     }
 
-    for (let index = 0; index < 2 && /Ã|Â|â/.test(text); index += 1) {
+    for (let index = 0; index < 2 && /\u00c3|\u00c2|\u00e2/.test(text); index += 1) {
         try {
             const bytes = Uint8Array.from(text, (char) => char.charCodeAt(0) & 0xff);
             const decoded = new TextDecoder("utf-8", { fatal: true }).decode(bytes);

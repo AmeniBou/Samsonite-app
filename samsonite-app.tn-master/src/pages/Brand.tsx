@@ -32,8 +32,8 @@ const Brand = () => {
         { value: "Global", label: "Travel expertise" },
       ]
     : [
-        { value: "1910", label: "Heritage Samsonite" },
-        { value: "Tunisie", label: "Presence locale" },
+        { value: "1910", label: "Héritage Samsonite" },
+        { value: "Tunisie", label: "Présence locale" },
         { value: "Global", label: "Expertise voyage" },
       ];
 
@@ -63,7 +63,7 @@ const Brand = () => {
     : [
         {
           icon: Building2,
-          title: "SociÃ©tÃ©",
+          title: "Société",
           lines: ["Samsonite Tunisie", "Bagages, sacs et accessoires de voyage"],
         },
         {
@@ -73,13 +73,13 @@ const Brand = () => {
         },
         {
           icon: Phone,
-          title: "TÃ©lÃ©phone",
+          title: "Téléphone",
           lines: ["26528103", "71809209"],
         },
         {
           icon: Mail,
           title: "Contact client",
-          lines: ["Pour commandes, disponibilites et service apres-vente", "Utilisez les pages contact et magasins"],
+          lines: ["Pour commandes, disponibilités et service après-vente", "Utilisez les pages contact et magasins"],
         },
       ];
 
@@ -91,10 +91,10 @@ const Brand = () => {
         "Maintain clear information about delivery, returns, warranty and product availability.",
       ]
     : [
-        "Proposer des bagages fiables pour les voyages quotidiens comme les longs deplacements.",
-        "Aider les clients a choisir la bonne valise, taille, sac ou accessoire de voyage.",
-        "Assurer un accompagnement local via les boutiques, le telephone et le service apres-vente.",
-        "Donner des informations claires sur la livraison, les retours, la garantie et la disponibilite.",
+        "Proposer des bagages fiables pour les voyages quotidiens comme les longs déplacements.",
+        "Aider les clients à choisir la bonne valise, taille, sac ou accessoire de voyage.",
+        "Assurer un accompagnement local via les boutiques, le téléphone et le service après-vente.",
+        "Donner des informations claires sur la livraison, les retours, la garantie et la disponibilité.",
       ];
 
   return (
@@ -104,7 +104,7 @@ const Brand = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-black/10" />
         <div className="samsonite-container relative z-10 pb-14 text-white">
           <p className="mb-4 text-xs font-black uppercase tracking-[0.3em] text-white/75">
-            {isEn ? "About us" : "A propos"}
+            {isEn ? "About us" : "À propos"}
           </p>
           <h1 className="max-w-3xl text-5xl font-black uppercase leading-none tracking-tight md:text-7xl">
             {isEn ? "Samsonite Tunisia" : "Samsonite Tunisie"}
@@ -112,7 +112,7 @@ const Brand = () => {
           <p className="mt-5 max-w-2xl text-lg leading-8 text-white/80">
             {isEn
               ? "A local destination for Samsonite luggage, bags and travel accessories, with dedicated support before and after every purchase."
-              : "Une adresse locale pour les bagages, sacs et accessoires de voyage Samsonite, avec un accompagnement avant et apres chaque achat."}
+              : "Une adresse locale pour les bagages, sacs et accessoires de voyage Samsonite, avec un accompagnement avant et après chaque achat."}
           </p>
         </div>
       </section>
@@ -137,12 +137,12 @@ const Brand = () => {
           <p className="mt-5 leading-7 text-muted-foreground">
             {isEn
               ? "Samsonite Tunisia supports customers looking for durable, practical and elegant travel solutions. The store experience and online catalogue are built around one objective: helping each customer travel with confidence."
-              : "Samsonite Tunisie accompagne les clients a la recherche de solutions de voyage durables, pratiques et elegantes. L'experience boutique et le catalogue en ligne ont un objectif simple : aider chaque client a voyager avec confiance."}
+              : "Samsonite Tunisie accompagne les clients à la recherche de solutions de voyage durables, pratiques et élégantes. L'expérience boutique et le catalogue en ligne ont un objectif simple : aider chaque client à voyager avec confiance."}
           </p>
           <p className="mt-4 leading-7 text-muted-foreground">
             {isEn
               ? "From hard suitcases to soft luggage, business bags, backpacks and accessories, the selection brings together products designed for mobility, protection and comfort."
-              : "Des valises rigides aux bagages souples, sacs business, sacs Ã  dos et accessoires, la sÃ©lection rassemble des produits conÃ§us pour la mobilitÃ©, la protection et le confort."}
+              : "Des valises rigides aux bagages souples, sacs business, sacs à dos et accessoires, la sélection rassemble des produits conçus pour la mobilité, la protection et le confort."}
           </p>
         </div>
 
@@ -171,7 +171,7 @@ const Brand = () => {
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
               {isEn
                 ? "A serious ecommerce experience depends on trust, clear information and accessible support."
-                : "Une experience ecommerce serieuse repose sur la confiance, des informations claires et un support accessible."}
+                : "Une expérience e-commerce sérieuse repose sur la confiance, des informations claires et un support accessible."}
             </p>
           </div>
 
@@ -212,7 +212,7 @@ const Brand = () => {
             <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">
               {isEn
                 ? "Visit our stores for product advice, availability, warranty guidance or pickup information."
-                : "Rendez-vous en boutique pour un conseil produit, une disponibilite, une garantie ou une information de retrait."}
+                : "Rendez-vous en boutique pour un conseil produit, une disponibilité, une garantie ou une information de retrait."}
             </p>
           </div>
           <Link to="/magasins" className="inline-flex justify-center border border-white px-6 py-3 text-sm font-black uppercase tracking-wide">
