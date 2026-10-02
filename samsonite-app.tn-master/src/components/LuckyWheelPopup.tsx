@@ -87,33 +87,33 @@ const LuckyWheelPopup = () => {
   const lost = result === "lose";
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 px-4 py-6">
-      <div className="relative w-full max-w-[780px] overflow-hidden bg-white shadow-2xl">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto bg-black/65 px-4 py-4">
+      <div className="relative w-full max-w-[370px] overflow-y-auto bg-white shadow-2xl max-h-[calc(100dvh-32px)] md:max-w-[780px]">
         <button
           type="button"
           onClick={close}
-          className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white text-neutral-700 shadow-sm transition-colors hover:bg-neutral-100"
+          className="absolute right-3 top-3 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-white text-neutral-700 shadow-lg ring-1 ring-black/10 transition-colors hover:bg-neutral-100 md:right-4 md:top-4 md:h-9 md:w-9 md:shadow-sm"
           aria-label={t("wheel.dismiss")}
         >
           <X className="h-4 w-4" />
         </button>
 
         <div className="grid gap-0 md:grid-cols-[0.95fr_1.05fr]">
-          <div className="relative flex min-h-[390px] items-center justify-center overflow-hidden bg-[#effaf8] px-8 py-10">
+          <div className={`relative min-h-[250px] items-center justify-center overflow-hidden bg-[#effaf8] px-3 py-6 sm:min-h-[390px] sm:px-8 sm:py-10 ${result ? "hidden md:flex" : "flex"}`}>
             <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(0,169,157,0.15),transparent_46%,rgba(255,202,103,0.38))]" />
             <div className="absolute -left-12 top-8 h-28 w-28 rounded-full bg-[#c7f1ec]" />
             <div className="absolute -bottom-10 right-8 h-24 w-24 rounded-full bg-[#ffe6b8]" />
-            <div className="absolute right-3 top-1/2 z-30 flex -translate-y-1/2 items-center">
-              <div className="-mr-2 h-0 w-0 border-y-[18px] border-r-[34px] border-y-transparent border-r-white drop-shadow-[0_5px_7px_rgba(66,22,40,0.18)]" />
-              <div className="h-16 w-16 rounded-full bg-white p-1.5 shadow-[0_8px_18px_rgba(66,22,40,0.22)]">
-                <div className="flex h-full w-full items-center justify-center rounded-full border-[5px] border-black bg-white">
-                  <img src="/assets/samsonite-logo.png" alt="Samsonite" className="h-5 w-10 object-contain" />
+            <div className="absolute right-1 top-1/2 z-30 flex -translate-y-1/2 items-center sm:right-3">
+              <div className="-mr-1.5 h-0 w-0 border-y-[12px] border-r-[23px] border-y-transparent border-r-white drop-shadow-[0_5px_7px_rgba(66,22,40,0.18)] sm:-mr-2 sm:border-y-[18px] sm:border-r-[34px]" />
+              <div className="h-12 w-12 rounded-full bg-white p-1 shadow-[0_8px_18px_rgba(66,22,40,0.22)] sm:h-16 sm:w-16 sm:p-1.5">
+                <div className="flex h-full w-full items-center justify-center rounded-full border-[4px] border-black bg-white sm:border-[5px]">
+                  <img src="/assets/samsonite-logo.png" alt="Samsonite" className="h-4 w-8 object-contain sm:h-5 sm:w-10" />
                 </div>
               </div>
             </div>
-            <div className="absolute h-[354px] w-[354px] rounded-full bg-white shadow-[0_18px_34px_rgba(119,21,64,0.16)]" />
+            <div className="absolute h-[248px] w-[248px] rounded-full bg-white shadow-[0_18px_34px_rgba(119,21,64,0.16)] sm:h-[354px] sm:w-[354px]" />
             <div
-              className="relative h-72 w-72 rounded-full border-[12px] border-white shadow-[0_16px_28px_rgba(0,105,112,0.16)] transition-transform ease-out sm:h-80 sm:w-80"
+              className="relative h-56 w-56 rounded-full border-[8px] border-white shadow-[0_16px_28px_rgba(0,105,112,0.16)] transition-transform ease-out [--wheel-knob-radius:-112px] [--wheel-text-radius:-78px] sm:h-80 sm:w-80 sm:border-[12px] sm:[--wheel-knob-radius:-160px] sm:[--wheel-text-radius:-102px]"
               style={{
                 transform: `rotate(${rotation}deg)`,
                 transitionDuration: "2600ms",
@@ -129,7 +129,7 @@ const LuckyWheelPopup = () => {
                     key={angle}
                     className="absolute left-1/2 top-1/2 h-6 w-6 rounded-full bg-white shadow-[0_4px_8px_rgba(119,21,64,0.14)]"
                     style={{
-                      transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-160px)`,
+                      transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(var(--wheel-knob-radius))`,
                     }}
                   />
                 ))}
@@ -138,7 +138,7 @@ const LuckyWheelPopup = () => {
                 {wheelSegments.map((segment) => (
                   <div
                     key={`${segment.centerAngle}-${segment.result}`}
-                    className={`absolute left-1/2 top-1/2 flex w-[82px] origin-center -translate-x-1/2 -translate-y-1/2 justify-center text-center text-[10px] font-black uppercase leading-tight tracking-[0.08em] drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] sm:w-24 sm:text-[12px] ${
+                    className={`absolute left-1/2 top-1/2 flex w-16 origin-center -translate-x-1/2 -translate-y-1/2 justify-center text-center text-[8.5px] font-black uppercase leading-tight tracking-[0.06em] drop-shadow-[0_1px_0_rgba(255,255,255,0.45)] sm:w-24 sm:text-[12px] ${
                       segment.result === "win"
                         ? segment.centerAngle === 22.5 || segment.centerAngle === 202.5
                           ? "text-[#00877e]"
@@ -146,27 +146,27 @@ const LuckyWheelPopup = () => {
                         : "text-[#173b3b]"
                     }`}
                     style={{
-                      transform: `translate(-50%, -50%) rotate(${segment.centerAngle}deg) translateY(-102px) rotate(-90deg)`,
+                      transform: `translate(-50%, -50%) rotate(${segment.centerAngle}deg) translateY(var(--wheel-text-radius)) rotate(-90deg)`,
                     }}
                   >
                     {segment.result === "win" ? segment.label : segment.shortLabel}
                   </div>
                 ))}
               </div>
-              <div className="absolute left-1/2 top-1/2 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[7px] border-white bg-[#d8f3ef] text-[#00877e] shadow-[0_10px_22px_rgba(0,105,112,0.22)]">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#f1fffc] text-[#00877e]">
-                  <Gift className="h-6 w-6" />
+              <div className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[6px] border-white bg-[#d8f3ef] text-[#00877e] shadow-[0_10px_22px_rgba(0,105,112,0.22)] sm:h-20 sm:w-20 sm:border-[7px]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f1fffc] text-[#00877e] sm:h-12 sm:w-12">
+                  <Gift className="h-5 w-5 sm:h-6 sm:w-6" />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col justify-center px-7 py-9 md:px-10">
-            <p className="mb-3 text-xs font-black uppercase tracking-[0.24em] text-[#00877e]">{t("wheel.eyebrow")}</p>
-            <h2 className="text-3xl font-black tracking-tight text-black">{t("wheel.title")}</h2>
-            <p className="mt-4 text-sm leading-6 text-neutral-600">{t("wheel.description")}</p>
+          <div className="flex flex-col justify-center px-5 py-5 sm:px-7 sm:py-9 md:px-10">
+            <p className="mb-2 text-[11px] font-black uppercase tracking-[0.24em] text-[#00877e] sm:mb-3 sm:text-xs">{t("wheel.eyebrow")}</p>
+            <h2 className="text-2xl font-black tracking-tight text-black sm:text-3xl">{t("wheel.title")}</h2>
+            <p className="mt-3 text-sm leading-6 text-neutral-600 sm:mt-4">{t("wheel.description")}</p>
 
-            <div className="mt-6 border border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
+            <div className="mt-4 border border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600 sm:mt-6">
               {t("wheel.once")}
             </div>
 
@@ -184,7 +184,7 @@ const LuckyWheelPopup = () => {
               </div>
             )}
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-5 flex flex-col gap-3 sm:mt-7 sm:flex-row">
               {!result && (
                 <button
                   type="button"
@@ -204,6 +204,16 @@ const LuckyWheelPopup = () => {
                 >
                   {t("wheel.useReward")}
                 </Link>
+              )}
+
+              {won && (
+                <button
+                  type="button"
+                  onClick={close}
+                  className="flex min-h-12 flex-1 items-center justify-center border border-[#00877e] px-6 text-sm font-black uppercase tracking-wide text-[#00877e] transition-colors hover:bg-teal-50"
+                >
+                  Continuer mes achats
+                </button>
               )}
 
               {lost && (

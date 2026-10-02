@@ -65,6 +65,25 @@ const luggageTypeOptions = [
   { key: "extensible", label: "Extensible", test: /extensible|expand/i },
 ];
 
+const hasCabin55Dimension = (value?: string) => {
+  if (!value) return false;
+  const normalized = value.toLowerCase().replace(",", ".").trim();
+  return /(^|[^\d])55\s*(cm|x|$)/i.test(normalized);
+};
+
+const isCabin55Product = (product: ProductDisplay) => {
+  if (hasCabin55Dimension(product.dimensions)) return true;
+  return product.variants.some(
+    (variant) =>
+      hasCabin55Dimension(variant.size) ||
+      hasCabin55Dimension(variant.dimensions) ||
+      hasCabin55Dimension(variant.extensibleDimensions)
+  );
+};
+
+const mergeProductsById = (products: ProductDisplay[]) =>
+  Array.from(new Map(products.map((product) => [product.id, product])).values());
+
 const sortOptions = [
   { value: "relevance", labelKey: "sort.relevance" },
   { value: "price-asc", labelKey: "sort.priceAsc" },
@@ -145,20 +164,28 @@ const Category = () => {
 
   const scopedProducts = useMemo(() => {
     if (!slug) return allProducts;
+
+    const addCabin55Products = (products: ProductDisplay[]) =>
+      slug === "bagages-a-main"
+        ? mergeProductsById([...products, ...allProducts.filter(isCabin55Product)])
+        : products;
+
     if (!rootCategory) {
-      return allProducts.filter((product) => product.categorySlugs.includes(slug));
+      return addCabin55Products(allProducts.filter((product) => product.categorySlugs.includes(slug)));
     }
 
     if (isChildCategory) {
-      return allProducts.filter((product) => product.categorySlugs.includes(slug));
+      return addCabin55Products(allProducts.filter((product) => product.categorySlugs.includes(slug)));
     }
 
     const childSlugs = rootCategory.children?.map((child) => child.slug) || [];
-    return allProducts.filter(
-      (product) =>
-        product.categorySlug === rootCategory.slug ||
-        product.categorySlugs.includes(rootCategory.slug) ||
-        childSlugs.some((childSlug) => product.categorySlugs.includes(childSlug))
+    return addCabin55Products(
+      allProducts.filter(
+        (product) =>
+          product.categorySlug === rootCategory.slug ||
+          product.categorySlugs.includes(rootCategory.slug) ||
+          childSlugs.some((childSlug) => product.categorySlugs.includes(childSlug))
+      )
     );
   }, [allProducts, isChildCategory, rootCategory, slug]);
 

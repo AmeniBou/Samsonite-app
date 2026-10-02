@@ -1,0 +1,71 @@
+{
+  "id": 45,
+  "scrapedId": 218,
+  "name": "ESSENS",
+  "sku": "211545",
+  "description": "Valise ESSENS rigide by Samsonite",
+  "price": "1100",
+  "currency": "TND",
+  "availability": "https://schema.org/OutOfStock",
+  "url": "https://samsonite.com.tn/fr/rigides/218-4097-essens.html#/3-taille-l/15-couleur-vert/21-dimension-75_x_51_x_32cm/129-poids-43_kg/188-volume-108_l",
+  "weight": null,
+  "width": null,
+  "height": null,
+  "depth": null,
+  "quantity": 0,
+  "brandId": 1,
+  "createdAt": "2026-07-08T07:33:44.529Z",
+  "updatedAt": "2026-07-16T10:06:58.556Z",
+  "images": [
+    {
+      "id": 1745,
+      "productId": 45,
+      "imageUrl": "/images/products/45/product_218_1.jpg",
+      "position": 0
+    },
+    {
+      "id": 1746,
+      "productId": 45,
+      "imageUrl": "/images/products/45/product_218_2.jpg",
+      "position": 1
+    },
+    {
+      "id": 1747,
+      "productId": 45,
+      "imageUrl": "/images/products/45/product_218_3.jpg",
+      "position": 2
+    },
+    {
+      "id": 1748,
+      "productId": 45,
+      "imageUrl": "/images/products/45/product_218_4.jpg",
+      "position": 3
+    },
+    {
+      "id": 1749,
+      "productId": 45,
+      "imageUrl": "/images/products/45/product_218_5.jpg",
+      "position": 4
+    },
+    {
+      "id": 1750,
+      "productId": 45,
+      "imageUrl": "/images/products/45/product_218_6.jpg",
+      "position": 5
+    },
+    {
+      "id": 1751,
+      "productId": 45,
+      "imageUrl": "/images/products/45/product_218_7.jpg",
+      "position": 6
+    }
+  ],
+  "features": [],
+  "variants": [],
+  "categories": [
+    {
+      "productId": 45,
+      "categoryId": 8
+    }
+  ]
+}
