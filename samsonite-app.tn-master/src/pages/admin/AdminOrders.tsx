@@ -16,6 +16,7 @@ import {
   RefreshCw,
   Search,
   ShoppingBag,
+  Trash2,
   Truck,
   X,
 } from "lucide-react";
@@ -36,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatTnd } from "@/lib/currency";
 import {
+  deleteOrder,
   listOrders,
   updateOrderStatus,
   type OrderStatus,
@@ -319,6 +321,18 @@ const AdminOrders = () => {
       setError(message);
     } finally {
       setUpdatingReference(null);
+    }
+  };
+
+  const handleDeleteOrder = async (order: StoredOrder) => {
+    try {
+      await deleteOrder(order.id);
+      setOrders((previous) => previous.filter((item) => item.id !== order.id));
+      setSelectedOrder((previous) => (previous?.id === order.id ? null : previous));
+      toast.success(`La commande ${order.id} a été supprimée.`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Impossible de supprimer la commande";
+      setError(message);
     }
   };
 
@@ -845,10 +859,32 @@ const AdminOrders = () => {
                       />
                     </td>
                     <td className="px-4 py-4 text-right">
+                      <div className="flex justify-end gap-2">
                       <button type="button" onClick={() => setSelectedOrder(order)} className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-2.5 py-1.5 text-xs font-semibold transition-colors hover:bg-gray-50">
                         <Eye className="h-3.5 w-3.5" />
                         Details
                       </button>
+                      <ConfirmDeleteDialog
+                        title={`Supprimer la commande ${order.id} ?`}
+                        description="Cette action supprimera définitivement la commande, ses articles et son historique. Elle ne modifie pas le stock."
+                        confirmLabel="Supprimer"
+                        pendingLabel="Suppression..."
+                        tone="danger"
+                        onConfirm={() => handleDeleteOrder(order)}
+                      >
+                        {(openDialog) => (
+                          <button
+                            type="button"
+                            onClick={openDialog}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-200 bg-red-50 text-red-600 transition-colors hover:bg-red-100"
+                            title="Supprimer la commande"
+                            aria-label={`Supprimer la commande ${order.id}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </ConfirmDeleteDialog>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -860,7 +896,7 @@ const AdminOrders = () => {
       )}
 
       {selectedOrder && (
-        <OrderDetailPanel order={selectedOrder} onClose={() => setSelectedOrder(null)} onStatusChange={handleStatusChange} onPrint={printOrder} updating={updatingReference === selectedOrder.id} />
+        <OrderDetailPanel order={selectedOrder} onClose={() => setSelectedOrder(null)} onStatusChange={handleStatusChange} onDelete={handleDeleteOrder} onPrint={printOrder} updating={updatingReference === selectedOrder.id} />
       )}
     </div>
   );
@@ -1036,12 +1072,14 @@ const OrderDetailPanel = ({
   order,
   onClose,
   onStatusChange,
+  onDelete,
   updating,
   onPrint,
 }: {
   order: StoredOrder;
   onClose: () => void;
   onStatusChange: (id: string, status: OrderStatus, note?: string) => void;
+  onDelete: (order: StoredOrder) => void | Promise<void>;
   onPrint: (order: StoredOrder) => void;
   updating: boolean;
 }) => {
@@ -1062,6 +1100,25 @@ const OrderDetailPanel = ({
             <FileText className="h-4 w-4" />
             Export PDF
           </button>
+          <ConfirmDeleteDialog
+            title={`Supprimer la commande ${order.id} ?`}
+            description="Cette action supprimera définitivement la commande, ses articles et son historique. Elle ne modifie pas le stock."
+            confirmLabel="Supprimer"
+            pendingLabel="Suppression..."
+            tone="danger"
+            onConfirm={() => onDelete(order)}
+          >
+            {(openDialog) => (
+              <button
+                type="button"
+                onClick={openDialog}
+                className="inline-flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100"
+              >
+                <Trash2 className="h-4 w-4" />
+                Supprimer
+              </button>
+            )}
+          </ConfirmDeleteDialog>
           <button type="button" onClick={onClose} className="rounded-full border border-gray-200 p-2 transition-colors hover:bg-gray-50">
             <X className="h-4 w-4" />
           </button>

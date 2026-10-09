@@ -627,6 +627,25 @@ export const listOrders = async (reference?: string) => {
   return orders.map(mapOrder);
 };
 
+export const deleteOrder = async (reference: string) => {
+  const normalizedReference = String(reference || "").trim();
+  if (!normalizedReference) {
+    throw new Error("Reference commande invalide");
+  }
+
+  const existingOrder = await prisma.order.findUnique({
+    where: { reference: normalizedReference },
+    select: { id: true, reference: true },
+  });
+
+  if (!existingOrder) {
+    throw new Error("Commande introuvable");
+  }
+
+  await prisma.order.delete({ where: { id: existingOrder.id } });
+  return { reference: existingOrder.reference };
+};
+
 export const updateOrderStatus = async (reference: string, status: string, note?: string) => {
   if (!ORDER_STATUSES.has(status)) {
     throw new Error("Statut invalide");

@@ -152,3 +152,15 @@ export const updateOrderStatus = async (id: string, status: OrderStatus, note?: 
   }
   return data.order as StoredOrder;
 };
+
+export const deleteOrder = async (id: string) => {
+  const res = await fetch(`${API_BASE}/admin/orders/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || "Impossible de supprimer la commande");
+  }
+  return data.deleted as { reference: string };
+};

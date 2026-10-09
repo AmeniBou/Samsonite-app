@@ -2,6 +2,7 @@
 import { requireAuth } from "../middleware/auth.js";
 import {
   createOrder,
+  deleteOrder,
   getOrderByReference,
   listOrders,
   updateOrderStatus,
@@ -50,6 +51,16 @@ adminOrdersRouter.put("/:reference/status", async (req: Request, res: Response):
   try {
     const order = await updateOrderStatus(req.params.reference, String(req.body.status || ""), String(req.body.note || ""));
     res.json({ success: true, order });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : "Erreur inconnue";
+    res.status(400).json({ success: false, error: detail });
+  }
+});
+
+adminOrdersRouter.delete("/:reference", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const deleted = await deleteOrder(req.params.reference);
+    res.json({ success: true, deleted });
   } catch (err) {
     const detail = err instanceof Error ? err.message : "Erreur inconnue";
     res.status(400).json({ success: false, error: detail });
