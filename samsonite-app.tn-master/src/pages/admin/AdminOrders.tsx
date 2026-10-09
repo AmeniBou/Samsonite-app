@@ -441,7 +441,7 @@ const AdminOrders = () => {
     <div class="grand"><span>Total</span><span>${formatTnd(order.totals.total)}</span></div>
   </div>
   ${order.customer.notes ? `<section class="box" style="min-height: auto; margin-top: 22px;"><h2>Note client</h2>${htmlEscape(order.customer.notes)}</section>` : ""}
-  <footer class="footer">Samsonite Tunisie · Appelez-nous: 26528103 / 71809209 · commercial@samsonite.com.tn<br />Merci pour votre confiance.</footer>
+  <footer class="footer">Samsonite Tunisie · Appelez-nous: 26528103 / 71809209 · samsonite@midex.tn<br />Merci pour votre confiance.</footer>
   </main>
   <script>window.onload = () => window.print();</script>
 </body>

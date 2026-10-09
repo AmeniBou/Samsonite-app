@@ -212,7 +212,7 @@ const buildOrderDetailsHtml = (
     </section>
 
     <footer class="footer">
-      Samsonite Tunisie · Appelez-nous: 26528103 / 71809209 · commercial@samsonite.com.tn<br />
+      Samsonite Tunisie · Appelez-nous: 26528103 / 71809209 · samsonite@midex.tn<br />
       ${htmlEscape(translate("order.footerNote"))}
     </footer>
   </main>
@@ -522,9 +522,9 @@ const OrderConfirmation = () => {
                 <Phone className="h-4 w-4" />
                 71809209
               </a>
-              <a href="mailto:commercial@samsonite.com.tn" className="flex items-center gap-3 font-semibold hover:underline">
+              <a href="mailto:samsonite@midex.tn" className="flex items-center gap-3 font-semibold hover:underline">
                 <Mail className="h-4 w-4" />
-                commercial@samsonite.com.tn
+                samsonite@midex.tn
               </a>
             </div>
           </div>

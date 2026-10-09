@@ -110,8 +110,8 @@ const Footer = () => {
               <p>Fax : 71 809 080</p>
               <p>
                 {t("footer.emailUs")} :{" "}
-                <a href="mailto:commercial@samsonite.com.tn" className="break-all transition-colors hover:text-primary-foreground">
-                  commercial@samsonite.com.tn
+                <a href="mailto:samsonite@midex.tn" className="break-all transition-colors hover:text-primary-foreground">
+                  samsonite@midex.tn
                 </a>
               </p>
             </div>
