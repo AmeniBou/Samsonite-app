@@ -902,7 +902,7 @@ const ensureCategory = async (categoryId: number) => {
 const ensureProductSubCategory = async (categoryId: number) => {
   const category = await ensureCategory(categoryId);
   if (!category.parentId) {
-    throw new Error("Choisis une vraie sous-categorie, pas une categorie parente.");
+    throw new Error("Choisissez une sous-catégorie, pas une catégorie parente.");
   }
   return category;
 };

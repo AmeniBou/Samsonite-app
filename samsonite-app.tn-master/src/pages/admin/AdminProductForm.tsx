@@ -655,6 +655,11 @@ const AdminProductForm = () => {
             setError("La sous-catégorie est requise.");
             return;
         }
+        if (!selectedCategoryIsValidSubCategory) {
+            setError(subCategoryRequiredMessage);
+            setCurrentStep(1);
+            return;
+        }
         if (form.variants.length === 0) {
             setError("Ajoute au moins une variante avec couleur, prix, stock et images.");
             return;
@@ -796,14 +801,40 @@ const AdminProductForm = () => {
             const firstVariant = variants[0];
             const derivedPrice = firstVariant?.price || (form.price ? parseFloat(form.price) : 0);
             const derivedStock = variants.reduce((sum, variant) => sum + (variant.stock || 0), 0);
+            const parsedBrandId = parseInt(form.brandId, 10);
+            const parsedCategoryId = parseInt(form.categoryId, 10);
+            const categoryToSave = categories.find((category) => category.id === parsedCategoryId);
+            const parentCategoryToSave = categories.find((category) => category.id === parseInt(form.parentCategoryId, 10));
+
+            if (!Number.isInteger(parsedBrandId) || parsedBrandId <= 0) {
+                setError("La marque est obligatoire.");
+                setCurrentStep(1);
+                return;
+            }
+
+            if (
+                !Number.isInteger(parsedCategoryId) ||
+                parsedCategoryId <= 0 ||
+                !categoryToSave ||
+                !categoryToSave.parentId ||
+                String(categoryToSave.parentId) !== form.parentCategoryId
+            ) {
+                setError(
+                    parentCategoryToSave
+                        ? `Choisissez une sous-catégorie sous "${parentCategoryToSave.name}" avant d'enregistrer ce produit.`
+                        : "Choisissez une catégorie parente puis une sous-catégorie avant d'enregistrer ce produit."
+                );
+                setCurrentStep(1);
+                return;
+            }
 
             const productData = {
                 name: form.name.trim(),
                 description: form.description.trim(),
                 descriptionShort: form.descriptionShort.trim(),
                 price: derivedPrice,
-                brandId: parseInt(form.brandId, 10),
-                categoryId: parseInt(form.categoryId, 10),
+                brandId: parsedBrandId,
+                categoryId: parsedCategoryId,
                 reference: form.reference.trim(),
                 weight: firstVariant?.weight || undefined,
                 width: firstVariant?.width || undefined,
@@ -850,12 +881,24 @@ const AdminProductForm = () => {
     const childCategories = categories
         .filter((category) => String(category.parentId) === form.parentCategoryId)
         .sort((first, second) => first.name.localeCompare(second.name, "fr"));
+    const shouldKeepSelectedCategory =
+        selectedParent &&
+        selectedCategory &&
+        Boolean(selectedCategory.parentId) &&
+        !childCategories.some((category) => category.id === selectedCategory.id);
     const categoryOptions =
-        selectedParent && selectedCategory && !childCategories.some((category) => category.id === selectedCategory.id)
+        shouldKeepSelectedCategory
             ? [...childCategories, selectedCategory].sort((first, second) => first.name.localeCompare(second.name, "fr"))
             : selectedParent
               ? childCategories
               : [];
+    const selectedCategoryIsValidSubCategory =
+        Boolean(selectedCategory?.parentId) && String(selectedCategory?.parentId) === form.parentCategoryId;
+    const selectedParentLabel = selectedParent?.name || "la catégorie sélectionnée";
+    const subCategoryRequiredMessage = `Choisissez une sous-catégorie sous "${selectedParentLabel}", pas la catégorie parente.`;
+    const missingSubCategoryMessage = selectedParent
+        ? `Choisissez une sous-catégorie sous "${selectedParentLabel}" avant d'enregistrer ce produit.`
+        : "La sous-catégorie est obligatoire.";
     const allVariantImages = form.variants.flatMap((variant) => parseLines(variant.imagesText));
     const imagePreviewItems = allVariantImages.slice(0, 12);
     const allProductImages = allVariantImages;
@@ -943,7 +986,8 @@ const AdminProductForm = () => {
         if (!form.name.trim()) errors.push("Le nom du produit est obligatoire.");
         if (!form.brandId) errors.push("La marque est obligatoire.");
         if (!form.parentCategoryId) errors.push("La catégorie parente est obligatoire.");
-        if (!form.categoryId) errors.push("La sous-catégorie est obligatoire.");
+        if (!form.categoryId) errors.push(missingSubCategoryMessage);
+        else if (!selectedCategoryIsValidSubCategory) errors.push(subCategoryRequiredMessage);
         return errors;
     };
 
@@ -1002,7 +1046,7 @@ const AdminProductForm = () => {
         setValidatedSteps((previous) => new Set(previous).add(1));
         const errors = getGeneralValidationErrors();
         if (errors.length > 0) {
-            setError("Veuillez remplir tous les champs obligatoires avant de continuer.");
+            setError(errors[0]);
             return false;
         }
         setError("");
@@ -1198,9 +1242,9 @@ const AdminProductForm = () => {
                             name="categoryId"
                             value={form.categoryId}
                             onChange={handleChange}
-                            className={`h-10 w-full rounded-md border bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-black disabled:bg-gray-100 ${showGeneralErrors && !form.categoryId ? invalidControlClass : "border-gray-300"}`}
-                            aria-invalid={showGeneralErrors && !form.categoryId}
-                            aria-describedby={showGeneralErrors && !form.categoryId ? "product-category-error" : undefined}
+                            className={`h-10 w-full rounded-md border bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-black disabled:bg-gray-100 ${showGeneralErrors && (!form.categoryId || !selectedCategoryIsValidSubCategory) ? invalidControlClass : "border-gray-300"}`}
+                            aria-invalid={showGeneralErrors && (!form.categoryId || !selectedCategoryIsValidSubCategory)}
+                            aria-describedby={showGeneralErrors && (!form.categoryId || !selectedCategoryIsValidSubCategory) ? "product-category-error" : undefined}
                             required
                             disabled={!form.parentCategoryId}
                         >
@@ -1211,7 +1255,11 @@ const AdminProductForm = () => {
                                 </option>
                             ))}
                         </select>
-                        {showGeneralErrors && !form.categoryId && <p id="product-category-error" className="mt-1 text-xs font-semibold text-red-600">La sous-catégorie est obligatoire.</p>}
+                        {showGeneralErrors && (!form.categoryId || !selectedCategoryIsValidSubCategory) && (
+                            <p id="product-category-error" className="mt-1 text-xs font-semibold text-red-600">
+                                {!form.categoryId ? missingSubCategoryMessage : subCategoryRequiredMessage}
+                            </p>
+                        )}
                     </div>
                 </div>
 

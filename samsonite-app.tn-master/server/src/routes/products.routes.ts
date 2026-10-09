@@ -932,7 +932,7 @@ router.put("/products/:id", async (req: Request, res: Response): Promise<void> =
         return;
     }
     if (fields.categoryId !== undefined && (!Number.isInteger(normalizedFields.categoryId) || normalizedFields.categoryId! <= 0)) {
-        res.status(400).json({ error: "La sous-categorie selectionnee est invalide" });
+        res.status(400).json({ error: "La sous-catégorie sélectionnée est invalide" });
         return;
     }
     if (fields.brandId !== undefined && (!Number.isInteger(normalizedFields.brandId) || normalizedFields.brandId! <= 0)) {
@@ -943,7 +943,7 @@ router.put("/products/:id", async (req: Request, res: Response): Promise<void> =
     try {
         const result = await updateProduct(id, normalizedFields);
         if (!result.success) {
-            res.status(502).json({ error: result.error });
+            res.status(400).json({ error: result.error });
             return;
         }
 
