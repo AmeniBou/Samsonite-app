@@ -64,12 +64,12 @@ const ContactFaq = () => {
 
   const faqs = isEn
     ? [
-        { q: "Which subject should I choose?", a: "Choose Customer service for orders, product availability, delivery, returns or after-sales support." },
+        { q: "Which subject should I choose?", a: "Choose Customer service for orders, product availability, delivery or after-sales support." },
         { q: "What should I include in my message?", a: "Add the product name, color, size, order reference and phone number so the team can answer faster." },
         { q: "Can I attach a document?", a: "Yes, attach a photo, proof of purchase or any document that helps explain your request." },
       ]
     : [
-        { q: "Quel sujet choisir ?", a: "Choisissez Service client pour les commandes, disponibilites, livraisons, retours ou demandes apres-vente." },
+        { q: "Quel sujet choisir ?", a: "Choisissez Service client pour les commandes, disponibilités, livraisons ou demandes après-vente." },
         { q: "Que faut-il indiquer dans le message ?", a: "Ajoutez le nom du produit, la couleur, la taille, la référence de commande et votre téléphone pour une réponse plus rapide." },
         { q: "Puis-je joindre un document ?", a: "Oui, ajoutez une photo, une preuve d'achat ou tout document utile pour expliquer votre demande." },
       ];

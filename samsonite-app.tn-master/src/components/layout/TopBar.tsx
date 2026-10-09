@@ -12,7 +12,7 @@ const TopBar = () => {
           <Truck className="h-3.5 w-3.5" />
           <span>{t("top.freeShipping")}</span>
         </Link>
-        <Link to="/retours" className="flex items-center gap-1.5 hover:underline">
+        <Link to="/livraison" className="flex items-center gap-1.5 hover:underline">
           <PackageCheck className="h-3.5 w-3.5" />
           <span>{t("top.freeReturns")}</span>
         </Link>

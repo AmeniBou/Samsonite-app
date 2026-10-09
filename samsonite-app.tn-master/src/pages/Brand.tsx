@@ -88,13 +88,13 @@ const Brand = () => {
         "Offer reliable luggage designed for everyday travel and long journeys.",
         "Help customers choose the right suitcase, size, bag or travel accessory.",
         "Provide local support through stores, phone assistance and after-sales guidance.",
-        "Maintain clear information about delivery, returns, warranty and product availability.",
+        "Maintain clear information about delivery, warranty and product availability.",
       ]
     : [
         "Proposer des bagages fiables pour les voyages quotidiens comme les longs déplacements.",
         "Aider les clients à choisir la bonne valise, taille, sac ou accessoire de voyage.",
         "Assurer un accompagnement local via les boutiques, le téléphone et le service après-vente.",
-        "Donner des informations claires sur la livraison, les retours, la garantie et la disponibilité.",
+        "Donner des informations claires sur la livraison, la garantie et la disponibilité.",
       ];
 
   return (

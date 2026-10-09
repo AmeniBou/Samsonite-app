@@ -7,7 +7,7 @@ import {
   ChevronUp,
   Minus,
   Plus,
-  RotateCcw,
+  Headphones,
   Shield,
   ShoppingBag,
   BadgePercent,
@@ -22,6 +22,14 @@ import { formatTnd } from "@/lib/currency";
 import { useCart } from "@/hooks/useCart";
 import { useLanguage } from "@/lib/i18n";
 import type { CategoryDisplay, ProductDisplay, ProductVariant } from "@/lib/prestashop/types";
+
+const STANDARD_SIZE_ORDER = ["S", "M", "L", "XL"];
+
+const getStandardSizeRank = (label: string) => {
+  const normalized = label.trim().toUpperCase();
+  const index = STANDARD_SIZE_ORDER.indexOf(normalized);
+  return index === -1 ? Number.POSITIVE_INFINITY : index;
+};
 
 const Product = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -341,8 +349,9 @@ const Product = () => {
   const effectiveVariants = selectableVariants.length > 0 ? selectableVariants : variants;
 
   const getColorKey = (variant?: ProductVariant) =>
-    (variant?.color?.hex || "").trim().toLowerCase() ||
-    (variant?.color?.name || "").trim().toLowerCase();
+    variant?.color
+      ? `${(variant.color.name || "").trim().toLowerCase() || "color"}|${(variant.color.hex || "").trim().toLowerCase() || "no-hex"}`
+      : "";
 
   const normalizeVariantKey = (value?: string) => (value || "").trim().toLowerCase();
   const getVariantDimensionLabel = (variant?: ProductVariant) => {
@@ -550,7 +559,37 @@ const Product = () => {
         byLabel.set(key, { label, combinationId: variant.combinationId, stock: variant.stock || 0, score });
       }
     }
-    return Array.from(byLabel.values()).map(({ score: _score, ...size }) => size);
+
+    const existingSizes = Array.from(byLabel.values());
+    const existingStandardRanks = existingSizes
+      .map((size) => getStandardSizeRank(size.label))
+      .filter((rank) => Number.isFinite(rank));
+
+    if (existingStandardRanks.length >= 2) {
+      const minRank = Math.min(...existingStandardRanks);
+      const maxRank = Math.max(...existingStandardRanks);
+      for (let rank = minRank; rank <= maxRank; rank += 1) {
+        const label = STANDARD_SIZE_ORDER[rank];
+        const key = label.toLowerCase();
+        if (!byLabel.has(key)) {
+          byLabel.set(key, {
+            label,
+            combinationId: 0,
+            stock: 0,
+            score: -1,
+          });
+        }
+      }
+    }
+
+    return Array.from(byLabel.values())
+      .sort((a, b) => {
+        const rankA = getStandardSizeRank(a.label);
+        const rankB = getStandardSizeRank(b.label);
+        if (rankA !== rankB) return rankA - rankB;
+        return a.label.localeCompare(b.label, "fr", { numeric: true });
+      })
+      .map(({ score: _score, ...size }) => size);
   }, [effectiveVariants]);
 
   const updateVariantUrl = (variant: ProductVariant) => {
@@ -1175,7 +1214,7 @@ const Product = () => {
                 <p className="text-xs font-semibold leading-4">{t("product.freeShipping")}</p>
               </div>
               <div className="flex items-center gap-3">
-                <RotateCcw className="h-4 w-4 text-muted-foreground" />
+                <Headphones className="h-4 w-4 text-muted-foreground" />
                 <p className="text-xs font-semibold leading-4">{t("product.freeReturns")}</p>
               </div>
               <div className="flex items-center gap-3">

@@ -316,7 +316,7 @@ export const mapPSProductToDisplay = (
 
     const normalizedName = variant.color.name.trim().toLowerCase();
     const normalizedHex = variant.color.hex.trim().toLowerCase();
-    const colorKey = normalizedHex || normalizedName;
+    const colorKey = `${normalizedName || "color"}|${normalizedHex || "no-hex"}`;
     const score =
       (variant.isDefault ? 100 : 0) +
       ((variant.stock || 0) > 0 ? 10 : 0) +

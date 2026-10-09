@@ -47,7 +47,6 @@ const SiteMap = () => {
       title: isEn ? "Help" : "Aide",
       links: [
         { label: t("footer.shipping"), href: "/livraison" },
-        { label: t("footer.returns"), href: "/retours" },
         { label: t("footer.contactFaq"), href: "/nous-contacter" },
         { label: t("product.warranty"), href: "/services" },
       ],

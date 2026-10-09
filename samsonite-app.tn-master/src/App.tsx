@@ -19,7 +19,6 @@ import PrestashopConfig from "./pages/PrestashopConfig";
 import Stores from "./pages/Stores";
 import Account from "./pages/Account";
 import Shipping from "./pages/Shipping";
-import Returns from "./pages/Returns";
 import Newsletter from "./pages/Newsletter";
 import DataError from "./pages/DataError";
 import ContactFaq from "./pages/ContactFaq";
@@ -83,7 +82,6 @@ const App = () => {
                 <Route path="/magasins" element={<Stores />} />
                 <Route path="/compte" element={<Account />} />
                 <Route path="/livraison" element={<Shipping />} />
-                <Route path="/retours" element={<Returns />} />
                 <Route path="/contact-faq" element={<ContactFaq />} />
                 <Route path="/nous-contacter" element={<ContactFaq />} />
                 <Route path="/plan-du-site" element={<SiteMap />} />

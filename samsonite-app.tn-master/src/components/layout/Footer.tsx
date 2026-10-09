@@ -50,11 +50,6 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/retours" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
-                  {t("footer.returns")}
-                </Link>
-              </li>
-              <li>
                 <Link to="/nous-contacter" className="text-sm text-primary-foreground/70 transition-colors hover:text-primary-foreground">
                   {t("footer.contactFaq")}
                 </Link>

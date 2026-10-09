@@ -22,13 +22,13 @@ const Shipping = () => {
     : [
         {
           title: "Grand Tunis",
-          price: "15 DT / gratuite des 350 DT",
-          desc: "La livraison standard est disponible uniquement sur le Grand Tunis. Elle coute 15 DT et devient gratuite pour les commandes de plus de 350 DT.",
+          price: "15 DT / gratuite dès 350 DT",
+          desc: "La livraison standard est disponible uniquement sur le Grand Tunis. Elle coûte 15 DT et devient gratuite pour les commandes de plus de 350 DT.",
         },
         {
           title: "Hors Grand Tunis",
           price: "Non couvert par la livraison standard",
-          desc: "Pour une autre zone de livraison, l'equipe confirme la disponibilite et les conditions avant validation de la commande.",
+          desc: "Pour une autre zone de livraison, l'équipe confirme la disponibilité et les conditions avant validation de la commande.",
         },
       ];
 
@@ -39,9 +39,9 @@ const Shipping = () => {
         "Delivery time starts from the dispatch date, after payment and team validation.",
       ]
     : [
-        "Les commandes passees du lundi au vendredi, hors jours feries, et confirmees avant 17h sont preparees pour une expedition sous 48h.",
-        "Les commandes passees en dehors de ce creneau sont preparees deux jours apres la prochaine ouverture.",
-        "Le delai de livraison commence a partir de la date d'expedition, apres paiement et validation par notre equipe.",
+        "Les commandes passées du lundi au vendredi, hors jours fériés, et confirmées avant 17h sont préparées pour une expédition sous 72h.",
+        "Les commandes passées en dehors de ce créneau sont préparées après la prochaine ouverture.",
+        "Le délai de livraison commence à partir de la date d'expédition, après paiement et validation par notre équipe.",
       ];
 
   const schedule = isEn
@@ -54,12 +54,12 @@ const Shipping = () => {
         { order: "Friday after 08:00 until Saturday before 14:00", delivery: "Monday" },
       ]
     : [
-        { order: "Samedi apres 14h, weekend et lundi avant 8h", delivery: "Mardi" },
-        { order: "Lundi apres 8h jusqu'a 17h", delivery: "Mercredi" },
-        { order: "Mardi apres 8h jusqu'a 17h", delivery: "Jeudi" },
-        { order: "Mercredi apres 8h jusqu'a 17h", delivery: "Vendredi" },
-        { order: "Jeudi apres 8h jusqu'a 17h", delivery: "Samedi" },
-        { order: "Vendredi apres 8h jusqu'au samedi avant 14h", delivery: "Lundi" },
+        { order: "Samedi après 14h, week-end et lundi avant 8h", delivery: "Mardi" },
+        { order: "Lundi après 8h jusqu'à 17h", delivery: "Mercredi" },
+        { order: "Mardi après 8h jusqu'à 17h", delivery: "Jeudi" },
+        { order: "Mercredi après 8h jusqu'à 17h", delivery: "Vendredi" },
+        { order: "Jeudi après 8h jusqu'à 17h", delivery: "Samedi" },
+        { order: "Vendredi après 8h jusqu'au samedi avant 14h", delivery: "Lundi" },
       ];
 
   return (
@@ -76,19 +76,19 @@ const Shipping = () => {
             <p className="mt-5 max-w-3xl text-base leading-7 text-muted-foreground">
               {isEn
                 ? "Samsonite gives special care to the processing, transport and delivery of online luggage orders. Your items are delivered to the address entered during checkout."
-                : "Specialise dans la vente en ligne de bagages, Samsonite apporte un soin particulier au traitement, au transport et a la livraison des articles commandes. Vos produits sont livres a l'adresse indiquee lors de la commande."}
+                : "Spécialisé dans la vente en ligne de bagages, Samsonite apporte un soin particulier au traitement, au transport et à la livraison des articles commandés. Vos produits sont livrés à l'adresse indiquée lors de la commande."}
             </p>
           </div>
 
           <div className="border border-border bg-white p-6">
             <ShieldCheck className="h-7 w-7" />
             <h2 className="mt-5 text-xl font-black uppercase">
-              {isEn ? "Validated order" : "Commande validee"}
+              {isEn ? "Validated order" : "Commande validée"}
             </h2>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
               {isEn
                 ? "An order is considered valid once it has been paid and confirmed by the team."
-                : "Une commande est consideree comme validee lorsqu'elle est payee et confirmee par notre equipe."}
+                : "Une commande est considérée comme validée lorsqu'elle est payée et confirmée par notre équipe."}
             </p>
           </div>
         </div>
@@ -118,12 +118,12 @@ const Shipping = () => {
           <div>
             <Clock className="h-8 w-8" />
             <h2 className="mt-4 text-2xl font-black uppercase">
-              {isEn ? "Dispatch within 48h" : "Expedition sous 48h"}
+              {isEn ? "Dispatch within 72h" : "Expédition sous 72h"}
             </h2>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
               {isEn
                 ? "The delivery period starts from the dispatch date, according to order validation and opening days."
-                : "Le delai de livraison commence a courir a partir de la date d'expedition, selon la validation de la commande et les jours d'ouverture."}
+                : "Le délai de livraison commence à courir à partir de la date d'expédition, selon la validation de la commande et les jours d'ouverture."}
             </p>
           </div>
 
@@ -163,7 +163,7 @@ const Shipping = () => {
         <p className="mt-5 max-w-3xl text-sm leading-6 text-muted-foreground">
           {isEn
             ? "These times are indicative and may vary depending on public holidays, delivery area, product availability or order validation."
-            : "Ces delais sont indicatifs et peuvent varier selon les jours feries, la zone de livraison, la disponibilite du produit ou la validation de la commande."}
+            : "Ces délais sont indicatifs et peuvent varier selon les jours fériés, la zone de livraison, la disponibilité du produit ou la validation de la commande."}
         </p>
       </section>
     </div>

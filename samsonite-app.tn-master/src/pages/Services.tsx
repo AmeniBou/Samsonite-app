@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Headphones, MapPin, PackageCheck, RotateCcw, ShieldCheck, Truck, Wrench } from "lucide-react";
+import { ArrowRight, Headphones, MapPin, PackageCheck, ShieldCheck, Truck, Wrench } from "lucide-react";
 
 import { useLanguage } from "@/lib/i18n";
 
@@ -20,15 +20,15 @@ const Services = () => {
         : ["15 TND sur le Grand Tunis", "Offerte des 350 TND", "Preparation apres confirmation"],
     },
     {
-      icon: RotateCcw,
-      title: isEn ? "Returns and exchanges" : "Retours et echanges",
+      icon: ShieldCheck,
+      title: isEn ? "After-sales support" : "Service après-vente",
       desc: isEn
-        ? "A clear return process for items kept in original condition with their labels and packaging."
-        : "Un processus clair pour les articles conserves dans leur etat d'origine avec etiquette et emballage.",
-      href: "/retours",
+        ? "Our team helps you with warranty questions, product checks and support requests after purchase."
+        : "Notre équipe vous accompagne pour la garantie, le contrôle produit et les demandes après achat.",
+      href: "/contact-faq",
       details: isEn
-        ? ["Return request reviewed by support", "Exchange possible depending on stock", "Refund after inspection"]
-        : ["Demande analysee par le service client", "Echange selon disponibilite", "Remboursement apres controle"],
+        ? ["Order reference recommended", "Product photos help the diagnosis", "Support handled by the local team"]
+        : ["Référence de commande recommandée", "Photos du produit utiles au diagnostic", "Prise en charge par l'équipe locale"],
     },
     {
       icon: ShieldCheck,
@@ -99,8 +99,8 @@ const Services = () => {
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground">
               {isEn
-                ? "Everything you need to order with confidence: delivery, returns, warranty, repairs and direct support from the local team."
-                : "Tout ce qu'il faut pour commander avec confiance : livraison, retours, garantie, reparations et accompagnement par l'equipe locale."}
+                ? "Everything you need to order with confidence: delivery, warranty, repairs and direct support from the local team."
+                : "Tout ce qu'il faut pour commander avec confiance : livraison, garantie, réparations et accompagnement par l'équipe locale."}
             </p>
           </div>
 
